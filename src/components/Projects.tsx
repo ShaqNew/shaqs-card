@@ -9,7 +9,7 @@ import MeloCare from "@/lib/images/MeloCare_Page.png";
 import Sandbox from "@/lib/images/Sandbox_Page.png";
 
 const ProjectGrid = tw.div`
-grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll h-150
+grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll lg:h-150
 `;
 
 const ProjectCardImage = tw.a`
