@@ -1,4 +1,5 @@
 import Image from "next/image";
+import tw from "tailwind-styled-components";
 import CalvinKlein from "@/lib/images/CK_Page.png";
 import TommyHilfiger from "@/lib/images/TH_Page.png";
 import Tempur from "@/lib/images/Tempur_Page.png";
@@ -7,20 +8,30 @@ import Xtreme from "@/lib/images/Xtreme_Page.png";
 import MeloCare from "@/lib/images/MeloCare_Page.png";
 import Sandbox from "@/lib/images/Sandbox_Page.png";
 
+const ProjectGrid = tw.div`
+grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll h-150
+`;
+
+const ProjectCardImage = tw.a`
+h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center
+`;
+
+const ProjectCardHeading = tw.h3`
+text-xl font-semibold text-heading mb-2
+`;
+
 export default function Projects() {
   return (
     <section id="projects" className="section-padding">
       <div className="section-container">
         <h2 className="section-title">Past Projects and Work</h2>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll">
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <ProjectGrid>
+          <div className="card">
+            <ProjectCardImage href="https://melo-next.vercel.app/">
               <Image src={MeloCare} alt="MeloCare" width={1000} height={1000} />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">
-                MeloCare
-              </h3>
+              <ProjectCardHeading>MeloCare</ProjectCardHeading>
               <p className="text-body mb-4">
                 A healthcare service provider website that I&apos;m currently
                 developing for a client. It is a work in progress and currently
@@ -29,14 +40,12 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://shaqs-sandbox.vercel.app/">
               <Image src={Sandbox} alt="Sandbox" width={1000} height={1000} />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">
-                Sandbox
-              </h3>
+              <ProjectCardHeading>Sandbox</ProjectCardHeading>
               <p className="text-body mb-4">
                 This is my sandbox website which I use to practice my skills and
                 learn new technologies. It&apos;s experimental and not a
@@ -45,14 +54,12 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://www.xtreme.game/">
               <Image src={Xtreme} alt="Xtreme" width={1000} height={1000} />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">
-                Xtreme
-              </h3>
+              <ProjectCardHeading>Xtreme</ProjectCardHeading>
               <p className="text-body mb-4">
                 An iGaming and sports betting website. I worked on this project
                 alongside a senior Frontend developer as we maintained and
@@ -61,12 +68,12 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://www.velo.com/">
               <Image src={Velo} alt="Velo" width={1000} height={1000} />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">Velo</h3>
+              <ProjectCardHeading>Velo</ProjectCardHeading>
               <p className="text-body mb-4">
                 An e-commerce website for BAT (British American Tobacco) that I
                 worked on alongside a senior Frontend developer as we maintained
@@ -75,10 +82,10 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://uk.tempur.com/">
               <Image src={Tempur} alt="Tempur" width={1000} height={1000} />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
               <h3 className="text-xl font-semibold text-heading mb-2">
                 Tempur
@@ -90,19 +97,17 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://uk.tommy.com/">
               <Image
                 src={TommyHilfiger}
                 alt="Tommy Hilfiger"
                 width={1000}
                 height={1000}
               />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">
-                Tommy Hilfiger
-              </h3>
+              <ProjectCardHeading>Tommy Hilfiger</ProjectCardHeading>
               <p className="text-body mb-4">
                 Tommy Hilfiger&apos;s e-commerce website that I worked on during
                 my time at an e-commerce agency.
@@ -110,19 +115,17 @@ export default function Projects() {
             </div>
           </div>
 
-          <div className="card overflow-hidden">
-            <div className="h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+          <div className="card">
+            <ProjectCardImage href="https://www.calvinklein.co.uk/">
               <Image
                 src={CalvinKlein}
                 alt="Calvin Klein"
                 width={1000}
                 height={1000}
               />
-            </div>
+            </ProjectCardImage>
             <div className="p-6">
-              <h3 className="text-xl font-semibold text-heading mb-2">
-                Calvin Klein
-              </h3>
+              <ProjectCardHeading>Calvin Klein</ProjectCardHeading>
               <p className="text-body mb-4">
                 A Calvin Klein&apos;s e-commerce website that I worked on during
                 my time at an e-commerce agency.
@@ -206,7 +209,7 @@ export default function Projects() {
               </div>
             </div>
           </div> */}
-        </div>
+        </ProjectGrid>
       </div>
     </section>
   );

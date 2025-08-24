@@ -1,11 +1,20 @@
+import Image from "next/image";
+import logogram from "@/lib/images/logogram-hydCrl.png";
+
 export default function Hero() {
   return (
     <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="section-container text-center">
         <div className="mb-8">
-          <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 p-1">
+          <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-900 to-blue-800 p-1">
             <div className="w-full h-full rounded-full bg-white dark:bg-slate-800 flex items-center justify-center">
-              <span className="text-3xl font-bold text-heading">SN</span>
+              <Image
+                src={logogram}
+                alt="logogram"
+                width={1000}
+                height={1000}
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         </div>

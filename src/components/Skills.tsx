@@ -1,10 +1,21 @@
+// import styled, { css } from "@emotion/styled";
+import tw from "tailwind-styled-components";
+
+const SkillCard = tw.div`
+  card overflow-y-scroll lg:overflow-scroll h-full md:h-auto sm:h-auto
+`;
+
+const SkillGrid = tw.div`
+  grid md:grid-cols-3 gap-8 lg:h-60 md:h-auto sm:h-auto
+`;
+
 export default function Skills() {
   return (
     <section id="skills" className="section-padding">
       <div className="section-container">
         <h2 className="section-title">Technical Skills</h2>
-        <div className="grid md:grid-cols-3 gap-8 lg:h-60 md:h-auto sm:h-auto">
-          <div className="card lg:overflow-scroll h-full md:h-auto sm:h-auto">
+        <SkillGrid>
+          <SkillCard className="card">
             <h3 className="text-xl font-semibold text-heading mb-4 text-center">
               Frontend
             </h3>
@@ -34,9 +45,9 @@ export default function Skills() {
                 {/* <span className="text-accent font-medium">Adept</span> */}
               </div>
             </div>
-          </div>
+          </SkillCard>
 
-          <div className="card lg:overflow-scroll h-full md:h-auto sm:h-auto">
+          <SkillCard className="card">
             <h3 className="text-xl font-semibold text-heading mb-4 text-center">
               Backend
             </h3>
@@ -58,9 +69,9 @@ export default function Skills() {
                 {/* <span className="text-accent font-medium">Advanced</span> */}
               </div>
             </div>
-          </div>
+          </SkillCard>
 
-          <div className="card lg:overflow-scroll h-full md:h-auto sm:h-auto">
+          <SkillCard className="card">
             <h3 className="text-xl font-semibold text-heading mb-4 text-center">
               DevOps & Cloud
             </h3>
@@ -97,8 +108,8 @@ export default function Skills() {
                 {/* <span className="text-accent font-medium">Expert</span> */}
               </div>
             </div>
-          </div>
-        </div>
+          </SkillCard>
+        </SkillGrid>
       </div>
     </section>
   );
