@@ -13,7 +13,7 @@ grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll lg:h-150
 `;
 
 const ProjectCardImage = tw.a`
-h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center
+h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center hover:scale-105 transition-all duration-200
 `;
 
 const ProjectCardHeading = tw.h3`
