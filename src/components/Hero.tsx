@@ -18,7 +18,10 @@ export default function Hero() {
             </div>
           </div>
         </div>
-        <h1 className="text-4xl sm:text-6xl font-bold text-heading mb-6">
+        <h1
+          id="hero-heading"
+          className="text-4xl sm:text-6xl font-bold text-heading mb-6"
+        >
           Shaq Newell
         </h1>
         <p className="text-xl sm:text-2xl text-body mb-8 max-w-3xl mx-auto">
@@ -32,6 +35,9 @@ export default function Hero() {
           </a>
           <a href="#projects" className="btn-secondary">
             View My Work
+          </a>
+          <a href="https://shaqs-sandbox.vercel.app/" className="btn-secondary">
+            Visit my Sandbox
           </a>
         </div>
       </div>
