@@ -1,5 +1,6 @@
 import Image from "next/image";
 import tw from "tailwind-styled-components";
+import MeetingPoint from "@/lib/images/MeetingPointScreenshot.png";
 import CalvinKlein from "@/lib/images/CK_Page.png";
 import TommyHilfiger from "@/lib/images/TH_Page.png";
 import Tempur from "@/lib/images/Tempur_Page.png";
@@ -9,7 +10,7 @@ import MeloCare from "@/lib/images/MeloCare_Page.png";
 import Sandbox from "@/lib/images/Sandbox_Page.png";
 
 const ProjectGrid = tw.div`
-grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll lg:h-150
+grid md:grid-cols-2 lg:grid-cols-3 gap-8 overflow-scroll
 `;
 
 const ProjectCardImage = tw.a`
@@ -135,6 +136,24 @@ export default function Projects() {
                 <span className="tech-tag">Node.js</span>
                 <span className="tech-tag">SASS/BEM</span>
               </div> */}
+            </div>
+          </div>
+
+          <div className="card">
+            <ProjectCardImage href="https://youtu.be/F0l-N0IqgZ4">
+              <Image
+                src={MeetingPoint}
+                alt="Meeting Point Video"
+                width={1000}
+                height={1000}
+              />
+            </ProjectCardImage>
+            <div className="p-6">
+              <ProjectCardHeading>Meeting Point Demo</ProjectCardHeading>
+              <p className="text-body mb-4">
+                I created this app with friends for our final year project at
+                university with React Native for mobile and Vue.js for the web.
+              </p>
             </div>
           </div>
 

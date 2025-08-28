@@ -73,7 +73,7 @@ export default function Skills() {
 
           <SkillCard className="card">
             <h3 className="text-xl font-semibold text-heading mb-4 text-center">
-              DevOps & Cloud
+              DevOps, Cloud & Services
             </h3>
             <div className="space-y-2">
               <div className="flex justify-around">
@@ -97,11 +97,17 @@ export default function Skills() {
                 <span className="text-body">Salesforce</span>
               </div>
               <div className="flex justify-around">
+                <span className="text-body">Cloudinary</span>
+              </div>
+              <div className="flex justify-around">
                 <span className="text-body">Kubernetes</span>
                 {/* <span className="text-accent font-medium">Advanced</span> */}
               </div>
               <div className="flex justify-around">
                 <span className="text-body">Magento</span>
+              </div>
+              <div className="flex justify-around">
+                <span className="text-body">Azure</span>
               </div>
               <div className="flex justify-around">
                 <span className="text-body">CI/CD</span>
