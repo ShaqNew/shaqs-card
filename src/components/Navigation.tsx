@@ -11,9 +11,6 @@ export default function Navigation() {
             <a href="#skills" className="nav-link">
               Skills
             </a>
-            <a href="#experience" className="nav-link">
-              Experience
-            </a>
             <a href="#projects" className="nav-link">
               Projects
             </a>
