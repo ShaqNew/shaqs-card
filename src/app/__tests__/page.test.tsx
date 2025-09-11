@@ -1,42 +1,8 @@
-import { render, screen } from "../../test-utils/test-utils";
+// import { render, screen } from "../../test-utils/test-utils";
+import { render, screen } from "@testing-library/react";
+import { jest, describe, expect, it } from "@jest/globals";
+import "@testing-library/jest-dom";
 import Home from "../page";
-
-// Mock all the components
-jest.mock("../../components/Navigation", () => {
-  return function MockNavigation() {
-    return <nav data-testid="navigation">Navigation</nav>;
-  };
-});
-
-jest.mock("../../components/Hero", () => {
-  return function MockHero() {
-    return <section data-testid="hero">Hero</section>;
-  };
-});
-
-jest.mock("../../components/About", () => {
-  return function MockAbout() {
-    return <section data-testid="about">About</section>;
-  };
-});
-
-jest.mock("../../components/Skills", () => {
-  return function MockSkills() {
-    return <section data-testid="skills">Skills</section>;
-  };
-});
-
-jest.mock("../../components/Projects", () => {
-  return function MockProjects() {
-    return <section data-testid="projects">Projects</section>;
-  };
-});
-
-jest.mock("../../components/Contact", () => {
-  return function MockContact() {
-    return <section data-testid="contact">Contact</section>;
-  };
-});
 
 describe("Home Page", () => {
   it("renders all main components", () => {

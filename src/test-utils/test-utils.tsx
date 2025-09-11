@@ -1,6 +1,5 @@
 import React, { ReactElement } from "react";
 import { render, RenderOptions } from "@testing-library/react";
-import { ThemeProvider } from "next-themes";
 
 // Mock theme provider for testing
 const MockThemeProvider = ({ children }: { children: React.ReactNode }) => {

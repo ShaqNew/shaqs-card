@@ -3,7 +3,7 @@
 import React from "react";
 import { render, screen } from "../../test-utils/test-utils";
 import "@testing-library/jest-dom";
-import { describe, expect, it, jest } from "@jest/globals";
+import { describe, expect, it } from "@jest/globals";
 import Projects from "../Projects";
 
 // Mock Next.js Image component

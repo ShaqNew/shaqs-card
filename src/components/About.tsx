@@ -1,6 +1,10 @@
 export default function About() {
   return (
-    <section id="about" className="section-padding section-bg-white">
+    <section
+      data-testid="about"
+      id="about"
+      className="section-padding section-bg-white"
+    >
       <div className="section-container">
         <h2 className="section-title">About Me</h2>
         <div className="grid md:grid-cols-2 gap-12 items-center">

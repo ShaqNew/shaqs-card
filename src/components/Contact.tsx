@@ -1,6 +1,10 @@
 export default function Contact() {
   return (
-    <section id="contact" className="section-padding section-bg-white">
+    <section
+      data-testid="contact"
+      id="contact"
+      className="section-padding section-bg-white"
+    >
       <div className="max-w-4xl mx-auto text-center">
         <h2 className="section-title">Get In Touch</h2>
         <p className="text-lg text-body mb-8">

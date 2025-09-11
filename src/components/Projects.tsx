@@ -23,7 +23,7 @@ text-xl font-semibold text-heading mb-2
 
 export default function Projects() {
   return (
-    <section id="projects" className="section-padding">
+    <section data-testid="projects" id="projects" className="section-padding">
       <div className="section-container">
         <h2 className="section-title">Past Projects and Work</h2>
         <ProjectGrid>
