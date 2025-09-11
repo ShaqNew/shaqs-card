@@ -3,7 +3,7 @@ import logogram from "@/lib/images/logogram-hydCrl.png";
 
 export default function Hero() {
   return (
-    <section className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+    <section data-testid="hero" className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
       <div className="section-container text-center">
         <div className="mb-8">
           <div className="w-32 h-32 mx-auto mb-6 rounded-full bg-gradient-to-r from-blue-900 to-blue-800 p-1">

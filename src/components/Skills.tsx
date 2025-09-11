@@ -11,7 +11,7 @@ const SkillGrid = tw.div`
 
 export default function Skills() {
   return (
-    <section id="skills" className="section-padding">
+    <section data-testid="skills" id="skills" className="section-padding">
       <div className="section-container">
         <h2 className="section-title">Technical Skills</h2>
         <SkillGrid>
