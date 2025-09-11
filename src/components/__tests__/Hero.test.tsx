@@ -2,13 +2,13 @@ import { render, screen } from "../../test-utils/test-utils";
 import Hero from "../Hero";
 
 // Mock Next.js Image component
-jest.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
-  },
-}));
+// jest.mock("next/image", () => ({
+//   __esModule: true,
+//   default: (props: any) => {
+//     // eslint-disable-next-line @next/next/no-img-element
+//     return <img {...props} />;
+//   },
+// }));
 
 describe("Hero Component", () => {
   it("renders hero section with correct heading", () => {

@@ -7,13 +7,13 @@ import { describe, expect, it, jest } from "@jest/globals";
 import Projects from "../Projects";
 
 // Mock Next.js Image component
-jest.mock("next/image", () => ({
-  __esModule: true,
-  default: (props: any) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} />;
-  },
-}));
+// jest.mock("next/image", () => ({
+//   __esModule: true,
+//   default: (props: any) => {
+//     // eslint-disable-next-line @next/next/no-img-element
+//     return <img {...props} />;
+//   },
+// }));
 
 describe("Projects Component (Simple)", () => {
   it("renders projects section with correct heading", () => {
