@@ -1,7 +1,7 @@
 // testing Tailwind styled components with Jest yeilds rendering errors,
 // this simple test is a workaround
 import React from "react";
-import { render, screen } from "../../test-utils/test-utils";
+import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import { describe, expect, it } from "@jest/globals";
 import Projects from "../Projects";
