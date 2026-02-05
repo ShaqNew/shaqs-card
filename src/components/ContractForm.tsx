@@ -2,13 +2,65 @@
 
 import { useState } from "react";
 
-export default function ContractForm() {
+type ContractFormProps = {
+  onYes: () => void;
+  onNo: () => void;
+};
+
+export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   const [isSwapped, setIsSwapped] = useState(false);
+  const [noSize, setNoSize] = useState("text-xl");
+  const [yesSize, setYesSize] = useState("text-xl");
+  const [noText, setNoText] = useState("no");
+  //   const [disguiseNoButton, setDisguiseNoButton] = useState(false);
+
+  const transformNoButton = () => {
+    if (noSize === "text-xl") {
+      setNoSize("text-md");
+      setYesSize("text-3xl");
+    } else if (noSize === "text-md") {
+      setNoSize("text-sm");
+      setYesSize("text-5xl");
+    } else {
+      setNoSize("text-xs");
+      setYesSize("text-7xl");
+    }
+  };
+
+  const swapButtons = () => {
+    setIsSwapped((prev) => !prev);
+  };
+
+  const changeButtonText = () => {
+    if (Math.random() < 0.5) {
+      setNoText("yes");
+    } else {
+      setNoText("Disabled");
+    }
+  };
+
+  const handleNoClick = () => {
+    if (noText != "no") {
+      setNoText("no");
+    }
+    if (Math.random() < 0.3) {
+      swapButtons();
+    } else if (Math.random() < 0.3) {
+      transformNoButton();
+    } else if (Math.random() < 0.3) {
+      changeButtonText();
+    } else {
+      onNo();
+    }
+  };
 
   const yesButton = (
     <button
       type="button"
-      className="rounded-full bg-emerald-600 px-6 py-2 text-sm font-semibold uppercase tracking-wide text-white transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+      className={`rounded-full bg-emerald-600 px-6 py-2 font-semibold
+      uppercase tracking-wide text-white transition hover:bg-emerald-500
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${yesSize}`}
+      onClick={onYes}
     >
       YES
     </button>
@@ -17,10 +69,15 @@ export default function ContractForm() {
   const noButton = (
     <button
       type="button"
-      className="rounded-full border border-slate-300 px-6 py-2 text-sm font-semibold uppercase tracking-wide text-slate-700 transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-      onClick={() => setIsSwapped((prev) => !prev)}
+      className={`rounded-full border border-slate-300 font-semibold
+        uppercase tracking-wide text-slate-700 transition hover:bg-slate-100
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300
+        dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 px-6 py-2 ${noSize}`}
+      onClick={() => {
+        handleNoClick();
+      }}
     >
-      no
+      {noText}
     </button>
   );
 
