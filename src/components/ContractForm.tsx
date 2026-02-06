@@ -9,22 +9,31 @@ type ContractFormProps = {
 
 export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   const [isSwapped, setIsSwapped] = useState(false);
+  const [sizeScale, setSizeScale] = useState(1);
+  const [textChanges, setTextChanges] = useState(0);
   const [noSize, setNoSize] = useState("text-xl");
   const [yesSize, setYesSize] = useState("text-xl");
   const [noText, setNoText] = useState("no");
   //   const [disguiseNoButton, setDisguiseNoButton] = useState(false);
 
   const transformNoButton = () => {
-    if (noSize === "text-xl") {
+    if (sizeScale === 1) {
       setNoSize("text-md");
       setYesSize("text-3xl");
-    } else if (noSize === "text-md") {
+    } else if (sizeScale === 2) {
       setNoSize("text-sm");
       setYesSize("text-5xl");
-    } else {
+    } else if (sizeScale === 3) {
       setNoSize("text-xs");
       setYesSize("text-7xl");
+    } else if (sizeScale === 4) {
+      setNoSize("text-xs");
+      setYesSize("text-9xl");
+    } else {
+      console.log("Out of sizes");
+      handleNoClick();
     }
+    setSizeScale((prev) => prev + 1);
   };
 
   const swapButtons = () => {
@@ -34,9 +43,31 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   const changeButtonText = () => {
     if (Math.random() < 0.5) {
       setNoText("yes");
-    } else {
+    } else if (Math.random() < 0.5) {
       setNoText("Disabled");
+    } else if (Math.random() < 0.5) {
+      setNoText("...");
+    } else {
+      setNoText("Click if you hate fun");
     }
+    switch (textChanges) {
+      case 1:
+        setNoText("Click if you hate fun");
+        break;
+      case 2:
+        setNoText("Disabled");
+        break;
+      case 3:
+        setNoText("Yes!!!");
+        break;
+      case 4:
+        setNoText("...");
+        break;
+      default:
+        handleNoClick();
+        break;
+    }
+    setTextChanges((prev) => prev + 1);
   };
 
   const handleNoClick = () => {

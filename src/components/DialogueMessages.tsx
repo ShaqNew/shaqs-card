@@ -6,6 +6,7 @@ type triggerSource = {
 
 export default function DialogueMessages(input: triggerSource) {
   const [message, setMessage] = useState<string>("");
+  const [link, setLink] = useState<string>("");
 
   useEffect(() => {
     switch (input.type) {
@@ -41,7 +42,7 @@ export default function DialogueMessages(input: triggerSource) {
         setMessage(`If you click this again, I'll take that as a yes`);
         break;
       case 5:
-        setMessage(`Stop it!`);
+        setMessage(`Terms accepted :)`);
         break;
       case 6:
         setMessage(`STOP!`);
@@ -67,10 +68,39 @@ export default function DialogueMessages(input: triggerSource) {
       case 3:
         setMessage(`Try clicking the YES button`);
         break;
+      case 4:
+        setMessage("Click for further assistance");
+        setLink(
+          "https://www.specsavers.co.uk/?srsltid=AfmBOook3V9EnXvEUnoBZKb7_yO0Ypufqvo9yN4icupEWjHFJi0YFoHp"
+        );
+        break;
+      case 5:
+        setLink("");
+        setMessage(`Click if you hate fun`);
+        break;
+      case 6:
+        setMessage(`Click if you hate fun`);
+        break;
+      case 7:
+        setMessage(`Click if you hate fun`);
       default:
         setMessage(`No button clicked ${count} times`);
         break;
     }
   };
-  return <p key={message}>{message}</p>;
+  return (
+    <p className="text-center text-lg text-slate-900 dark:text-slate-100 mt-4 mb-4">
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          className="text-blue-500 hover:text-blue-700 underline cursor-pointer border border-blue-500 px-2 py-1 rounded-md"
+        >
+          {message}
+        </a>
+      ) : (
+        <span>{message}</span>
+      )}
+    </p>
+  );
 }
