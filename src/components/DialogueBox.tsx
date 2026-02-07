@@ -63,19 +63,23 @@ export default function DialogueBox({
         className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
         onClick={closeModal}
       />
-      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white/95 p-6 shadow-xl dark:bg-slate-900/90">
-        <div className="flex items-start justify-between gap-6">
-          <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
-            Dialogue Box
+      <div className="relative z-10 w-full max-w-lg rounded-2xl bg-white/95 p-6 shadow-xl dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700">
+        <div className="flex justify-center">
+          <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 text-center">
+            {triggerType === "link"
+              ? "Access denied 🛑"
+              : triggerType === "yes"
+              ? "YES 🥹"
+              : "NO 😭"}
           </h2>
-          <button
+          {/* <button
             type="button"
             aria-label="Close dialog"
             onClick={closeModal}
             className="rounded-full border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
           >
             Close
-          </button>
+          </button> */}
         </div>
         {revealed ? (
           <div className="mt-4 text-center text-lg text-slate-900 dark:text-slate-100">

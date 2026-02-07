@@ -39,7 +39,7 @@ export default function DialogueMessages(input: triggerSource) {
         setMessage(`Click YES to read the document`);
         break;
       case 4:
-        setMessage(`If you click this again, I'll take that as a yes`);
+        setMessage(`If you click this again, I'll take that as a "yes"`);
         break;
       case 5:
         setMessage(`Terms accepted :)`);
@@ -76,15 +76,20 @@ export default function DialogueMessages(input: triggerSource) {
         break;
       case 5:
         setLink("");
-        setMessage(`Click if you hate fun`);
+        setMessage(`This isn't a negotiation`);
         break;
       case 6:
-        setMessage(`Click if you hate fun`);
+        setLink(
+          "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGVtMml2MHpxZ2YzMWV3d3l4dWhoNWZ2cjM3OTgxejh5dHl0bTY0dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2aw9gwZlltbdX92b4w/giphy.gif"
+        );
+        setMessage(`Negotiation Form attached 🔗`);
         break;
       case 7:
-        setMessage(`Click if you hate fun`);
+        setLink("");
+        setMessage(`Please?`);
+        break;
       default:
-        setMessage(`No button clicked ${count} times`);
+        setMessage(`Please x ${count}?`);
         break;
     }
   };

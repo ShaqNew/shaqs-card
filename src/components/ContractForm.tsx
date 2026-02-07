@@ -9,14 +9,15 @@ type ContractFormProps = {
 
 export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   const [isSwapped, setIsSwapped] = useState(false);
+  const [firstNoClick, setFirstNoClick] = useState(true);
   const [sizeScale, setSizeScale] = useState(1);
-  const [textChanges, setTextChanges] = useState(0);
+  const [textChanges, setTextChanges] = useState(1);
   const [noSize, setNoSize] = useState("text-xl");
   const [yesSize, setYesSize] = useState("text-xl");
   const [noText, setNoText] = useState("no");
   //   const [disguiseNoButton, setDisguiseNoButton] = useState(false);
 
-  const transformNoButton = () => {
+  const changeButtonScales = () => {
     if (sizeScale === 1) {
       setNoSize("text-md");
       setYesSize("text-3xl");
@@ -26,11 +27,8 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
     } else if (sizeScale === 3) {
       setNoSize("text-xs");
       setYesSize("text-7xl");
-    } else if (sizeScale === 4) {
-      setNoSize("text-xs");
-      setYesSize("text-9xl");
     } else {
-      console.log("Out of sizes");
+      console.log("changeButtonScales default, sizeScale:", sizeScale);
       handleNoClick();
     }
     setSizeScale((prev) => prev + 1);
@@ -41,15 +39,6 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   };
 
   const changeButtonText = () => {
-    if (Math.random() < 0.5) {
-      setNoText("yes");
-    } else if (Math.random() < 0.5) {
-      setNoText("Disabled");
-    } else if (Math.random() < 0.5) {
-      setNoText("...");
-    } else {
-      setNoText("Click if you hate fun");
-    }
     switch (textChanges) {
       case 1:
         setNoText("Click if you hate fun");
@@ -64,6 +53,7 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
         setNoText("...");
         break;
       default:
+        console.log("changeButtonText default, textChanges:", textChanges);
         handleNoClick();
         break;
     }
@@ -74,11 +64,14 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
     if (noText != "no") {
       setNoText("no");
     }
-    if (Math.random() < 0.3) {
+    if (firstNoClick) {
       swapButtons();
+      setFirstNoClick(false);
     } else if (Math.random() < 0.3) {
-      transformNoButton();
-    } else if (Math.random() < 0.3) {
+      swapButtons();
+    } else if (Math.random() < 0.3 && sizeScale < 4) {
+      changeButtonScales();
+    } else if (Math.random() < 0.3 && textChanges < 5) {
       changeButtonText();
     } else {
       onNo();
