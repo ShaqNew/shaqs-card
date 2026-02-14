@@ -28,33 +28,36 @@ export default function DialogueMessages(input: triggerSource) {
   const setLinkMessage = (count: number) => {
     switch (count) {
       case 1:
-        setMessage(`Document can't be opened, try again`);
+        setMessage(`OI! Don't worry about the details`);
         break;
       case 2:
-        setMessage(
-          `Document can't be opened, but trust me the terms are good :)`
-        );
+        setMessage(`Document can't be opened, try again`);
         break;
       case 3:
-        setMessage(`Click YES to read the document`);
+        setMessage(
+          `The document can't be opened, but trust me the terms are good :)`,
+        );
         break;
       case 4:
-        setMessage(`If you click this again, I'll take that as a "yes"`);
+        setMessage(`Click YES to read the document`);
         break;
       case 5:
-        setMessage(`Terms accepted :)`);
+        setMessage(`If you click this again, I'll take that as a "yes"`);
         break;
       case 6:
+        setMessage(`Terms accepted :)`);
+        break;
+      case 7:
         setMessage(`STOP!`);
         break;
       default:
-        setMessage(`Stubborness = ${count}/10`);
+        setMessage(`Stubborness = ${count}`);
         break;
     }
   };
 
   const setYesMessage = (count: number) => {
-    setMessage(`Thank you :)`);
+    setMessage(`Wait, really?`);
   };
 
   const setNoMessage = (count: number) => {
@@ -71,7 +74,7 @@ export default function DialogueMessages(input: triggerSource) {
       case 4:
         setMessage("Click for further assistance");
         setLink(
-          "https://www.specsavers.co.uk/?srsltid=AfmBOook3V9EnXvEUnoBZKb7_yO0Ypufqvo9yN4icupEWjHFJi0YFoHp"
+          "https://www.specsavers.co.uk/?srsltid=AfmBOook3V9EnXvEUnoBZKb7_yO0Ypufqvo9yN4icupEWjHFJi0YFoHp",
         );
         break;
       case 5:
@@ -80,16 +83,16 @@ export default function DialogueMessages(input: triggerSource) {
         break;
       case 6:
         setLink(
-          "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGVtMml2MHpxZ2YzMWV3d3l4dWhoNWZ2cjM3OTgxejh5dHl0bTY0dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2aw9gwZlltbdX92b4w/giphy.gif"
+          "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExcGVtMml2MHpxZ2YzMWV3d3l4dWhoNWZ2cjM3OTgxejh5dHl0bTY0dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/2aw9gwZlltbdX92b4w/giphy.gif",
         );
         setMessage(`Negotiation Form attached 🔗`);
         break;
       case 7:
         setLink("");
-        setMessage(`Please?`);
+        setMessage(`Pleeeeease?`);
         break;
       default:
-        setMessage(`Please x ${count}?`);
+        setMessage(`Okay... just click "No" once more and I'll give up`);
         break;
     }
   };

@@ -15,6 +15,8 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
   const [noSize, setNoSize] = useState("text-xl");
   const [yesSize, setYesSize] = useState("text-xl");
   const [noText, setNoText] = useState("no");
+  const [noButtonHidden, setNoButtonHidden] = useState(false);
+  const [noModalTriggers, setNoModalTriggers] = useState(0);
   //   const [disguiseNoButton, setDisguiseNoButton] = useState(false);
 
   const changeButtonScales = () => {
@@ -60,21 +62,46 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
     setTextChanges((prev) => prev + 1);
   };
 
+  const hideNoButton = () => {
+    setNoButtonHidden(true);
+  };
+
+  const triggerNoModal = () => {
+    if ((textChanges < 5 || sizeScale < 4) && noModalTriggers == 6) {
+      swapButtons();
+      console.log("Condition not met yet");
+    } else {
+      onNo();
+      setNoModalTriggers((prev) => prev + 1);
+      if (noModalTriggers >= 7) {
+        // console.log("textChanges:", textChanges);
+        // console.log("sizeScale:", sizeScale);
+        // console.log("noModalTriggers:", noModalTriggers);
+        hideNoButton();
+      }
+    }
+  };
+
   const handleNoClick = () => {
     if (noText != "no") {
       setNoText("no");
     }
+
+    // if (textChanges === 5 && sizeScale === 4 && noModalTriggers >= 7) {
+    //   hideNoButton();
+    // }
+
     if (firstNoClick) {
       swapButtons();
       setFirstNoClick(false);
-    } else if (Math.random() < 0.3) {
-      swapButtons();
-    } else if (Math.random() < 0.3 && sizeScale < 4) {
-      changeButtonScales();
-    } else if (Math.random() < 0.3 && textChanges < 5) {
+    } else if (Math.random() < 0.5) {
+      triggerNoModal();
+    } else if (Math.random() < 0.4 && textChanges < 5) {
       changeButtonText();
+    } else if (Math.random() < 0.4 && sizeScale < 4) {
+      changeButtonScales();
     } else {
-      onNo();
+      swapButtons();
     }
   };
 
@@ -96,7 +123,7 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
       className={`rounded-full border border-slate-300 font-semibold
         uppercase tracking-wide text-slate-700 transition hover:bg-slate-100
         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300
-        dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 px-6 py-2 ${noSize}`}
+        dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 px-6 py-2 ${noSize} ${noButtonHidden ? "hidden" : ""}`}
       onClick={() => {
         handleNoClick();
       }}

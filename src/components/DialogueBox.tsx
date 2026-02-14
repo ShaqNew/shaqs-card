@@ -19,7 +19,7 @@ export default function DialogueBox({
   const [noClicks, setNoClicks] = useState(0);
   const [boxMessage, setBoxMessage] = useState("");
   const [triggerType, setTriggerType] = useState<"link" | "yes" | "no" | null>(
-    null
+    null,
   );
   const [totalClicks, setTotalClicks] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -69,8 +69,8 @@ export default function DialogueBox({
             {triggerType === "link"
               ? "Access denied 🛑"
               : triggerType === "yes"
-              ? "YES 🥹"
-              : "NO 😭"}
+                ? "YES 🥹"
+                : "NO 💔"}
           </h2>
           {/* <button
             type="button"
@@ -93,15 +93,27 @@ export default function DialogueBox({
             {triggerType === "yes" && (
               <>
                 <DialogueMessages type="yes" count={yesClicks} />
-                <button
-                  type="button"
-                  className="rounded-full bg-emerald-600 px-6 py-2 font-semibold mx-auto block
-                        uppercase tracking-wide text-white transition hover:bg-emerald-500
+                <div className="flex justify-center gap-4">
+                  <button
+                    type="button"
+                    className="rounded-full bg-emerald-600 px-6 py-2 font-semibold mx-auto block
+                        uppercase tracking-wide text-white transition hover:bg-emerald-500 cursor-pointer
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 text-lg"
-                  onClick={handleContinue}
-                >
-                  Continue
-                </button>
+                    onClick={handleContinue}
+                  >
+                    Continue
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="rounded-full bg-slate-600 px-6 py-2 font-semibold mx-auto block
+                        uppercase tracking-wide text-slate-100 transition cursor-not-allowed
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 text-lg"
+                    onClick={handleContinue}
+                  >
+                    Go Back
+                  </button>
+                </div>
               </>
             )}
             {triggerType === "no" && (
