@@ -68,7 +68,7 @@ export default function ContractForm({ onYes, onNo }: ContractFormProps) {
 
   const triggerNoModal = () => {
     if ((textChanges < 5 || sizeScale < 4) && noModalTriggers == 6) {
-      swapButtons();
+      handleNoClick();
       console.log("Condition not met yet");
     } else {
       onNo();
