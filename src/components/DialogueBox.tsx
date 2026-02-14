@@ -62,9 +62,10 @@ export default function DialogueBox({
   const handleContinue = () => {
     setRevealed(true);
   };
-  // const handleGoBack = () => {
-  //   setFailedCancel(true);
-  // };
+  const handleGoBack = () => {
+    // setFailedCancel(true);
+    alert("I'm sorry, but that button doesn't work. 🙃");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -124,11 +125,11 @@ export default function DialogueBox({
                   </button>
                   <button
                     type="button"
-                    disabled
+                    // disabled
                     className="rounded-full bg-slate-600 px-6 py-2 font-semibold mx-auto block
                         uppercase tracking-wide text-slate-100 transition cursor-not-allowed
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 text-lg"
-                    // onClick={handleGoBack}
+                    onClick={handleGoBack}
                   >
                     Go Back
                   </button>
