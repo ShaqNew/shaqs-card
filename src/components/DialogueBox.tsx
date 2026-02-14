@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 type DialogueBoxProps = {
   isOpen: boolean;
   onClose: () => void;
+  hideContractLinkButton: () => void;
   triggerSource: "link" | "yes" | "no" | null;
 };
 
@@ -13,6 +14,7 @@ export default function DialogueBox({
   isOpen,
   onClose,
   triggerSource,
+  hideContractLinkButton,
 }: DialogueBoxProps) {
   const [contractLinkClicks, setContractLinkClicks] = useState(0);
   const [yesClicks, setYesClicks] = useState(0);
@@ -23,6 +25,7 @@ export default function DialogueBox({
   );
   const [totalClicks, setTotalClicks] = useState(0);
   const [revealed, setRevealed] = useState(false);
+  // const [failedCancel, setFailedCancel] = useState(false);
 
   const closeModal = () => {
     setRevealed(false);
@@ -34,6 +37,7 @@ export default function DialogueBox({
       if (triggerSource === "link") {
         setTriggerType("link");
         setContractLinkClicks((prev) => prev + 1);
+        // console.log("contractLinkClicks:", contractLinkClicks);
       } else if (triggerSource === "yes") {
         setTriggerType("yes");
         setYesClicks((prev) => prev + 1);
@@ -45,15 +49,22 @@ export default function DialogueBox({
       }
       setTotalClicks((prev) => prev + 1);
     }
+    if (triggerType === "link" && contractLinkClicks >= 8) {
+      hideContractLinkButton();
+    }
   }, [isOpen, triggerSource]);
 
   if (!isOpen) {
+    // setFailedCancel(false);
     return null;
   }
 
   const handleContinue = () => {
     setRevealed(true);
   };
+  // const handleGoBack = () => {
+  //   setFailedCancel(true);
+  // };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -90,7 +101,7 @@ export default function DialogueBox({
               a precursor to your birthday.
             </p>
             <p className="font-bold text-lg text-rose-500 underline mb-2">
-              Check under the bed
+              Check under the bed 💖
             </p>
           </div>
         ) : (
@@ -117,7 +128,7 @@ export default function DialogueBox({
                     className="rounded-full bg-slate-600 px-6 py-2 font-semibold mx-auto block
                         uppercase tracking-wide text-slate-100 transition cursor-not-allowed
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 text-lg"
-                    onClick={handleContinue}
+                    // onClick={handleGoBack}
                   >
                     Go Back
                   </button>

@@ -51,7 +51,7 @@ export default function DialogueMessages(input: triggerSource) {
         setMessage(`STOP!`);
         break;
       default:
-        setMessage(`Stubborness = ${count}`);
+        setMessage(`No more Contract link for you!`);
         break;
     }
   };

@@ -11,7 +11,7 @@ export default function GirlfriendRenewalPage() {
   const [dialogueTrigger, setDialogueTrigger] = useState<
     "link" | "yes" | "no" | null
   >(null);
-
+  const [contractLinkHidden, setContractLinkHidden] = useState(false);
   const openDialogue = (trigger: "link" | "yes" | "no") => {
     setDialogueTrigger(trigger);
     setIsDialogueOpen(true);
@@ -29,7 +29,10 @@ export default function GirlfriendRenewalPage() {
           rest of our lives.
         </h3>
         {/* <p>By Accepting this agreement, you agree to continue being the love of my life for the rest of your life.</p> */}
-        <ContractLink onClick={() => openDialogue("link")} />
+        <ContractLink
+          onClick={() => openDialogue("link")}
+          hidden={contractLinkHidden}
+        />
         <ContractForm
           onYes={() => openDialogue("yes")}
           onNo={() => openDialogue("no")}
@@ -38,6 +41,7 @@ export default function GirlfriendRenewalPage() {
           isOpen={isDialogueOpen}
           onClose={() => setIsDialogueOpen(false)}
           triggerSource={dialogueTrigger}
+          hideContractLinkButton={() => setContractLinkHidden(true)}
         />
       </main>
     </div>
