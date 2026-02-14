@@ -83,7 +83,15 @@ export default function DialogueBox({
         </div>
         {revealed ? (
           <div className="mt-4 text-center text-lg text-slate-900 dark:text-slate-100">
-            <p>You have revealed the secret message!</p>
+            <p className="mb-2">Thank you for being the love of my life!</p>
+            <p className="mb-2">I love you more than anything in the world.</p>
+            <p>
+              I know we don&apos;t usually do valentines day so think of this as
+              a precursor to your birthday.
+            </p>
+            <p className="font-bold text-lg text-rose-500 underline mb-2">
+              Check under the bed
+            </p>
           </div>
         ) : (
           <>

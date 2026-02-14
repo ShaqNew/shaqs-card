@@ -24,8 +24,9 @@ export default function GirlfriendRenewalPage() {
           LOML Renewal
         </h1>
         <h3 className="text-center text-lg text-slate-900 dark:text-slate-100 mb-10">
-          By Accepting this agreement, you agree to continue being the love of
-          my life for the rest of your life.
+          By Accepting this agreement, you agree to continue being the{" "}
+          <strong className="text-rose-500">love of my life</strong> for the
+          rest of our lives.
         </h3>
         {/* <p>By Accepting this agreement, you agree to continue being the love of my life for the rest of your life.</p> */}
         <ContractLink onClick={() => openDialogue("link")} />
