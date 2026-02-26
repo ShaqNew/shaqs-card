@@ -5,9 +5,9 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="text-xl font-bold text-heading">Shaq Newell</div>
           <div className="hidden md:flex space-x-8">
-            <a href="/girlfriend-renewal" className="nav-link">
+            {/* <a href="/girlfriend-renewal" className="nav-link">
               Girlfriend Renewal
-            </a>
+            </a> */}
             <a href="#about" className="nav-link">
               About
             </a>
