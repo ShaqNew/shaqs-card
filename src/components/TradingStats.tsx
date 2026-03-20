@@ -13,7 +13,7 @@ interface TradingStatsProps {
     total_value?: number;
     pnl?: number;
     pnl_pct?: number;
-    holdings?: Record<string, any>;
+    holdings?: Record<string, number>;
   } | null;
   isLoading: boolean;
 }

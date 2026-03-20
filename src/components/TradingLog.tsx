@@ -2,12 +2,43 @@
 
 import React from "react";
 
+interface TradeData {
+  action: "BUY" | "SELL" | "LIQUIDATE";
+  ticker: string;
+  shares: number;
+  price: number;
+  value: number;
+}
+
+interface RegimeChangeData {
+  old_regime: string;
+  new_regime: string;
+  vix: number;
+  reason?: string;
+}
+
+interface PortfolioSummaryData {
+  cash: number;
+  market_value: number;
+  total_value: number;
+  pnl: number;
+  pnl_pct: number;
+  holdings: Record<string, {
+    shares: number;
+    cost_basis: number;
+    last_price: number;
+    mkt_value: number;
+    pnl: number;
+    pnl_pct: number;
+  }>;
+}
+
 interface LogEntry {
   timestamp: string;
-  level: string;
-  event: string;
+  level: "INFO" | "WARNING" | "ERROR";
+  event: "TRADE" | "REGIME_CHANGE" | "PORTFOLIO_SUMMARY" | "RESEARCH" | string;
   message: string;
-  data?: any;
+  data?: TradeData | RegimeChangeData | PortfolioSummaryData | any;
 }
 
 interface TradingLogProps {
