@@ -1,10 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
-const TRADING_API_HOST = process.env.NEXT_PUBLIC_TRADING_API_HOST || "YOUR_DROPLET_IP"; 
-const TRADING_API_KEY = process.env.NEXT_PUBLIC_TRADING_API_KEY || "";
-const BASE_URL = `/api/trading`; // Using Next.js local proxy to bypass CORS
-
-const defaultHeaders = TRADING_API_KEY ? { "X-API-Key": TRADING_API_KEY } : undefined;
+const BASE_URL = `/api/trading`; // Points to our secure Next.js Server Route
+const TRADING_ENABLED = process.env.NEXT_PUBLIC_TRADING_ENABLED === "true";
 
 export function useTradingData() {
   const [state, setState] = useState<any>(null);
@@ -17,8 +14,8 @@ export function useTradingData() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const fetchData = useCallback(async () => {
-    if (TRADING_API_HOST === "YOUR_DROPLET_IP") {
-      setError("API Host not configured. Please set NEXT_PUBLIC_TRADING_API_HOST.");
+    if (!TRADING_ENABLED) {
+      setError("Trading Dashboard is currently disabled.");
       setIsLoading(false);
       return;
     }
@@ -69,7 +66,7 @@ export function useTradingData() {
     error,
     lastUpdated,
     refetch: fetchData,
-    isHostConfigured: TRADING_API_HOST !== "YOUR_DROPLET_IP"
+    isHostConfigured: TRADING_ENABLED
   };
 }
 
@@ -85,37 +82,37 @@ export async function getLogs({ limit = 100, level = null, event = null }: { lim
   if (level) params.append("level", level);
   if (event) params.append("event", event);
 
-  const res = await fetch(`${BASE_URL}/logs?${params.toString()}`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/logs?${params.toString()}`, { headers: undefined });
   return res.json();
 }
 
 // ─── Latest single log entry ────────────────────────────────────────────────
 export async function getLatestLog() {
-  const res = await fetch(`${BASE_URL}/logs/latest`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/logs/latest`, { headers: undefined });
   return res.json();
 }
 
 // ─── Trade history ──────────────────────────────────────────────────────────
 export async function getTrades(limit: number = 50) {
-  const res = await fetch(`${BASE_URL}/logs/trades?limit=${limit}`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/logs/trades?limit=${limit}`, { headers: undefined });
   return res.json();
 }
 
 // ─── Regime change history ──────────────────────────────────────────────────
 export async function getRegimeChanges(limit: number = 20) {
-  const res = await fetch(`${BASE_URL}/logs/regime-changes?limit=${limit}`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/logs/regime-changes?limit=${limit}`, { headers: undefined });
   return res.json();
 }
 
 // ─── Portfolio snapshots ─────────────────────────────────────────────────────
 export async function getPortfolioHistory(limit: number = 20) {
-  const res = await fetch(`${BASE_URL}/logs/portfolio?limit=${limit}`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/logs/portfolio?limit=${limit}`, { headers: undefined });
   return res.json();
 }
 
 // ─── Current portfolio state ────────────────────────────────────────────────
 export async function getStatus() {
-  const res = await fetch(`${BASE_URL}/status`, { headers: defaultHeaders });
+  const res = await fetch(`${BASE_URL}/status`, { headers: undefined });
   return res.json();
 }
 
