@@ -5,7 +5,7 @@ const TRADING_API_KEY = process.env.TRADING_API_KEY;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   if (!TRADING_API_HOST || !TRADING_API_KEY) {
     return NextResponse.json(
