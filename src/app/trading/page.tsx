@@ -71,7 +71,7 @@ export default function TradingPage() {
             Market Monitor
           </h1>
           <p className="text-lg md:text-xl text-white/50 mb-4 font-light leading-relaxed">
-            Real-time insights from your Digital Ocean trading engine. Monitor regimes, P&L, and strategy logs in one unified dashboard.
+            Real-time insights from my remotely hosted trading engine. Monitor regimes, P&L, and strategy logs in one unified dashboard.
           </p>
           <div className="flex flex-col gap-1 items-center">
             {lastUpdated && (

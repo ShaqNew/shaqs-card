@@ -50,9 +50,11 @@ export function useTradingData() {
     }
   }, []);
 
+  const minuteInterval = 60000;
+
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Poll every 60s
+    const interval = setInterval(fetchData, minuteInterval*3); // Poll every 3 minutes
     return () => clearInterval(interval);
   }, [fetchData]);
 
