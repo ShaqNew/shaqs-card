@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTimer } from '@/hooks/useTimer';
-import Link from 'next/link';
+import NaanasSpaceLayout from '@/components/NaanasSpaceLayout';
 
 type AnswerType = 'yes' | 'no' | 'cold' | 'heat' | 'combo' | '';
 
@@ -194,17 +194,8 @@ export default function HeadacheQuestionnaire() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-900/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-20">
-        <Link href="/naanas-space" className="text-slate-400 hover:text-purple-400 font-medium flex items-center gap-2 transition-colors">
-          &larr; Back to Hub
-        </Link>
-      </div>
-      <div className="max-w-2xl mx-auto relative z-10">
+    <NaanasSpaceLayout showBackLink>
+      <div className="max-w-2xl mx-auto">
         <header className="text-center mb-12">
           <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-4">
             Naana&apos;s Remedy Finder
@@ -286,6 +277,6 @@ export default function HeadacheQuestionnaire() {
           </div>
         )}
       </div>
-    </div>
+    </NaanasSpaceLayout>
   );
 }

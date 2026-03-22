@@ -1,14 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import NaanasSpaceLayout from "@/components/NaanasSpaceLayout";
 
 export default function NaanasSpaceHub() {
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-900/20 rounded-full blur-[120px] pointer-events-none" />
-      
-      <main className="mx-auto flex max-w-4xl flex-col items-center justify-center min-h-[80vh] relative z-10">
+    <NaanasSpaceLayout>
+      <main className="flex flex-col items-center justify-center min-h-[80vh]">
         <h1 className="text-center text-5xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-6">
           Naana&apos;s Space
         </h1>
@@ -47,6 +45,6 @@ export default function NaanasSpaceHub() {
           </Link>
         </div>
       </main>
-    </div>
+    </NaanasSpaceLayout>
   );
 }
