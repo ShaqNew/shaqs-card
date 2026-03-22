@@ -197,7 +197,7 @@ export default function HeadacheQuestionnaire() {
       <div className="max-w-2xl mx-auto">
         <header className="text-center mb-12">
           <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
-            Naana's Remedy Finder
+            Naana&apos;s Remedy Finder
           </h2>
           <p className="text-slate-400 text-lg">
             Quick lil guidence to find the ideal session (heat, cold, or both) for your current headache.
