@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTimer } from '@/hooks/useTimer';
 
 type AnswerType = 'yes' | 'no' | 'cold' | 'heat' | 'combo' | '';
@@ -93,6 +93,13 @@ const Timer = ({ timeLeft, isActive, toggle, reset, formatTime }: any) => (
 export default function HeadacheQuestionnaire() {
   const [answers, setAnswers] = useState<Answers>({ q1: '', q2: '', q3: '' });
   const [result, setResult] = useState<Result | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [result]);
 
   const { timeLeft, isActive, toggle, reset, formatTime, setIsActive } = useTimer({
     initialTime: 15 * 60,
@@ -190,10 +197,10 @@ export default function HeadacheQuestionnaire() {
       <div className="max-w-2xl mx-auto">
         <header className="text-center mb-12">
           <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
-            Remedy Finder
+            Naana's Remedy Finder
           </h2>
           <p className="text-slate-400 text-lg">
-            Find the optimal session (heat, cold, or both) for your current symptoms.
+            Quick lil guidence to find the ideal session (heat, cold, or both) for your current headache.
           </p>
         </header>
 
@@ -243,7 +250,9 @@ export default function HeadacheQuestionnaire() {
         </form>
 
         {result && (
-          <div className={`mt-12 p-8 rounded-3xl border-2 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 ${
+          <div 
+            ref={resultRef}
+            className={`mt-12 p-8 rounded-3xl border-2 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 ${
             result.isWarning 
               ? 'bg-rose-500/10 border-rose-500/30' 
               : 'bg-slate-900 border-blue-500/20'
