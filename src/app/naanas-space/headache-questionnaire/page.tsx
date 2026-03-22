@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useTimer } from '@/hooks/useTimer';
+import Link from 'next/link';
 
 type AnswerType = 'yes' | 'no' | 'cold' | 'heat' | 'combo' | '';
 
@@ -193,7 +194,12 @@ export default function HeadacheQuestionnaire() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative">
+      <div className="absolute top-6 left-6 md:top-10 md:left-10">
+        <Link href="/naanas-space" className="text-slate-400 hover:text-blue-400 font-medium flex items-center gap-2 transition-colors">
+          &larr; Back to Hub
+        </Link>
+      </div>
       <div className="max-w-2xl mx-auto">
         <header className="text-center mb-12">
           <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
