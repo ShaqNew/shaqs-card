@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+"use client";
+
+import React, { useState } from 'react';
+import { useTimer } from '@/hooks/useTimer';
 
 type AnswerType = 'yes' | 'no' | 'cold' | 'heat' | 'combo' | '';
 
@@ -14,67 +17,110 @@ interface Result {
   description: React.ReactNode;
 }
 
+const QuestionCard = ({ 
+  question, 
+  name, 
+  options, 
+  selectedValue,
+  onChange 
+}: { 
+  question: string; 
+  name: keyof Answers; 
+  options: { label: string; value: AnswerType }[]; 
+  selectedValue: AnswerType;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) => (
+  <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-2xl mb-6 shadow-xl transition-all hover:border-blue-500/30">
+    <p className="text-lg font-semibold text-slate-100 mb-4">{question}</p>
+    <div className="space-y-3">
+      {options.map((opt) => {
+        const isSelected = selectedValue === opt.value;
+        return (
+          <label 
+            key={opt.value} 
+            className={`flex items-center p-3 rounded-xl cursor-pointer transition-all border-2 ${
+              isSelected 
+                ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/20' 
+                : 'bg-slate-800/30 border-transparent hover:bg-slate-800/50'
+            } group`}
+          >
+            <input 
+              type="radio" 
+              name={name} 
+              value={opt.value} 
+              checked={isSelected}
+              onChange={onChange} 
+              className="w-5 h-5 text-blue-500 bg-slate-800 border-slate-700 focus:ring-blue-500 focus:ring-offset-slate-900"
+            />
+            <span className={`ml-3 transition-colors ${isSelected ? 'text-white font-medium' : 'text-slate-400 group-hover:text-slate-200'}`}>
+              {opt.label}
+            </span>
+          </label>
+        );
+      })}
+    </div>
+  </div>
+);
+
+const Timer = ({ timeLeft, isActive, toggle, reset, formatTime }: any) => (
+  <div className="mt-8 p-6 bg-slate-900/80 border border-blue-500/20 rounded-2xl text-center shadow-2xl">
+    <div className="text-4xl font-mono font-bold text-blue-400 mb-4 tracking-wider transition-all">
+      <span className="opacity-70 text-2xl mr-2">⏱️</span>
+      {formatTime()}
+    </div>
+    <div className="flex justify-center gap-4">
+      <button 
+        onClick={toggle}
+        className={`px-6 py-2 rounded-full font-bold transition-all ${
+          isActive 
+            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' 
+            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
+        }`}
+      >
+        {isActive ? 'Pause' : 'Start Timer'}
+      </button>
+      <button 
+        onClick={reset}
+        className="px-6 py-2 rounded-full font-bold bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700 transition-all"
+      >
+        Reset
+      </button>
+    </div>
+    <p className="mt-4 text-xs text-slate-500 uppercase tracking-widest font-semibold">15 Minute Session Recommended</p>
+  </div>
+);
+
 export default function HeadacheQuestionnaire() {
-  const [answers, setAnswers] = useState<Answers>({
-    q1: '',
-    q2: '',
-    q3: '',
+  const [answers, setAnswers] = useState<Answers>({ q1: '', q2: '', q3: '' });
+  const [result, setResult] = useState<Result | null>(null);
+
+  const { timeLeft, isActive, toggle, reset, formatTime, setIsActive } = useTimer({
+    initialTime: 15 * 60,
+    onFinish: () => alert("Time is up! Please remove your heat pad or cooling strip now to protect your skin.")
   });
 
-  const [result, setResult] = useState<Result | null>(null);
-  
-  const [timeLeft, setTimeLeft] = useState<number>(15 * 60); // 15 minutes in seconds
-  const [isTimerActive, setIsTimerActive] = useState<boolean>(false);
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-    
-    if (isTimerActive && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prevTime) => prevTime - 1);
-      }, 1000);
-    } 
-    else if (timeLeft === 0 && isTimerActive) {
-      setIsTimerActive(false);
-      alert("Time is up! Please remove your heat pad or cooling strip now to protect your skin.");
-    }
-    
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isTimerActive, timeLeft]);
-
-  const formatTime = (seconds: number): string => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAnswers({
-      ...answers,
-      [e.target.name]: e.target.value as AnswerType,
-    });
+    setAnswers({ ...answers, [e.target.name]: e.target.value as AnswerType });
   };
 
   const calculateRemedy = () => {
     const { q1, q2, q3 } = answers;
-
     if (!q1 || !q2 || !q3) {
       alert("Please answer all the questions so I can give you the best suggestion.");
       return;
     }
 
-    setIsTimerActive(false);
-    setTimeLeft(15 * 60);
-
+    reset();
+    
     if (q1 === 'yes') {
       setResult({
         isWarning: true,
-        title: "⚠️ Seek Medical Attention",
+        title: "Medical Attention Required",
         description: (
-          <p>
-            These are red flag symptoms (fever, confusion, stiff neck, or sudden severe pain), it'll be best to skip the home remedies and <strong>seek medical attention</strong>. It is always better to be safe.
+          <p className="text-slate-300 leading-relaxed">
+            These are red flag symptoms (fever, confusion, stiff neck, or sudden severe pain). 
+            Please skip home remedies and <strong className="text-rose-400">seek immediate medical attention</strong>. 
+            Safety should always come first.
           </p>
         ),
       });
@@ -92,212 +138,135 @@ export default function HeadacheQuestionnaire() {
     if (coldScore > heatScore) {
       setResult({
         isWarning: false,
-        title: "❄️ Recommended: Cold Therapy (Cooling Strips)",
+        title: "Cold Therapy Recommended",
         description: (
-          <p>
-            This could be a migraine or vascular headache. <br /><br />
-            <strong>What to do:</strong> Apply a cooling strip or ice pack to your forehead or temples. The cold will help constrict blood vessels and numb the throbbing pain. Rest in a dark, quiet room.
+          <p className="text-slate-300 leading-relaxed">
+            This appears to be a migraine or vascular headache. <br /><br />
+            Apply a <span className="text-blue-400 font-bold text-lg">cooling strip</span> or ice pack to your forehead or temples. 
+            The cold will help constrict blood vessels and numb the throbbing pain. Rest in a dark, quiet room.
           </p>
         ),
       });
-      setIsTimerActive(true);
+      setIsActive(true);
     } else if (heatScore > coldScore) {
       setResult({
         isWarning: false,
-        title: "🔥 Recommended: Heat Therapy (Heat Pads)",
+        title: "Heat Therapy Recommended",
         description: (
-          <p>
-            This could be a tension headache originating from your muscles. <br /><br />
-            <strong>What to do:</strong> Apply a heat pad or warm compress to the back of your neck and shoulders. The warmth will increase blood flow and help those tight muscles relax. Try doing some gentle neck stretches.
+          <p className="text-slate-300 leading-relaxed">
+            This appears to be a tension headache originating from muscle tightness. <br /><br />
+            Apply a <span className="text-orange-400 font-bold text-lg">heat pad</span> or warm compress to the back of your neck and shoulders. 
+            The warmth will increase blood flow and help muscles relax.
           </p>
         ),
       });
-      setIsTimerActive(true);
+      setIsActive(true);
     } else {
       setResult({
         isWarning: false,
-        title: "⚖️ Recommended: The Combination Method",
+        title: "The Combination Method",
         description: (
-          <p>
-            You are dealing with a mix of tension and throbbing pain. <br /><br />
-            <strong>What to do:</strong> Put a heat pad on your neck/shoulders to melt the muscle tension, and simultaneously place a cooling strip on your forehead to numb the throbbing. 
-          </p>
+          <div className="text-slate-300 space-y-3">
+            <p>You are dealing with a mix of tension and throbbing pain.</p>
+            <div className="p-4 bg-slate-800/40 rounded-xl border border-slate-700/50">
+              <p className="flex items-center gap-3">
+                <span className="text-orange-400">🔥</span>
+                <span><span className="text-orange-400 font-bold">Heat pad</span> on your neck/shoulders for muscle tension.</span>
+              </p>
+              <p className="flex items-center gap-3 mt-2">
+                <span className="text-blue-400">❄️</span>
+                <span><span className="text-blue-400 font-bold">Cooling strip</span> on your forehead for throbbing pain.</span>
+              </p>
+            </div>
+          </div>
         ),
       });
-      setIsTimerActive(true);
+      setIsActive(true);
     }
   };
-
-  const styles: { [key: string]: React.CSSProperties } = {
-    container: {
-      fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-      backgroundColor: '#121212',
-      color: '#e0e0e0',
-      lineHeight: '1.6',
-      padding: '20px',
-      maxWidth: '600px',
-      margin: '0 auto',
-      borderRadius: '8px',
-    },
-    heading: {
-      color: '#ffffff',
-      borderBottom: '1px solid #333',
-      paddingBottom: '10px',
-    },
-    questionBlock: {
-      backgroundColor: '#1e1e1e',
-      padding: '15px 20px',
-      marginBottom: '20px',
-      borderRadius: '8px',
-      border: '1px solid #333',
-    },
-    label: {
-      display: 'block',
-      marginBottom: '10px',
-      cursor: 'pointer',
-    },
-    button: {
-      backgroundColor: '#4a90e2',
-      color: 'white',
-      border: 'none',
-      padding: '12px 20px',
-      fontSize: '16px',
-      borderRadius: '5px',
-      cursor: 'pointer',
-      width: '100%',
-      fontWeight: 'bold',
-      marginTop: '10px',
-    },
-    timerDisplay: {
-      marginTop: '15px',
-      padding: '15px',
-      backgroundColor: '#1e1e1e',
-      borderRadius: '5px',
-      textAlign: 'center',
-      fontSize: '24px',
-      fontWeight: 'bold',
-      color: '#4a90e2',
-      border: '1px solid #333'
-    },
-    timerControls: {
-      display: 'flex',
-      justifyContent: 'center',
-      gap: '10px',
-      marginTop: '10px'
-    },
-    timerBtn: {
-      padding: '5px 15px',
-      backgroundColor: '#333',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '3px',
-      cursor: 'pointer'
-    }
-  };
-
-  // Helper functions for dynamic styles to maintain strict typing
-  const getResultBoxStyle = (isWarning: boolean): React.CSSProperties => ({
-    marginTop: '30px',
-    padding: '20px',
-    backgroundColor: '#2a2a2a',
-    borderRadius: '8px',
-    borderLeft: `5px solid ${isWarning ? '#e74c3c' : '#4a90e2'}`,
-  });
-
-  const getResultTitleStyle = (isWarning: boolean): React.CSSProperties => ({
-    color: isWarning ? '#e74c3c' : '#e0e0e0',
-    marginTop: 0,
-  });
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.heading}>Headache & Neck Pain Remedy Finder</h2>
-      <p>Fill out this quick form to see whether heat, ice, or a combination is best for your current symptoms.</p>
+    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6">
+      <div className="max-w-2xl mx-auto">
+        <header className="text-center mb-12">
+          <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
+            Remedy Finder
+          </h2>
+          <p className="text-slate-400 text-lg">
+            Find the optimal session (heat, cold, or both) for your current symptoms.
+          </p>
+        </header>
 
-      <form>
-        {/* Question 1 */}
-        <div style={styles.questionBlock}>
-          <p style={{ fontWeight: 'bold', marginTop: 0 }}>1. Are you experiencing any of these severe symptoms?</p>
-          <label style={styles.label}>
-            <input type="radio" name="q1" value="yes" onChange={handleChange} style={{ marginRight: '10px' }} />
-            Yes (Sudden "worst ever" headache, fever, confusion, or unable to touch chin to chest)
-          </label>
-          <label style={styles.label}>
-            <input type="radio" name="q1" value="no" onChange={handleChange} style={{ marginRight: '10px' }} />
-            No, none of these
-          </label>
-        </div>
+        <form className="space-y-2">
+          <QuestionCard 
+            question='1. Are you experiencing any of these severe symptoms? (Sudden "worst ever" pain, fever, or confusion)'
+            name="q1"
+            selectedValue={answers.q1}
+            options={[
+              { label: 'No, none of these', value: 'no' },
+              { label: 'Yes', value: 'yes' },
+            ]}
+            onChange={handleChange}
+          />
 
-        {/* Question 2 */}
-        <div style={styles.questionBlock}>
-          <p style={{ fontWeight: 'bold', marginTop: 0 }}>2. How would you describe the pain in your head?</p>
-          <label style={styles.label}>
-            <input type="radio" name="q2" value="cold" onChange={handleChange} style={{ marginRight: '10px' }} />
-            Throbbing, pulsing, or pounding
-          </label>
-          <label style={styles.label}>
-            <input type="radio" name="q2" value="heat" onChange={handleChange} style={{ marginRight: '10px' }} />
-            Dull, aching, or feeling like a tight band
-          </label>
-          <label style={styles.label}>
-            <input type="radio" name="q2" value="combo" onChange={handleChange} style={{ marginRight: '10px' }} />
-            A mix of both, or I'm not sure
-          </label>
-        </div>
+          <QuestionCard 
+            question="2. How would you describe the pain in your head?"
+            name="q2"
+            selectedValue={answers.q2}
+            options={[
+              { label: 'Throbbing, pulsing, or pounding', value: 'cold' },
+              { label: 'Dull, aching, or feeling like a tight band', value: 'heat' },
+              { label: 'A mix of both, or I\'m not sure', value: 'combo' },
+            ]}
+            onChange={handleChange}
+          />
 
-        {/* Question 3 */}
-        <div style={styles.questionBlock}>
-          <p style={{ fontWeight: 'bold', marginTop: 0 }}>3. Where is the pain mostly concentrated?</p>
-          <label style={styles.label}>
-            <input type="radio" name="q3" value="cold" onChange={handleChange} style={{ marginRight: '10px' }} />
-            Forehead, temples, or behind the eyes
-          </label>
-          <label style={styles.label}>
-            <input type="radio" name="q3" value="heat" onChange={handleChange} style={{ marginRight: '10px' }} />
-            Back of the head, neck, and shoulders
-          </label>
-          <label style={styles.label}>
-            <input type="radio" name="q3" value="combo" onChange={handleChange} style={{ marginRight: '10px' }} />
-            It's everywhere
-          </label>
-        </div>
+          <QuestionCard 
+            question="3. Where is the pain mostly concentrated?"
+            name="q3"
+            selectedValue={answers.q3}
+            options={[
+              { label: 'Forehead, temples, or behind the eyes', value: 'cold' },
+              { label: 'Back of the head, neck, and shoulders', value: 'heat' },
+              { label: 'It\'s everywhere', value: 'combo' },
+            ]}
+            onChange={handleChange}
+          />
 
-        <button type="button" onClick={calculateRemedy} style={styles.button}>
-          Find My Remedy
-        </button>
-      </form>
+          <button 
+            type="button" 
+            onClick={calculateRemedy} 
+            className="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0a0a0c]"
+          >
+            Calculate Remedy
+          </button>
+        </form>
 
-      {/* Conditionally render the result box */}
-      {result && (
-        <div style={getResultBoxStyle(result.isWarning)}>
-          <h3 style={getResultTitleStyle(result.isWarning)}>{result.title}</h3>
-          {result.description}
-          
-          {/* Render timer only if it's not a medical warning */}
-          {!result.isWarning && (
-            <div style={styles.timerDisplay}>
-              ⏱️ {formatTime(timeLeft)}
-              <div style={styles.timerControls}>
-                <button 
-                  style={styles.timerBtn} 
-                  onClick={() => setIsTimerActive(!isTimerActive)}
-                >
-                  {isTimerActive ? 'Pause' : 'Resume'}
-                </button>
-                <button 
-                  style={styles.timerBtn} 
-                  onClick={() => {
-                    setIsTimerActive(false);
-                    setTimeLeft(15 * 60);
-                  }}
-                >
-                  Reset
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        {result && (
+          <div className={`mt-12 p-8 rounded-3xl border-2 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 ${
+            result.isWarning 
+              ? 'bg-rose-500/10 border-rose-500/30' 
+              : 'bg-slate-900 border-blue-500/20'
+          }`}>
+            <h3 className={`text-2xl font-bold mb-4 flex items-center gap-3 ${
+              result.isWarning ? 'text-rose-400' : 'text-white'
+            }`}>
+              {result.isWarning ? '⚠️' : '✅'} {result.title}
+            </h3>
+            {result.description}
+            
+            {!result.isWarning && (
+              <Timer 
+                timeLeft={timeLeft}
+                isActive={isActive}
+                toggle={toggle}
+                reset={reset}
+                formatTime={formatTime}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
