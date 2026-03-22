@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import HeadacheQuestionnaire from "./HeadacheQuestionnaire";
 
 import ContractForm from "../../components/ContractForm";
 import ContractLink from "../../components/ContractLink";
@@ -12,10 +13,15 @@ export default function GirlfriendRenewalPage() {
     "link" | "yes" | "no" | null
   >(null);
   const [contractLinkHidden, setContractLinkHidden] = useState(false);
+  const [showHeadacheQuestionnare, setShowHeadacheQuestionnare] = useState(true);
   const openDialogue = (trigger: "link" | "yes" | "no") => {
     setDialogueTrigger(trigger);
     setIsDialogueOpen(true);
   };
+
+  if (showHeadacheQuestionnare) {
+    return <HeadacheQuestionnaire />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
