@@ -31,7 +31,7 @@ const QuestionCard = ({
   selectedValue: AnswerType;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => (
-  <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-2xl mb-6 shadow-xl transition-all hover:border-blue-500/30">
+  <div className="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-2xl mb-6 shadow-xl transition-all hover:border-violet-500/30">
     <p className="text-lg font-semibold text-slate-100 mb-4">{question}</p>
     <div className="space-y-3">
       {options.map((opt) => {
@@ -41,7 +41,7 @@ const QuestionCard = ({
             key={opt.value} 
             className={`flex items-center p-3 rounded-xl cursor-pointer transition-all border-2 ${
               isSelected 
-                ? 'bg-blue-500/10 border-blue-500/50 ring-1 ring-blue-500/20' 
+                ? 'bg-purple-500/10 border-purple-500/50 ring-1 ring-purple-500/20' 
                 : 'bg-slate-800/30 border-transparent hover:bg-slate-800/50'
             } group`}
           >
@@ -51,7 +51,7 @@ const QuestionCard = ({
               value={opt.value} 
               checked={isSelected}
               onChange={onChange} 
-              className="w-5 h-5 text-blue-500 bg-slate-800 border-slate-700 focus:ring-blue-500 focus:ring-offset-slate-900"
+              className="w-5 h-5 text-purple-500 bg-slate-800 border-slate-700 focus:ring-purple-500 focus:ring-offset-slate-900"
             />
             <span className={`ml-3 transition-colors ${isSelected ? 'text-white font-medium' : 'text-slate-400 group-hover:text-slate-200'}`}>
               {opt.label}
@@ -64,8 +64,8 @@ const QuestionCard = ({
 );
 
 const Timer = ({ timeLeft, isActive, toggle, reset, formatTime }: any) => (
-  <div className="mt-8 p-6 bg-slate-900/80 border border-blue-500/20 rounded-2xl text-center shadow-2xl">
-    <div className="text-4xl font-mono font-bold text-blue-400 mb-4 tracking-wider transition-all">
+  <div className="mt-8 p-6 bg-slate-900/80 border border-purple-500/20 rounded-2xl text-center shadow-2xl">
+    <div className="text-4xl font-mono font-bold text-purple-400 mb-4 tracking-wider transition-all">
       <span className="opacity-70 text-2xl mr-2">⏱️</span>
       {formatTime()}
     </div>
@@ -75,7 +75,7 @@ const Timer = ({ timeLeft, isActive, toggle, reset, formatTime }: any) => (
         className={`px-6 py-2 rounded-full font-bold transition-all ${
           isActive 
             ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30 hover:bg-amber-500/20' 
-            : 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20'
+            : 'bg-purple-600 text-white hover:bg-purple-500 shadow-lg shadow-purple-600/20'
         }`}
       >
         {isActive ? 'Pause' : 'Start Timer'}
@@ -150,7 +150,7 @@ export default function HeadacheQuestionnaire() {
         description: (
           <p className="text-slate-300 leading-relaxed">
             This appears to be a migraine or vascular headache. <br /><br />
-            Apply a <span className="text-blue-400 font-bold text-lg">cooling strip</span> or ice pack to your forehead or temples. 
+            Apply a <span className="text-violet-400 font-bold text-lg">cooling strip</span> or ice pack to your forehead or temples. 
             The cold will help constrict blood vessels and numb the throbbing pain. Rest in a dark, quiet room.
           </p>
         ),
@@ -182,8 +182,8 @@ export default function HeadacheQuestionnaire() {
                 <span><span className="text-orange-400 font-bold">Heat pad</span> on your neck/shoulders for muscle tension.</span>
               </p>
               <p className="flex items-center gap-3 mt-2">
-                <span className="text-blue-400">❄️</span>
-                <span><span className="text-blue-400 font-bold">Cooling strip</span> on your forehead for throbbing pain.</span>
+                <span className="text-violet-400">❄️</span>
+                <span><span className="text-violet-400 font-bold">Cooling strip</span> on your forehead for throbbing pain.</span>
               </p>
             </div>
           </div>
@@ -194,15 +194,19 @@ export default function HeadacheQuestionnaire() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative">
-      <div className="absolute top-6 left-6 md:top-10 md:left-10">
-        <Link href="/naanas-space" className="text-slate-400 hover:text-blue-400 font-medium flex items-center gap-2 transition-colors">
+    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative overflow-hidden">
+      {/* Background Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-900/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-20">
+        <Link href="/naanas-space" className="text-slate-400 hover:text-purple-400 font-medium flex items-center gap-2 transition-colors">
           &larr; Back to Hub
         </Link>
       </div>
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto relative z-10">
         <header className="text-center mb-12">
-          <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent mb-4">
+          <h2 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-violet-400 bg-clip-text text-transparent mb-4">
             Naana&apos;s Remedy Finder
           </h2>
           <p className="text-slate-400 text-lg">
@@ -249,7 +253,7 @@ export default function HeadacheQuestionnaire() {
           <button 
             type="button" 
             onClick={calculateRemedy} 
-            className="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/20 transform transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-[#0a0a0c]"
+            className="w-full py-4 mt-4 bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-500 hover:to-violet-500 text-white font-bold text-lg rounded-2xl shadow-xl shadow-purple-500/20 transform transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-[#0a0a0c]"
           >
             Calculate Remedy
           </button>
@@ -261,7 +265,7 @@ export default function HeadacheQuestionnaire() {
             className={`mt-12 p-8 rounded-3xl border-2 transition-all animate-in fade-in slide-in-from-bottom-4 duration-500 ${
             result.isWarning 
               ? 'bg-rose-500/10 border-rose-500/30' 
-              : 'bg-slate-900 border-blue-500/20'
+              : 'bg-slate-900 border-purple-500/20'
           }`}>
             <h3 className={`text-2xl font-bold mb-4 flex items-center gap-3 ${
               result.isWarning ? 'text-rose-400' : 'text-white'

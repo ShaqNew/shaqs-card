@@ -19,19 +19,24 @@ export default function GirlfriendRenewalPage() {
   };
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 relative">
-      <div className="absolute top-6 left-6 md:top-10 md:left-10">
-        <Link href="/naanas-space" className="text-slate-500 dark:text-slate-400 hover:text-blue-500 font-medium flex items-center gap-2 transition-colors">
+    <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative overflow-hidden">
+      {/* Background Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-900/10 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-violet-900/10 rounded-full blur-[120px] pointer-events-none" />
+
+      <div className="absolute top-6 left-6 md:top-10 md:left-10 z-20">
+        <Link href="/naanas-space" className="text-slate-400 hover:text-purple-400 font-medium flex items-center gap-2 transition-colors">
           &larr; Back to Hub
         </Link>
       </div>
-      <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center px-6">
-        <h1 className="text-center text-4xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mb-4">
+
+      <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center px-6 relative z-10">
+        <h1 className="text-center text-4xl font-bold tracking-tight text-white mb-4">
           LOML Renewal
         </h1>
-        <h3 className="text-center text-lg text-slate-900 dark:text-slate-100 mb-10">
+        <h3 className="text-center text-lg text-slate-400 mb-10">
           By Accepting this agreement, you agree to continue being the{" "}
-          <strong className="text-rose-500">love of my life</strong> for the
+          <strong className="text-purple-400">love of my life</strong> for the
           rest of our lives.
         </h3>
         <ContractLink
