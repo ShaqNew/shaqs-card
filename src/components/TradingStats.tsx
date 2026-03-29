@@ -37,7 +37,7 @@ export default function TradingStats({ state, portfolio, isLoading }: TradingSta
               <span className="font-semibold text-white text-lg">{state?.vix?.toFixed(2) || "--"}</span>
             </div>
             <p className="text-sm text-white/50 pt-2 leading-relaxed">
-              The regime determines the strategy's risk posture and position sizing logic based on calculated volatility conditions.
+              The regime determines the strategy&apos;s risk posture and position sizing logic based on calculated volatility conditions.
             </p>
           </div>
         );
