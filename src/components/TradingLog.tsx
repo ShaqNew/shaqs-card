@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useMemo } from "react";
 
 interface TradeData {
   action: "BUY" | "SELL" | "LIQUIDATE";
@@ -47,6 +47,24 @@ interface TradingLogProps {
 }
 
 export default function TradingLog({ logs, isLoading }: TradingLogProps) {
+  const [selectedFilter, setSelectedFilter] = useState("ALL");
+
+  const filterCategories = [
+    { id: "ALL", label: "All", events: [] },
+    { id: "TRADES", label: "Trades", events: ["TRADE", "REBALANCE"] },
+    { id: "REGIME", label: "Regime", events: ["REGIME_CHANGE"] },
+    { id: "PORTFOLIO", label: "Portfolio", events: ["PORTFOLIO_SUMMARY", "DRAWDOWN"] },
+    { id: "ANALYSIS", label: "Analysis", events: ["RESEARCH_RESULT", "RESEARCH"] },
+    { id: "ERRORS", label: "Errors", events: ["ERROR"] },
+  ];
+
+  const filteredLogs = useMemo(() => {
+    if (selectedFilter === "ALL") return logs;
+    const category = filterCategories.find(c => c.id === selectedFilter);
+    if (!category) return logs;
+    return logs.filter(log => category.events.includes(log.event.toUpperCase()));
+  }, [logs, selectedFilter]);
+
   if (isLoading) {
     return (
       <div className="w-full max-w-6xl mt-8 bg-black/20 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden animate-pulse">
@@ -103,19 +121,37 @@ export default function TradingLog({ logs, isLoading }: TradingLogProps) {
       <div className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
         {/* Terminal Header */}
         <div className="bg-white/5 border-b border-white/5 px-6 py-3 flex items-center justify-between">
-          <div className="flex gap-2">
+          {/* <div className="flex gap-2">
             <div className="w-3 h-3 rounded-full bg-red-500/50" />
             <div className="w-3 h-3 rounded-full bg-amber-500/50" />
             <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
+          </div> */}
+          
+          <div className="flex items-center gap-1.5 px-4 overflow-x-auto no-scrollbar">
+            {filterCategories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedFilter(cat.id)}
+                className={`
+                  px-2.5 py-1 rounded-md text-[10px] uppercase tracking-tighter font-bold transition-all whitespace-nowrap
+                  ${selectedFilter === cat.id 
+                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
+                    : "text-white/20 hover:text-white/40 hover:bg-white/5 border border-transparent"}
+                `}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
-          <div className="text-[10px] font-mono text-white/30 tracking-widest uppercase">Trading-Monitor-v1.0.0</div>
+
+          {/* <div className="hidden md:block text-[10px] font-mono text-white/30 tracking-widest uppercase">Trading-Monitor-v1.0.0</div> */}
         </div>
 
         {/* Scrollable Log Area */}
         <div className="max-h-[500px] overflow-y-auto font-mono text-sm custom-scrollbar">
-          {logs.length > 0 ? (
+          {filteredLogs.length > 0 ? (
             <div className="divide-y divide-white/5">
-              {logs.map((log, idx) => (
+              {filteredLogs.map((log, idx) => (
                 <div 
                   key={idx} 
                   className="px-6 py-3 hover:bg-white/5 transition-colors flex items-start gap-4 group"
