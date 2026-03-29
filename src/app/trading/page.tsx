@@ -10,6 +10,7 @@ import { useTradingData } from "@/hooks/useTradingData";
 export default function TradingPage() {
   const { 
     state, 
+    portfolio,
     logs, 
     trades,
     regimeChanges,
@@ -108,7 +109,7 @@ export default function TradingPage() {
            </div>
         )}
 
-        <TradingStats state={state} isLoading={isLoading} />
+        <TradingStats state={state} portfolio={portfolio} isLoading={isLoading} />
         
         {/* Bottom Section: Logs, Trades, Regimes */}
         <div className="w-full max-w-6xl mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">

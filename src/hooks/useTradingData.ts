@@ -5,6 +5,7 @@ const TRADING_ENABLED = process.env.NEXT_PUBLIC_TRADING_ENABLED === "true";
 
 export function useTradingData() {
   const [state, setState] = useState<any>(null);
+  const [portfolio, setPortfolio] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [trades, setTrades] = useState<any[]>([]);
   const [regimeChanges, setRegimeChanges] = useState<any[]>([]);
@@ -25,9 +26,10 @@ export function useTradingData() {
       setError(null);
 
       // Use the standalone functions to fetch everything concurrently
-      const [healthData, statusData, logsData, tradesData, regimeData] = await Promise.all([
+      const [healthData, statusData, portData, logsData, tradesData, regimeData] = await Promise.all([
         checkHealth(),
         getStatus().catch(() => ({ state: null })),
+        getPortfolioHistory(1).catch(() => ({ summaries: [] })),
         getLogs({ limit: 50 }).catch(() => ({ logs: [] })),
         getTrades(10).catch(() => ({ trades: [] })),
         getRegimeChanges(5).catch(() => ({ regime_changes: [] }))
@@ -36,6 +38,7 @@ export function useTradingData() {
       if (!statusData.state) throw new Error("Status API returned empty state or unauthorized.");
 
       setState(statusData.state);
+      setPortfolio(portData.summaries?.[0]?.data || null);
       setLogs(logsData.logs || []);
       setTrades(tradesData.trades || []);
       setRegimeChanges(regimeData.regime_changes || []);
@@ -60,6 +63,7 @@ export function useTradingData() {
 
   return {
     state,
+    portfolio,
     logs,
     trades,
     regimeChanges,

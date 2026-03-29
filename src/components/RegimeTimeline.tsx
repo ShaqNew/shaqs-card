@@ -20,7 +20,7 @@ export default function RegimeTimeline({ regimes }: RegimeTimelineProps) {
   if (!regimes || regimes.length === 0) return null;
 
   const getRegimeColor = (regime: string) => {
-    switch (regime.toUpperCase()) {
+    switch (regime?.toUpperCase()) {
       case "CALM":
         return "text-emerald-400 bg-emerald-400/20";
       case "ELEVATED":
