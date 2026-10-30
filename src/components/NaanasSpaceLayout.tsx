@@ -8,6 +8,7 @@ interface NaanasSpaceLayoutProps {
   showBackLink?: boolean;
   backHref?: string;
   backLabel?: string;
+  maxWidthClass?: string;
 }
 
 export default function NaanasSpaceLayout({
@@ -15,6 +16,7 @@ export default function NaanasSpaceLayout({
   showBackLink = false,
   backHref = "/naanas-space",
   backLabel = "Back to Hub",
+  maxWidthClass = "max-w-4xl",
 }: NaanasSpaceLayoutProps) {
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-slate-100 py-12 px-4 sm:px-6 relative overflow-hidden font-sans">
@@ -33,7 +35,7 @@ export default function NaanasSpaceLayout({
         </div>
       )}
 
-      <div className="relative z-10 mx-auto max-w-4xl">
+      <div className={`relative z-10 mx-auto ${maxWidthClass}`}>
         {children}
       </div>
     </div>
