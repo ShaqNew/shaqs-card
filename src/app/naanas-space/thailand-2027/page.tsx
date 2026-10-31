@@ -637,6 +637,16 @@ export default function ThailandTripDashboard() {
     setNewPackLabel("");
   };
 
+  const removeCustomPackingItem = (itemId: string) => {
+    updateTripState((prev) => ({
+      ...prev,
+      customPackingItems: prev.customPackingItems.filter(
+        (i) => i.id !== itemId
+      ),
+      packedItemIds: prev.packedItemIds.filter((id) => id !== itemId),
+    }));
+  };
+
   // Currency handlers
   const handleThbChange = (val: string) => {
     setThbInput(val);
@@ -2973,7 +2983,7 @@ export default function ThailandTripDashboard() {
                           )
                         }
                         style={monoStyle}
-                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
                           dressCodeTab === t.id
                             ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                             : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -3136,7 +3146,7 @@ export default function ThailandTripDashboard() {
                         )
                       }
                       style={monoStyle}
-                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                      className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
                         packingOwnerFilter === f.id
                           ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                           : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -3149,7 +3159,7 @@ export default function ThailandTripDashboard() {
                     type="button"
                     onClick={() => setShowUnpackedOnly(!showUnpackedOnly)}
                     style={monoStyle}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                    className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
                       showUnpackedOnly
                         ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
                         : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -3270,45 +3280,60 @@ export default function ThailandTripDashboard() {
                             item.id
                           );
                           return (
-                            <label
+                            <div
                               key={item.id}
-                              className={`py-2.5 first:pt-0 last:pb-0 flex items-start gap-3 cursor-pointer ${
+                              className={`py-2.5 first:pt-0 last:pb-0 flex items-start justify-between gap-2 ${
                                 isPacked ? "opacity-55" : ""
                               }`}
                             >
-                              <input
-                                type="checkbox"
-                                checked={isPacked}
-                                onChange={() => togglePackingItem(item.id)}
-                                className="mt-1 w-4 h-4 accent-[#13382E]"
-                              />
-                              <div className="flex-1 text-xs">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span
-                                    className={`font-semibold text-sm ${
-                                      isPacked
-                                        ? "line-through text-[#8A7E71]"
-                                        : "text-[#1F1A16]"
-                                    }`}
-                                  >
-                                    {item.label}
-                                  </span>
-                                  {item.forWho !== "both" && (
+                              <label className="flex items-start gap-3 cursor-pointer flex-1">
+                                <input
+                                  type="checkbox"
+                                  checked={isPacked}
+                                  onChange={() => togglePackingItem(item.id)}
+                                  className="mt-1 w-4 h-4 accent-[#13382E]"
+                                />
+                                <div className="flex-1 text-xs">
+                                  <div className="flex flex-wrap items-center gap-2">
                                     <span
-                                      style={monoStyle}
-                                      className="px-1.5 py-0.5 bg-[#EFE7D8] border border-[#1F1A16]/15 text-[#A8442A] text-[10px] uppercase tracking-wider"
+                                      className={`font-semibold text-sm ${
+                                        isPacked
+                                          ? "line-through text-[#8A7E71]"
+                                          : "text-[#1F1A16]"
+                                      }`}
                                     >
-                                      {item.forWho}
+                                      {item.label}
                                     </span>
+                                    {item.forWho !== "both" && (
+                                      <span
+                                        style={monoStyle}
+                                        className="px-1.5 py-0.5 bg-[#EFE7D8] border border-[#1F1A16]/15 text-[#A8442A] text-[11px] uppercase tracking-wider"
+                                      >
+                                        {item.forWho}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {item.note && (
+                                    <p className="text-[#5C5248] mt-0.5">
+                                      {item.note}
+                                    </p>
                                   )}
                                 </div>
-                                {item.note && (
-                                  <p className="text-[#5C5248] mt-0.5">
-                                    {item.note}
-                                  </p>
-                                )}
-                              </div>
-                            </label>
+                              </label>
+                              {item.id.startsWith("custom-pack-") && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeCustomPackingItem(item.id)
+                                  }
+                                  className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 shrink-0 cursor-pointer"
+                                  title="Remove custom packing item"
+                                  aria-label={`Remove ${item.label}`}
+                                >
+                                  &#10005;
+                                </button>
+                              )}
+                            </div>
                           );
                         })}
                       </div>
