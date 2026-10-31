@@ -593,7 +593,7 @@ export default function ThailandTripDashboard() {
 
   const jumpToActiveOrFirstDay = () => {
     const todayIso = new Date().toISOString().slice(0, 10);
-    const matchedDay = TRIP_DAYS.find((d) => d.isoDate === todayIso);
+    const matchedDay = TRIP_DAYS.find((d) => d.dateIso === todayIso);
     const targetDayNum = matchedDay ? matchedDay.dayNumber : 0;
     setSelectedDayNum(null);
     setPhaseFilter("all");
