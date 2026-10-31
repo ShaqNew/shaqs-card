@@ -27,7 +27,7 @@ export default function NaanasSpaceHub() {
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 group-hover:text-amber-300 transition-colors">
-                Thailand 2027: Naana&apos;s 30th Birthday Escape
+                Thailand 2027: Naana&apos;s Birthday Escape
               </h2>
               <p className="text-slate-300 leading-relaxed">
                 Our interactive luxury trip planner, live itinerary, confirmed flight &amp; hotel vault (Shangri-La Bangkok &amp; The Pavilions Phuket), packing studio, and on-the-ground survival guide.

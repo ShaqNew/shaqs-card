@@ -98,7 +98,7 @@ const CATEGORY_EDITORIAL_STYLES: Record<
   },
   romance: {
     tag: "border-[#A8442A]/45 bg-[#A8442A]/12 text-[#8F351E]",
-    label: "XXX Celebration",
+    label: "Celebration",
   },
   custom: {
     tag: "border-[#1F1A16]/25 bg-[#EFE7D8] text-[#1F1A16]",
@@ -123,6 +123,21 @@ const chronometerDigitalStyle = {
   letterSpacing: "0.06em",
 };
 
+const ExternalArrow = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 12 12"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="inline-block w-3 h-3 ml-1 -mt-0.5 shrink-0"
+  >
+    <path d="M3 9L9 3M9 3H4.5M9 3V7.5" />
+  </svg>
+);
+
 export default function ThailandTripDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("itinerary");
   const [tripState, setTripState] = useState<PersistedTripState>(
@@ -137,6 +152,9 @@ export default function ThailandTripDashboard() {
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [selectedDayNum, setSelectedDayNum] = useState<number | null>(null);
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
+  const [openSuggestionInfoKey, setOpenSuggestionInfoKey] = useState<
+    string | null
+  >(null);
   const [newActTime, setNewActTime] = useState("19:00 ICT");
   const [newActTitle, setNewActTitle] = useState("");
   const [newActLocation, setNewActLocation] = useState("");
@@ -580,9 +598,6 @@ export default function ThailandTripDashboard() {
             <span>&larr;</span>
             <span>Back to Naana&apos;s Space</span>
           </Link>
-          <span className="hidden md:inline text-[#8A7E71]">
-            PRIVATE TRAVEL FOLIO &bull; VOLUME XXX &bull; SIAM &amp; ANDAMAN
-          </span>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -630,13 +645,7 @@ export default function ThailandTripDashboard() {
             <div className="lg:col-span-8 space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span className="px-3 py-1 bg-[#A8442A] text-[#FBF8F3] text-[10px] uppercase tracking-[0.22em] font-semibold">
-                  Celebrating Naana&apos;s 30th Birthday
-                </span>
-                <span
-                  style={serifStyle}
-                  className="italic text-lg text-[#5C5248]"
-                >
-                  A Private Monograph for Shaquille Newell &amp; Naana Binfoh
+                  Celebrating Naana&apos;s Birthday
                 </span>
               </div>
 
@@ -647,47 +656,48 @@ export default function ThailandTripDashboard() {
                 Thailand 2027 Escape
               </h1>
 
-              <p className="text-base sm:text-lg text-[#4A4036] max-w-2xl leading-relaxed font-normal pt-1">
-                <strong>{TRIP_METADATA.datesDisplay}</strong> &mdash; Eight
-                nights across the Kingdom of Siam. Three nights on the royal
-                riverfront at{" "}
-                <span
-                  style={serifStyle}
-                  className="italic font-semibold text-xl text-[#A8442A]"
-                >
-                  Shangri-La Bangkok
-                </span>
-                , followed by five nights in a private hilltop sanctuary at{" "}
-                <span
-                  style={serifStyle}
-                  className="italic font-semibold text-xl text-[#13382E]"
-                >
-                  The Pavilions Phuket
-                </span>
-                .
-              </p>
-
-              {/* Minimalist Route Line */}
-              <div
-                style={monoStyle}
-                className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-2 text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
-              >
-                <span className="text-[#1F1A16] font-semibold">
-                  LGW &rarr; SHJ &rarr; BKK
-                </span>
-                <span className="text-[#9E7B3B]">&bull;</span>
-                <span>CHAO PHRAYA RIVER (05&ndash;08 FEB)</span>
-                <span className="text-[#9E7B3B]">&bull;</span>
-                <span className="text-[#1F1A16] font-semibold">
-                  BKK &rarr; HKT
-                </span>
-                <span className="text-[#9E7B3B]">&bull;</span>
-                <span>LAYAN HILLS, PHUKET (08&ndash;13 FEB)</span>
-                <span className="text-[#9E7B3B]">&bull;</span>
-                <span className="text-[#1F1A16] font-semibold">
-                  HKT &rarr; SHJ &rarr; LGW
-                </span>
+              <div className="text-base sm:text-lg text-[#4A4036] max-w-2xl leading-relaxed font-normal pt-1 space-y-1">
+                <p>
+                  <strong>{TRIP_METADATA.datesDisplay}</strong>
+                </p>
+                <p>
+                  Three nights on the royal riverfront at{" "}
+                  <span
+                    style={serifStyle}
+                    className="italic font-semibold text-xl text-[#A8442A]"
+                  >
+                    Shangri-La Bangkok
+                  </span>
+                </p>
+                <p>
+                  Five nights in a private hilltop sanctuary at{" "}
+                  <span
+                    style={serifStyle}
+                    className="italic font-semibold text-xl text-[#13382E]"
+                  >
+                    The Pavilions Phuket
+                  </span>
+                  .
+                </p>
               </div>
+
+              {/* Minimalist Route List */}
+              <ul
+                style={monoStyle}
+                className="flex flex-col gap-1.5 pt-2 text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
+              >
+                <li className="text-[#1F1A16] font-semibold">
+                  LGW &rarr; SHJ &rarr; BKK
+                </li>
+                <li>CHAO PHRAYA RIVER (05&ndash;08 FEB)</li>
+                <li className="text-[#1F1A16] font-semibold">
+                  BKK &rarr; HKT
+                </li>
+                <li>LAYAN HILLS, PHUKET (08&ndash;13 FEB)</li>
+                <li className="text-[#1F1A16] font-semibold">
+                  HKT &rarr; SHJ &rarr; LGW
+                </li>
+              </ul>
             </div>
 
             {/* Right Column: Sculptural Countdown & Readiness Dossier Box */}
@@ -787,20 +797,20 @@ export default function ThailandTripDashboard() {
                   className="flex justify-between text-[10px] text-[#8A7E71] pt-1"
                 >
                   <span>
-                    PROTOCOL {prepProgress.done}/{prepProgress.total}
+                    PREP {prepProgress.done}/{prepProgress.total}
                   </span>
                   <span>
                     APPS {appsProgress.done}/{appsProgress.total}
                   </span>
                   <span>
-                    TRUNKS {packingProgress.done}/{packingProgress.total}
+                    PACKING {packingProgress.done}/{packingProgress.total}
                   </span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Editorial Table of Contents / Chapter Navigation */}
+          {/* Editorial Table of Contents / Step Navigation */}
           <nav
             aria-label="Trip Dashboard Views"
             className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-[#1F1A16]/20 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 bg-[#FBF8F3]/60"
@@ -830,7 +840,7 @@ export default function ThailandTripDashboard() {
                 id: "packing" as ActiveTab,
                 numeral: "IV",
                 label: "Packing Studio",
-                sub: `${packingProgress.done}/${packingProgress.total} in Trunks`,
+                sub: `${packingProgress.done}/${packingProgress.total} Packed`,
               },
               {
                 id: "guide" as ActiveTab,
@@ -864,7 +874,7 @@ export default function ThailandTripDashboard() {
                         isActive ? "text-[#D8B979]" : "text-[#9E7B3B]"
                       }`}
                     >
-                      Chapter {tab.numeral}
+                      Step {tab.numeral}
                     </span>
                     {isActive && (
                       <span className="w-1.5 h-1.5 rounded-full bg-[#D8B979]" />
@@ -891,7 +901,7 @@ export default function ThailandTripDashboard() {
         </header>
 
         {/* ===================================================================
-            CHAPTER I: ITINERARY & DAY-BY-DAY PLANNER
+            STEP I: ITINERARY & DAY-BY-DAY PLANNER
            =================================================================== */}
         {activeTab === "itinerary" && (
           <section className="space-y-10">
@@ -903,7 +913,7 @@ export default function ThailandTripDashboard() {
                     style={monoStyle}
                     className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
                   >
-                    CHAPTER I &bull; THE DAILY CHRONICLE
+                    STEP I &bull; THE DAILY CHRONICLE
                   </span>
                   <h2
                     style={serifStyle}
@@ -1077,45 +1087,127 @@ export default function ThailandTripDashboard() {
                                 style={monoStyle}
                                 className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71]"
                               >
-                                CONCIERGE SUGGESTIONS (TAP TO INSCRIBE)
+                                SUGGESTIONS (TAP TO INSCRIBE)
                               </p>
-                              <div className="space-y-2">
+                              <div className="space-y-2.5">
                                 {day.quickSuggestions.map((sug, idx) => {
-                                  const alreadyAdded = allDayActivities.some(
+                                  const sugKey = `${day.dayNumber}-${idx}`;
+                                  const isInfoOpen =
+                                    openSuggestionInfoKey === sugKey;
+                                  const matchedCustomAct = customActs.find(
                                     (a) => a.title === sug.title
                                   );
+                                  const alreadyAdded = Boolean(matchedCustomAct);
                                   return (
-                                    <button
-                                      key={idx}
-                                      type="button"
-                                      disabled={alreadyAdded}
-                                      onClick={() =>
-                                        addCustomActivity(day.dayNumber, {
-                                          time: sug.time,
-                                          title: sug.title,
-                                          category: sug.category,
-                                          location: sug.location,
-                                          notes: sug.notes,
-                                        })
-                                      }
-                                      className={`w-full text-left p-2.5 text-xs border transition-colors ${
+                                    <div
+                                      key={sugKey}
+                                      className={`border transition-colors ${
                                         alreadyAdded
-                                          ? "bg-[#13382E]/8 border-[#13382E]/30 text-[#13382E] cursor-default"
-                                          : "bg-[#FBF8F3] border-[#1F1A16]/15 text-[#1F1A16] hover:border-[#A8442A] cursor-pointer"
+                                          ? "bg-[#13382E]/8 border-[#13382E]/30"
+                                          : "bg-[#FBF8F3] border-[#1F1A16]/15 hover:border-[#A8442A]"
                                       }`}
                                     >
-                                      <span
-                                        style={monoStyle}
-                                        className="text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
-                                      >
-                                        {alreadyAdded
-                                          ? "✓ INSCRIBED"
-                                          : `+ ADD AT ${sug.time}`}
-                                      </span>
-                                      <span className="font-medium leading-snug">
-                                        {sug.title}
-                                      </span>
-                                    </button>
+                                      <div className="flex items-stretch justify-between gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (matchedCustomAct) {
+                                              removeCustomActivity(
+                                                day.dayNumber,
+                                                matchedCustomAct.id
+                                              );
+                                            } else {
+                                              addCustomActivity(day.dayNumber, {
+                                                time: sug.time,
+                                                title: sug.title,
+                                                category: sug.category,
+                                                location: sug.location,
+                                                notes: sug.notes,
+                                                mapUrl:
+                                                  sug.serviceLinks?.[0]?.url,
+                                              });
+                                            }
+                                          }}
+                                          className="flex-1 text-left p-2.5 text-xs cursor-pointer"
+                                        >
+                                          <span
+                                            style={monoStyle}
+                                            className="text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
+                                          >
+                                            {alreadyAdded
+                                              ? "✓ INSCRIBED (TAP TO UNDO)"
+                                              : `+ ADD AT ${sug.time}`}
+                                          </span>
+                                          <span
+                                            className={`font-medium leading-snug block ${
+                                              alreadyAdded
+                                                ? "text-[#13382E]"
+                                                : "text-[#1F1A16]"
+                                            }`}
+                                          >
+                                            {sug.title}
+                                          </span>
+                                        </button>
+
+                                        {(sug.bookingGuide ||
+                                          (sug.serviceLinks &&
+                                            sug.serviceLinks.length > 0)) && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              setOpenSuggestionInfoKey(
+                                                isInfoOpen ? null : sugKey
+                                              )
+                                            }
+                                            style={monoStyle}
+                                            aria-expanded={isInfoOpen}
+                                            title="How to book & service links"
+                                            className={`px-2.5 border-l border-[#1F1A16]/15 text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer ${
+                                              isInfoOpen
+                                                ? "bg-[#1F1A16] text-[#F6F1E7]"
+                                                : "bg-[#EFE7D8]/60 text-[#5C5248] hover:text-[#1F1A16] hover:bg-[#EFE7D8]"
+                                            }`}
+                                          >
+                                            {isInfoOpen ? "CLOSE" : "INFO"}
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {/* Quick Direct Service Links Row */}
+                                      {sug.serviceLinks &&
+                                        sug.serviceLinks.length > 0 && (
+                                          <div className="px-2.5 pb-2 pt-1 border-t border-[#1F1A16]/10 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                            {sug.serviceLinks.map((lnk) => (
+                                              <a
+                                                key={lnk.url}
+                                                href={lnk.url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                style={monoStyle}
+                                                className="text-[10px] uppercase tracking-wider text-[#13382E] hover:text-[#A8442A] underline font-semibold inline-flex items-center"
+                                              >
+                                                <span>{lnk.label}</span>
+                                                <ExternalArrow />
+                                              </a>
+                                            ))}
+                                          </div>
+                                        )}
+
+                                      {/* Expandable Booking Guide Tooltip / Popup Drawer */}
+                                      {isInfoOpen && sug.bookingGuide && (
+                                        <div className="p-3 bg-[#EFE7D8] border-t border-[#1F1A16]/20 text-xs text-[#1F1A16] space-y-2">
+                                          <div
+                                            style={monoStyle}
+                                            className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A] font-semibold"
+                                          >
+                                            HOW TO BOOK &amp; ACCESS
+                                          </div>
+                                          <p className="leading-relaxed text-[#4A4036]">
+                                            {sug.bookingGuide}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
                                   );
                                 })}
                               </div>
@@ -1217,7 +1309,7 @@ export default function ThailandTripDashboard() {
                                         rel="noopener noreferrer"
                                         className="text-[#13382E] hover:text-[#A8442A] underline font-medium"
                                       >
-                                        VIEW CARTOGRAPHY &nearr;
+                                        VIEW CARTOGRAPHY <ExternalArrow />
                                       </a>
                                     )}
                                   </div>
@@ -1301,7 +1393,7 @@ export default function ThailandTripDashboard() {
                                   className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
                                 >
                                   <option value="romance">
-                                    XXX Celebration &amp; Romance
+                                    Celebration &amp; Romance
                                   </option>
                                   <option value="dining">Gastronomy</option>
                                   <option value="beach">Andaman Coast</option>
@@ -1363,7 +1455,7 @@ export default function ThailandTripDashboard() {
         )}
 
         {/* ===================================================================
-            CHAPTER II: BOOKINGS & RESERVATIONS VAULT (PERFORATED PASSES)
+            STEP II: BOOKINGS & RESERVATIONS VAULT (PERFORATED PASSES)
            =================================================================== */}
         {activeTab === "bookings" && (
           <section className="space-y-12">
@@ -1375,7 +1467,7 @@ export default function ThailandTripDashboard() {
                     style={monoStyle}
                     className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
                   >
-                    CHAPTER II &bull; CONFIRMED DOSSIER CREDENTIALS
+                    STEP II &bull; CONFIRMED DOSSIER CREDENTIALS
                   </span>
                   <h2
                     style={serifStyle}
@@ -1690,7 +1782,7 @@ export default function ThailandTripDashboard() {
                           style={monoStyle}
                           className="block w-full text-center py-2.5 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-[11px] uppercase tracking-[0.16em] transition-colors"
                         >
-                          Manage Airline Portal &nearr;
+                          Manage Airline Portal <ExternalArrow />
                         </a>
                         {flight.extraLinks.map((lnk) => (
                           <a
@@ -1701,7 +1793,7 @@ export default function ThailandTripDashboard() {
                             style={monoStyle}
                             className="block w-full text-center py-1.5 text-[10px] uppercase tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
                           >
-                            {lnk.label} &nearr;
+                            {lnk.label} <ExternalArrow />
                           </a>
                         ))}
                       </div>
@@ -1869,7 +1961,7 @@ export default function ThailandTripDashboard() {
                           style={monoStyle}
                           className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.15em]"
                         >
-                          Open Google Maps &nearr;
+                          Open Google Maps <ExternalArrow />
                         </a>
                         <button
                           type="button"
@@ -1891,7 +1983,7 @@ export default function ThailandTripDashboard() {
         )}
 
         {/* ===================================================================
-            CHAPTER III: ENTRY PROTOCOL, BANKING & DIGITAL CONCIERGE
+            STEP III: ENTRY PROTOCOL, BANKING & DIGITAL CONCIERGE
            =================================================================== */}
         {activeTab === "prep" && (
           <section className="space-y-10">
@@ -1903,7 +1995,7 @@ export default function ThailandTripDashboard() {
                     style={monoStyle}
                     className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
                   >
-                    CHAPTER III &bull; ENTRY &amp; IMMIGRATION PROTOCOL
+                    STEP III &bull; ENTRY &amp; IMMIGRATION PROTOCOL
                   </span>
                   <h2
                     style={serifStyle}
@@ -1916,7 +2008,7 @@ export default function ThailandTripDashboard() {
                   {[
                     { id: "all", label: "All" },
                     { id: "both", label: "Joint" },
-                    { id: "shaq", label: "Shaquille" },
+                    { id: "shaq", label: "Shaq" },
                     { id: "naana", label: "Naana" },
                   ].map((f) => (
                     <button
@@ -2131,7 +2223,7 @@ export default function ThailandTripDashboard() {
         )}
 
         {/* ===================================================================
-            CHAPTER IV: THE WARDROBE, ETIQUETTE & TRUNKS
+            STEP IV: THE WARDROBE, ETIQUETTE & TRUNKS
            =================================================================== */}
         {activeTab === "packing" && (
           <section className="space-y-10">
@@ -2291,7 +2383,7 @@ export default function ThailandTripDashboard() {
                     </div>
                     <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
                       <li>
-                        <strong>Shaquille (Gentlemen):</strong> Collared linen
+                        <strong>Shaq (Gentlemen):</strong> Collared linen
                         shirts, tailored lightweight chinos/trousers, and{" "}
                         <strong className="text-[#1F1A16] underline">
                           closed-toe loafers or clean smart sneakers
@@ -2384,7 +2476,7 @@ export default function ThailandTripDashboard() {
                   {[
                     { id: "all", label: "All" },
                     { id: "both", label: "Shared" },
-                    { id: "shaq", label: "Shaquille" },
+                    { id: "shaq", label: "Shaq" },
                     { id: "naana", label: "Naana" },
                   ].map((f) => (
                     <button
@@ -2471,7 +2563,7 @@ export default function ThailandTripDashboard() {
                   className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
                 >
                   <option value="both">Shared</option>
-                  <option value="shaq">Shaquille</option>
+                  <option value="shaq">Shaq</option>
                   <option value="naana">Naana</option>
                 </select>
                 <button
@@ -2581,7 +2673,7 @@ export default function ThailandTripDashboard() {
         )}
 
         {/* ===================================================================
-            CHAPTER V: FIELD DISPATCHES & CONSULAR SOS
+            STEP V: FIELD DISPATCHES & CONSULAR SOS
            =================================================================== */}
         {activeTab === "guide" && (
           <section className="space-y-10">
@@ -2798,7 +2890,7 @@ export default function ThailandTripDashboard() {
                           style={monoStyle}
                           className="block text-center text-[10px] uppercase tracking-[0.14em] text-[#13382E] underline"
                         >
-                          {c.linkLabel} &nearr;
+                          {c.linkLabel} <ExternalArrow />
                         </a>
                       )}
                     </div>
@@ -2832,7 +2924,7 @@ export default function ThailandTripDashboard() {
                         style={serifStyle}
                         className="text-lg font-semibold text-[#1F1A16] mt-1"
                       >
-                        {hosp.name} &nearr;
+                        {hosp.name} <ExternalArrow />
                       </div>
                       <p className="text-xs text-[#5C5248] mt-1">{hosp.note}</p>
                     </a>
@@ -2844,7 +2936,7 @@ export default function ThailandTripDashboard() {
         )}
 
         {/* ===================================================================
-            CHAPTER VI: FINANCIAL LEDGER, SURPLUS & CURRENCY BUREAU
+            STEP VI: FINANCIAL LEDGER, SURPLUS & CURRENCY BUREAU
            =================================================================== */}
         {activeTab === "budget" && (
           <section className="space-y-10">
@@ -2856,7 +2948,7 @@ export default function ThailandTripDashboard() {
                     style={monoStyle}
                     className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
                   >
-                    CHAPTER VI &bull; CURRENCY BUREAU &amp; FINANCIAL LEDGER
+                    STEP VI &bull; CURRENCY BUREAU &amp; FINANCIAL LEDGER
                   </span>
                   <h2
                     style={serifStyle}
@@ -2959,7 +3051,7 @@ export default function ThailandTripDashboard() {
                     Both five-star residences (Shangri-La Bangkok &amp; The
                     Pavilions Phuket) were secured below the £1,405.00 ceiling,
                     yielding a <strong>£72.65 (~3,233 THB)</strong> reserve
-                    dedicated to Naana&apos;s 30th birthday gastronomy and spa
+                    dedicated to Naana&apos;s birthday gastronomy and spa
                     rituals.
                   </p>
                 </div>

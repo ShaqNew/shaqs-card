@@ -11,10 +11,10 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
   it("renders the Thailand 2027 link card on the Naana's Space hub", () => {
     render(<NaanasSpaceHub />);
     expect(
-      screen.getByText(/Thailand 2027: Naana's 30th Birthday Escape/i)
+      screen.getByText(/Thailand 2027: Naana's Birthday Escape/i)
     ).toBeInTheDocument();
     const link = screen.getByRole("link", {
-      name: /Thailand 2027: Naana's 30th Birthday Escape/i,
+      name: /Thailand 2027: Naana's Birthday Escape/i,
     });
     expect(link).toHaveAttribute("href", "/naanas-space/thailand-2027");
   });
@@ -25,7 +25,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByRole("heading", { name: /Thailand 2027 Escape/i })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Celebrating Naana's 30th Birthday/i)
+      screen.getByText(/Celebrating Naana's Birthday/i)
     ).toBeInTheDocument();
     expect(
       screen.getByText(

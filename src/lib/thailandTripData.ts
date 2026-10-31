@@ -38,6 +38,8 @@ export interface TripDay {
     category: ItineraryActivity["category"];
     location?: string;
     notes?: string;
+    bookingGuide?: string;
+    serviceLinks?: { label: string; url: string }[];
   }[];
 }
 
@@ -86,9 +88,9 @@ export interface PlannedExpense {
 }
 
 export const TRIP_METADATA = {
-  title: "Thailand 2027: Naana's 30th Birthday Escape",
-  occasion: "Celebrating Naana's 30th Birthday",
-  leadPassenger: "Shaquille Newell",
+  title: "Thailand 2027: Naana's Birthday Escape",
+  occasion: "Celebrating Naana's Birthday",
+  leadPassenger: "Shaq Newell",
   partnerPassenger: "Naana Binfoh",
   startDateIso: "2027-02-04T16:40:00Z",
   landingDateIso: "2027-02-05T10:05:00Z", // 17:05 ICT
@@ -162,7 +164,7 @@ export const FLIGHT_BOOKINGS = [
     pnr: "2GXDQP",
     fareClass: "Eco Fare + Custom Add-ons (VZ306)",
     farePerks: [
-      "Shaquille: Seat 16A (Window) • 25kg Checked + 7kg Carry-on",
+      "Shaq: Seat 16A (Window) • 25kg Checked + 7kg Carry-on",
       "Naana: Seat 16B (Middle) • 30kg Checked + 7kg Carry-on",
       "Non-stop 1h 35m flight",
     ],
@@ -173,7 +175,7 @@ export const FLIGHT_BOOKINGS = [
     layover: null,
     passengerDetails: [
       {
-        name: "Shaquille Newell",
+        name: "Shaq Newell",
         seat: "16A (Window)",
         checkedBag: "25 kg Checked Bag",
         cabinBag: "7 kg Carry-on",
@@ -373,13 +375,37 @@ export const TRIP_DAYS: TripDay[] = [
         time: "14:45 GMT",
         category: "romance",
         location: "LGW North Terminal",
-        notes: "Kick off Naana's 30th celebration before boarding!",
+        notes: "Kick off Naana's birthday celebration before boarding!",
+        bookingGuide:
+          "Pre-book No1 Lounges or Clubrooms (Gatwick North Terminal) 4–6 weeks ahead online for guaranteed entry, or walk straight up to Searcys Champagne Bar airside after security (no reservation needed).",
+        serviceLinks: [
+          {
+            label: "No1 Lounges LGW",
+            url: "https://no1lounges.com/lounges/london-gatwick",
+          },
+          {
+            label: "Gatwick Lounges",
+            url: "https://www.gatwickairport.com/at-the-airport/flying-out/lounges.html",
+          },
+        ],
       },
       {
         title: "Activate Thailand eSIM (Airalo / Nomad / Holafly) before takeoff",
         time: "15:30 GMT",
         category: "transit",
         notes: "Install eSIM profile so data connects immediately upon landing at BKK.",
+        bookingGuide:
+          "Purchase an 8–15 day Thailand eSIM (AIS or TrueMove 5G network) in the Airalo or Holafly app 24h before flying. Install the eSIM on airport Wi-Fi and switch on 'Data Roaming' for that line upon landing at BKK.",
+        serviceLinks: [
+          {
+            label: "Airalo Thailand",
+            url: "https://www.airalo.com/thailand-esim",
+          },
+          {
+            label: "Holafly Thailand",
+            url: "https://esim.holafly.com/esim-thailand/",
+          },
+        ],
       },
     ],
   },
@@ -442,6 +468,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "dining",
         location: "ICONSIAM Riverfront",
         notes: "Explore the glamorous riverfront mall & indoor floating market for a relaxed first-night dinner.",
+        bookingGuide:
+          "No advance boat ticket required. Walk 2 mins from Shangri-La to Sathorn Pier—free shuttle boats to ICONSIAM run every 15–20 mins until 22:00. For riverside terrace dining at ICONSIAM, ask Shangri-La Concierge to book a table upon check-in.",
+        serviceLinks: [
+          {
+            label: "ICONSIAM Dining",
+            url: "https://www.iconsiam.com/en/dining",
+          },
+        ],
       },
       {
         title: "Riverside Nightcap at Salathip or Lobby Lounge",
@@ -449,6 +483,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "Shangri-La Bangkok Riverfront",
         notes: "Watch the lit dinner barges glide along the Chao Phraya.",
+        bookingGuide:
+          "On-site at Shangri-La Bangkok. Walk-ins are welcome for nightcaps at the Lobby Lounge; for an outdoor riverside teak pavilion table at Salathip Thai Restaurant, reserve via Shangri-La dining or hotel concierge.",
+        serviceLinks: [
+          {
+            label: "Shangri-La Dining",
+            url: "https://www.shangri-la.com/bangkok/shangrila/dining/",
+          },
+        ],
       },
     ],
   },
@@ -481,6 +523,18 @@ export const TRIP_DAYS: TripDay[] = [
         category: "culture",
         location: "Rattanakosin Island",
         notes: "Go early before midday heat; pack water & electrolytes.",
+        bookingGuide:
+          "Take the Chao Phraya Express Boat (~16–30 THB cash) from Sathorn Pier to Tha Chang (N9) for Grand Palace (500 THB entry; buy at gate or online 24h ahead) and Tha Tien (N8) for Wat Pho (300 THB cash at gate). Strict temple dress code applies.",
+        serviceLinks: [
+          {
+            label: "Grand Palace Tickets",
+            url: "https://www.royalgrandpalace.th/en/home",
+          },
+          {
+            label: "River Boat Guide",
+            url: "https://www.chaophrayaexpressboat.com/?lang=en",
+          },
+        ],
       },
       {
         title: "Cross-River Ferry to Wat Arun (Temple of Dawn)",
@@ -488,6 +542,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "culture",
         location: "Wat Arun",
         notes: "Stunning porcelain spires—great spot for couples photos!",
+        bookingGuide:
+          "No reservation required. Board the 5 THB cross-river ferry from Tha Tien Pier (outside Wat Pho) directly across to Wat Arun (200 THB cash entry at gate).",
+        serviceLinks: [
+          {
+            label: "Wat Arun Map",
+            url: "https://maps.google.com/?q=Wat+Arun+Bangkok",
+          },
+        ],
       },
       {
         title: "Afternoon Poolside Recharge at Shangri-La River Pool",
@@ -495,6 +557,8 @@ export const TRIP_DAYS: TripDay[] = [
         category: "spa",
         location: "Shangri-La Bangkok",
         notes: "Escape the peak afternoon heat with iced coconuts by the river.",
+        bookingGuide:
+          "Complimentary for Shangri-La guests—no booking needed. Simply give your room number at the riverside pool deck for loungers and towel service.",
       },
       {
         title: "Sunset Cocktails & Fine Dining at a Bangkok Rooftop (Mahanakhon / Lebua / Vertigo)",
@@ -502,6 +566,22 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "Silom / Sathon",
         notes: "Smart casual dress code strictly enforced (men: collared linen shirt, trousers & closed-toe loafers/smart sneakers).",
+        bookingGuide:
+          "Book 2–4 weeks in advance for a sunset table (~17:30 arrival). Top nearby rooftops: SkyBeach at The Standard Mahanakhon (highest in Bangkok), Vertigo & Moon Bar at Banyan Tree, or Sky Bar at Lebua (5-min walk from Shangri-La).",
+        serviceLinks: [
+          {
+            label: "Mahanakhon SkyBeach",
+            url: "https://www.standardhotels.com/bangkok/features/sky-beach",
+          },
+          {
+            label: "Vertigo Banyan Tree",
+            url: "https://www.banyantree.com/thailand/bangkok/dining/vertigo",
+          },
+          {
+            label: "Lebua Sky Bar",
+            url: "https://lebua.com/restaurants/sky-bar/",
+          },
+        ],
       },
     ],
   },
@@ -534,6 +614,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "spa",
         location: "Shangri-La Bangkok",
         notes: "Signature Thai aromatic massage before tomorrow's flight to Phuket.",
+        bookingGuide:
+          "Reserve 1–2 weeks ahead via the CHI Spa online portal or by emailing chi.slbk@shangri-la.com (quote hotel booking ref 12891938794 to request a private couples treatment suite).",
+        serviceLinks: [
+          {
+            label: "Book CHI, The Spa",
+            url: "https://www.shangri-la.com/bangkok/shangrila/health-leisure/chi-the-spa/",
+          },
+        ],
       },
       {
         title: "Evening Shuttle Boat to Asiatique The Riverfront or Chinatown (Yaowarat) Street Food",
@@ -541,6 +629,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "dining",
         location: "Asiatique / Yaowarat Road",
         notes: "Bring THB cash for Michelin-bib street food stalls or enjoy riverside Thai dining.",
+        bookingGuide:
+          "For Asiatique: take the free shuttle boat from Sathorn Pier (departs every 30 mins from 16:00). For Yaowarat (Chinatown): take Grab or MRT to Wat Mangkon Station—no booking needed for street food stalls (bring 1,000–2,000 THB cash).",
+        serviceLinks: [
+          {
+            label: "Asiatique Info",
+            url: "https://www.asiatiquethailand.com/en",
+          },
+        ],
       },
     ],
   },
@@ -578,7 +674,7 @@ export const TRIP_DAYS: TripDay[] = [
         id: "d4-vietjet-bagdrop",
         time: "13:15 ICT",
         title: "Arrive BKK Domestic • Thai Vietjet Bag Drop & Security",
-        subtitle: "PNR: 2GXDQP • Shaquille: 25kg (Seat 16A) | Naana: 30kg (Seat 16B)",
+        subtitle: "PNR: 2GXDQP • Shaq: 25kg (Seat 16A) | Naana: 30kg (Seat 16B)",
         category: "transit",
         location: "BKK Domestic Check-in Counters",
         notes: "7kg carry-on allowance per passenger. Keep power banks in hand luggage.",
@@ -622,6 +718,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "The Pavilions Phuket",
         notes: "Priority dining access included with your suite booking!",
+        bookingGuide:
+          "Priority dining reservations at Firefly Pool & Restaurant are included in your Pavilions suite package (Ref 78165SH099776). Confirm your arrival table at check-in or email info.phuket@pavilionshotels.com ahead of travel.",
+        serviceLinks: [
+          {
+            label: "Pavilions Dining",
+            url: "https://www.pavilionshotels.com/phuket/dining/",
+          },
+        ],
       },
     ],
   },
@@ -654,6 +758,8 @@ export const TRIP_DAYS: TripDay[] = [
         category: "spa",
         location: "The Pavilions Phuket",
         notes: "Call a front desk golf buggy from your suite to Firefly Pool.",
+        bookingGuide:
+          "Complimentary for resort guests—no advance booking required. Dial '0' from your suite phone to summon a buggy down to Firefly Pool.",
       },
       {
         title: "Golden Hour Panorama at 360 Bar",
@@ -661,6 +767,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "360 Bar, The Pavilions Phuket",
         notes: "Famous hilltop sunset views over the Andaman Sea with tapas & cocktails.",
+        bookingGuide:
+          "360 Bar opens daily at 17:00 atop the resort's highest peak. Message the resort concierge on LINE or ask the front desk earlier in the afternoon to hold a front-row sunset sofa for two.",
+        serviceLinks: [
+          {
+            label: "360 Bar Phuket",
+            url: "https://www.pavilionshotels.com/phuket/360-bar/",
+          },
+        ],
       },
     ],
   },
@@ -672,7 +786,7 @@ export const TRIP_DAYS: TripDay[] = [
     phase: "phuket",
     locationBadge: "Phuket • Bang Tao & Beach Clubs",
     title: "Beach Club Glamour & Andaman Sunset",
-    vibe: "Chic daybeds, ocean swims & tropical celebration for Naana's 30th",
+    vibe: "Chic daybeds, ocean swims & tropical birthday celebration",
     weatherSummary: "Phuket: 32°C Calm Seas • Gentle Breeze",
     accommodation: "The Pavilions Phuket (Night 3 of 5)",
     defaultActivities: [
@@ -693,13 +807,33 @@ export const TRIP_DAYS: TripDay[] = [
         category: "spa",
         location: "The Pavilions Phuket",
         notes: "Book via LINE or resort concierge using your £72.65 accommodation budget surplus!",
+        bookingGuide:
+          "Reserve 1–2 weeks in advance via info.phuket@pavilionshotels.com (quoting Ref 78165SH099776) or via the resort's LINE concierge upon check-in.",
+        serviceLinks: [
+          {
+            label: "Pavilions Spa",
+            url: "https://www.pavilionshotels.com/phuket/spa/",
+          },
+        ],
       },
       {
         title: "Celebration Birthday Dinner by Candlelight",
         time: "20:00 ICT",
         category: "romance",
         location: "Firefly Restaurant / ALTO Italian / Beachfront",
-        notes: "Toast to Naana's 30th Birthday under the stars!",
+        notes: "Toast to Naana's Birthday under the stars!",
+        bookingGuide:
+          "Book 2–3 weeks ahead for a romantic birthday table: either arrange a private candlelit setup at Firefly / ALTO via The Pavilions Concierge, or reserve a beachfront table at Catch Beach Club on Bang Tao Beach.",
+        serviceLinks: [
+          {
+            label: "Pavilions Dining",
+            url: "https://www.pavilionshotels.com/phuket/dining/",
+          },
+          {
+            label: "Catch Beach Club",
+            url: "https://catchbeachclub.com/",
+          },
+        ],
       },
     ],
   },
@@ -732,6 +866,18 @@ export const TRIP_DAYS: TripDay[] = [
         category: "beach",
         location: "Phuket Marina / Pier",
         notes: "Pack Stugeron motion sickness tablets, waterproof phone pouch & reef-safe sunscreen.",
+        bookingGuide:
+          "Book 1–2 weeks ahead either directly through The Pavilions Concierge (includes private resort pickup) or with a top-rated private boat operator such as 5 Star Marine Phuket.",
+        serviceLinks: [
+          {
+            label: "5 Star Marine",
+            url: "https://5starmarinephuket.com/",
+          },
+          {
+            label: "Pavilions Experiences",
+            url: "https://www.pavilionshotels.com/phuket/experiences/",
+          },
+        ],
       },
       {
         title: "Outdoor Rain Shower & Private Suite Lounge Evening",
@@ -739,6 +885,8 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "Deluxe Tropical View Suite",
         notes: "Use tropical DEET repellent in the lush evening resort gardens.",
+        bookingGuide:
+          "Private in-suite experience in your 81 sqm Deluxe Tropical View Suite. Dial '0' from your suite phone to order in-villa dining, ice buckets, or champagne.",
       },
     ],
   },
@@ -758,7 +906,7 @@ export const TRIP_DAYS: TripDay[] = [
         id: "d8-relax-day",
         time: "10:30 ICT",
         title: "Slow Morning at Layan Beach or Firefly Pool",
-        subtitle: "Savor the final full day of Naana's 30th Birthday Trip",
+        subtitle: "Savor the final full day of Naana's Birthday Trip",
         category: "romance",
         location: "The Pavilions Phuket / Layan Beach",
       },
@@ -770,6 +918,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "romance",
         location: "360 Bar, The Pavilions Phuket",
         notes: "Golden hour photos overlooking Layan hills.",
+        bookingGuide:
+          "Message the front desk via LINE or dial '0' to reserve a sunset table at 360 Bar for 17:30 and request buggy pickup from your suite.",
+        serviceLinks: [
+          {
+            label: "360 Bar",
+            url: "https://www.pavilionshotels.com/phuket/360-bar/",
+          },
+        ],
       },
       {
         title: "Final Night Romantic Dinner at Firefly Pool & Restaurant",
@@ -777,6 +933,14 @@ export const TRIP_DAYS: TripDay[] = [
         category: "dining",
         location: "The Pavilions Phuket",
         notes: "Pack main checked bags (20kg Air Arabia limit for return flight!) before bed.",
+        bookingGuide:
+          "Priority dining access at Firefly is included with your booking. Reserve your preferred poolside table with the concierge on the morning of 12 Feb.",
+        serviceLinks: [
+          {
+            label: "Firefly Restaurant",
+            url: "https://www.pavilionshotels.com/phuket/firefly/",
+          },
+        ],
       },
     ],
   },
@@ -830,7 +994,7 @@ export const TRIP_DAYS: TripDay[] = [
     phase: "return",
     locationBadge: "Sharjah SHJ → London LGW",
     title: "Valentine's Day Touchdown Home in London",
-    vibe: "Home sweet home with unforgettable 30th birthday memories",
+    vibe: "Home sweet home with unforgettable birthday memories",
     weatherSummary: "London Morning Arrival",
     defaultActivities: [
       {
@@ -859,7 +1023,7 @@ export const PREP_CHECKLIST: PrepCheckItem[] = [
   {
     id: "prep-passport-shaq",
     category: "immigration",
-    title: "Shaquille's Passport Validity & Blank Pages Verified",
+    title: "Shaq's Passport Validity & Blank Pages Verified",
     detail:
       "Must have 6+ full months validity from 5 Feb 2027 (valid past mid-August 2027) and at least 2 blank pages.",
     assignee: "shaq",
@@ -1054,7 +1218,7 @@ export const DEFAULT_PACKING_ITEMS: PackingItem[] = [
     id: "pack-naana-dresses",
     category: "Evening & Fine Dining",
     label: "Romantic maxi/midi dresses, dressy jumpsuits & elegant separates",
-    note: "For 30th birthday rooftop cocktails, Shangri-La riverside dining & Firefly Restaurant",
+    note: "For birthday rooftop cocktails, Shangri-La riverside dining & Firefly Restaurant",
     forWho: "naana",
     essential: true,
   },
@@ -1197,7 +1361,7 @@ export const DEFAULT_PLANNED_EXPENSES: PlannedExpense[] = [
   },
   {
     id: "exp-birthday-dinner",
-    title: "Naana's 30th Birthday Fine Dining Celebration (Funded by £72.65 Hotel Surplus!)",
+    title: "Naana's Birthday Fine Dining Celebration (Funded by £72.65 Hotel Surplus!)",
     category: "Birthday Treat",
     amountThb: 3233,
     city: "Phuket",
