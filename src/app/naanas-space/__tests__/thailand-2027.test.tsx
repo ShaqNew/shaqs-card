@@ -41,11 +41,11 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     render(<ThailandTripDashboard />);
     fireEvent.click(screen.getByRole("button", { name: /Bookings Vault/i }));
 
-    expect(screen.getByText("6I8SOP")).toBeInTheDocument();
-    expect(screen.getByText("12891938794")).toBeInTheDocument();
-    expect(screen.getByText("2GXDQP")).toBeInTheDocument();
-    expect(screen.getByText("78165SH099776")).toBeInTheDocument();
-    expect(screen.getByText("6LDREI")).toBeInTheDocument();
+    expect(screen.getAllByText("6I8SOP").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("12891938794").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2GXDQP").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("78165SH099776").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("6LDREI").length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Seat 16A \(Window\)/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Seat 16B \(Middle\)/i).length).toBeGreaterThan(0);
   });

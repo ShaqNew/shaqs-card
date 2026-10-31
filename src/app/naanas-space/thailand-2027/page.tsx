@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import NaanasSpaceLayout from "@/components/NaanasSpaceLayout";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import Link from "next/link";
 import {
   TRIP_METADATA,
   FLIGHT_BOOKINGS,
@@ -27,7 +27,13 @@ type ActiveTab =
   | "guide"
   | "budget";
 
-type PhaseFilter = "all" | "outbound" | "bangkok" | "transfer" | "phuket" | "return";
+type PhaseFilter =
+  | "all"
+  | "outbound"
+  | "bangkok"
+  | "transfer"
+  | "phuket"
+  | "return";
 
 const STORAGE_KEY = "naanas_space_thailand_2027_v1";
 
@@ -42,6 +48,7 @@ interface PersistedTripState {
   pavilionsBalancePaid: boolean;
   plannedExpenses: PlannedExpense[];
   exchangeRate: number;
+  updatedAt?: number;
 }
 
 const DEFAULT_PERSISTED_STATE: PersistedTripState = {
@@ -57,55 +64,63 @@ const DEFAULT_PERSISTED_STATE: PersistedTripState = {
   exchangeRate: TRIP_METADATA.exchangeRateBenchmark,
 };
 
-const CATEGORY_STYLES: Record<
+const CATEGORY_EDITORIAL_STYLES: Record<
   ItineraryActivity["category"],
-  { badge: string; icon: string; label: string }
+  { tag: string; label: string }
 > = {
   flight: {
-    badge: "bg-sky-500/15 text-sky-300 border-sky-500/30",
-    icon: "✈️",
-    label: "Flight",
+    tag: "border-[#13382E]/30 bg-[#13382E]/8 text-[#13382E]",
+    label: "Aviation",
   },
   hotel: {
-    badge: "bg-amber-500/15 text-amber-300 border-amber-500/30",
-    icon: "🏨",
-    label: "Luxury Stay",
+    tag: "border-[#9E7B3B]/40 bg-[#9E7B3B]/10 text-[#6E521F]",
+    label: "Residence",
   },
   transit: {
-    badge: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
-    icon: "🚕",
-    label: "Transit",
+    tag: "border-[#5C5248]/30 bg-[#EFE7D8] text-[#433A31]",
+    label: "Passage",
   },
   dining: {
-    badge: "bg-orange-500/15 text-orange-300 border-orange-500/30",
-    icon: "🍽️",
-    label: "Dining",
+    tag: "border-[#A8442A]/35 bg-[#A8442A]/10 text-[#8F351E]",
+    label: "Gastronomy",
   },
   culture: {
-    badge: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
-    icon: "🛕",
-    label: "Culture & Temples",
+    tag: "border-[#9E7B3B]/45 bg-[#9E7B3B]/12 text-[#735520]",
+    label: "Heritage & Temple",
   },
   beach: {
-    badge: "bg-teal-500/15 text-teal-300 border-teal-500/30",
-    icon: "🏖️",
-    label: "Beach & Sea",
+    tag: "border-[#1D4E40]/35 bg-[#1D4E40]/10 text-[#13382E]",
+    label: "Andaman Coast",
   },
   spa: {
-    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
-    icon: "💆🏽‍♀️",
-    label: "Spa & Pool",
+    tag: "border-[#2D5A47]/35 bg-[#2D5A47]/10 text-[#1E4233]",
+    label: "Sanctuary & Spa",
   },
   romance: {
-    badge: "bg-rose-500/15 text-rose-300 border-rose-500/30",
-    icon: "💖",
-    label: "Birthday & Romance",
+    tag: "border-[#A8442A]/45 bg-[#A8442A]/12 text-[#8F351E]",
+    label: "XXX Celebration",
   },
   custom: {
-    badge: "bg-purple-500/15 text-purple-300 border-purple-500/30",
-    icon: "✨",
-    label: "Custom Plan",
+    tag: "border-[#1F1A16]/25 bg-[#EFE7D8] text-[#1F1A16]",
+    label: "Bespoke Note",
   },
+};
+
+const serifStyle = {
+  fontFamily: "var(--font-editorial-serif), Georgia, serif",
+  fontVariantNumeric: "lining-nums tabular-nums" as const,
+};
+
+const monoStyle = {
+  fontFamily: "var(--font-editorial-mono), monospace",
+  fontVariantNumeric: "lining-nums tabular-nums" as const,
+};
+
+const chronometerDigitalStyle = {
+  fontFamily:
+    "'DS-Digital', var(--font-digital), var(--font-editorial-mono), monospace",
+  fontVariantNumeric: "tabular-nums" as const,
+  letterSpacing: "0.06em",
 };
 
 export default function ThailandTripDashboard() {
@@ -113,10 +128,12 @@ export default function ThailandTripDashboard() {
   const [tripState, setTripState] = useState<PersistedTripState>(
     DEFAULT_PERSISTED_STATE
   );
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced">(
+    "local"
+  );
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
-  // Itinerary filters & custom activity modal/inline state
+  // Itinerary filters & custom activity drawer state
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [selectedDayNum, setSelectedDayNum] = useState<number | null>(null);
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
@@ -144,7 +161,8 @@ export default function ThailandTripDashboard() {
   const [newPackCategory, setNewPackCategory] = useState<
     PackingItem["category"]
   >("Daytime & Temple Wear");
-  const [newPackForWho, setNewPackForWho] = useState<PackingItem["forWho"]>("both");
+  const [newPackForWho, setNewPackForWho] =
+    useState<PackingItem["forWho"]>("both");
 
   // Currency converter state
   const [thbInput, setThbInput] = useState<string>("1000");
@@ -172,10 +190,91 @@ export default function ThailandTripDashboard() {
     days: 96,
     hours: 17,
     minutes: 0,
-    statusLabel: "Until Takeoff from London Gatwick",
+    statusLabel: "Until Departure • London Gatwick",
   });
 
-  // Load persisted state from localStorage
+  const fetchFromCloud = useCallback(async () => {
+    if (typeof fetch === "undefined") return;
+    try {
+      const res = await fetch("/api/naanas-space/thailand-2027", {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!data?.configured) {
+        setSyncStatus("local");
+        return;
+      }
+      if (data.state) {
+        setTripState((prev) => {
+          const cloudUpdated = data.state.updatedAt || 0;
+          const localUpdated = prev.updatedAt || 0;
+          if (cloudUpdated >= localUpdated) {
+            const merged = { ...prev, ...data.state };
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+            } catch {
+              // Ignore storage errors
+            }
+            return merged;
+          }
+          return prev;
+        });
+        setSyncStatus("synced");
+      } else {
+        setTripState((current) => {
+          fetch("/api/naanas-space/thailand-2027", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: current }),
+          }).catch(() => {});
+          return current;
+        });
+        setSyncStatus("synced");
+      }
+    } catch {
+      setSyncStatus("local");
+    }
+  }, []);
+
+  const updateTripState = useCallback(
+    (updater: (prev: PersistedTripState) => PersistedTripState) => {
+      setTripState((prev) => {
+        const next: PersistedTripState = {
+          ...updater(prev),
+          updatedAt: Date.now(),
+        };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {
+          // Ignore storage errors
+        }
+        if (typeof fetch !== "undefined") {
+          setSyncStatus("syncing");
+          fetch("/api/naanas-space/thailand-2027", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: next }),
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data?.configured && data?.saved) {
+                setSyncStatus("synced");
+              } else {
+                setSyncStatus("local");
+              }
+            })
+            .catch(() => {
+              setSyncStatus("local");
+            });
+        }
+        return next;
+      });
+    },
+    []
+  );
+
+  // Load persisted state from localStorage + sync with Vercel KV
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -189,18 +288,15 @@ export default function ThailandTripDashboard() {
     } catch {
       // Ignore storage errors
     }
-    setIsHydrated(true);
-  }, []);
 
-  // Save state to localStorage on change
-  useEffect(() => {
-    if (!isHydrated) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tripState));
-    } catch {
-      // Ignore storage errors
-    }
-  }, [tripState, isHydrated]);
+    fetchFromCloud();
+
+    const handleFocus = () => {
+      fetchFromCloud();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [fetchFromCloud]);
 
   // Update countdown timer
   useEffect(() => {
@@ -220,7 +316,7 @@ export default function ThailandTripDashboard() {
           days,
           hours,
           minutes,
-          statusLabel: "Until Takeoff • Thu 4 Feb 2027 (16:40 GMT)",
+          statusLabel: "Until Departure • 04 Feb 2027 (16:40 GMT)",
         });
       } else if (now >= start && now <= end) {
         const dayIndex = Math.min(
@@ -231,14 +327,14 @@ export default function ThailandTripDashboard() {
           days: dayIndex,
           hours: 0,
           minutes: 0,
-          statusLabel: "Live in Thailand! Enjoy Naana's 30th Birthday Trip",
+          statusLabel: "Currently in Residence • Thailand",
         });
       } else {
         setCountdown({
           days: 0,
           hours: 0,
           minutes: 0,
-          statusLabel: "Completed • Feb 2027 Memories Forever",
+          statusLabel: "Archive • February 2027",
         });
       }
     };
@@ -297,7 +393,7 @@ export default function ThailandTripDashboard() {
 
   // Toggle helpers
   const togglePrepItem = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       completedPrepIds: prev.completedPrepIds.includes(id)
         ? prev.completedPrepIds.filter((item) => item !== id)
@@ -306,7 +402,7 @@ export default function ThailandTripDashboard() {
   };
 
   const toggleAppInstalled = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       installedAppIds: prev.installedAppIds.includes(id)
         ? prev.installedAppIds.filter((item) => item !== id)
@@ -315,7 +411,7 @@ export default function ThailandTripDashboard() {
   };
 
   const togglePackingItem = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       packedItemIds: prev.packedItemIds.includes(id)
         ? prev.packedItemIds.filter((item) => item !== id)
@@ -324,7 +420,7 @@ export default function ThailandTripDashboard() {
   };
 
   const toggleActivityCompleted = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       completedActivityIds: prev.completedActivityIds.includes(id)
         ? prev.completedActivityIds.filter((item) => item !== id)
@@ -340,7 +436,7 @@ export default function ThailandTripDashboard() {
       ...activityData,
       id: `custom-${dayNumber}-${Date.now()}`,
     };
-    setTripState((prev) => {
+    updateTripState((prev) => {
       const existing = prev.customActivitiesByDay[dayNumber] || [];
       return {
         ...prev,
@@ -353,7 +449,7 @@ export default function ThailandTripDashboard() {
   };
 
   const removeCustomActivity = (dayNumber: number, activityId: string) => {
-    setTripState((prev) => {
+    updateTripState((prev) => {
       const existing = prev.customActivitiesByDay[dayNumber] || [];
       return {
         ...prev,
@@ -390,7 +486,7 @@ export default function ThailandTripDashboard() {
       label: newPackLabel.trim(),
       forWho: newPackForWho,
     };
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       customPackingItems: [...prev.customPackingItems, item],
     }));
@@ -440,7 +536,7 @@ export default function ThailandTripDashboard() {
       city: newExpCity,
       isBooked: false,
     };
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       plannedExpenses: [...prev.plannedExpenses, exp],
     }));
@@ -449,7 +545,7 @@ export default function ThailandTripDashboard() {
   };
 
   const toggleExpenseBooked = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       plannedExpenses: prev.plannedExpenses.map((e) =>
         e.id === id ? { ...e, isBooked: !e.isBooked } : e
@@ -458,7 +554,7 @@ export default function ThailandTripDashboard() {
   };
 
   const deleteExpense = (id: string) => {
-    setTripState((prev) => ({
+    updateTripState((prev) => ({
       ...prev,
       plannedExpenses: prev.plannedExpenses.filter((e) => e.id !== id),
     }));
@@ -473,2101 +569,2658 @@ export default function ThailandTripDashboard() {
   }, [phaseFilter, selectedDayNum]);
 
   return (
-    <NaanasSpaceLayout
-      showBackLink
-      backHref="/naanas-space"
-      backLabel="Back to Naana's Space"
-      maxWidthClass="max-w-6xl"
-    >
-      {/* Floating Copy Feedback Toast */}
+    <div className="min-h-screen bg-[#F6F1E7] text-[#1F1A16] pb-24">
+      {/* Subtle Top Architectural Rule & Issue Bar */}
+      <div className="border-b border-[#1F1A16]/15 bg-[#EFE7D8]/70 px-4 sm:px-8 py-3">
+        <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.2em] text-[#5C5248]">
+          <Link
+            href="/naanas-space"
+            className="text-[#1F1A16] hover:text-[#A8442A] font-semibold flex items-center gap-2 transition-colors"
+          >
+            <span>&larr;</span>
+            <span>Back to Naana&apos;s Space</span>
+          </Link>
+          <span className="hidden md:inline text-[#8A7E71]">
+            PRIVATE TRAVEL FOLIO &bull; VOLUME XXX &bull; SIAM &amp; ANDAMAN
+          </span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={fetchFromCloud}
+              style={monoStyle}
+              className="px-2.5 py-0.5 border border-[#1F1A16]/20 bg-[#FBF8F3] text-[10px] tracking-[0.14em] text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+              title="Sync folio state with Vercel KV cloud storage"
+            >
+              {syncStatus === "synced"
+                ? "● CLOUD SYNCED"
+                : syncStatus === "syncing"
+                ? "◌ SYNCING..."
+                : "○ LOCAL CACHE"}
+            </button>
+            <span style={monoStyle} className="text-[#13382E] font-medium">
+              04 FEB &mdash; 14 FEB 2027
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Editorial Copy Stamp Notification */}
       {copiedText && (
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-500 text-slate-950 font-bold shadow-2xl shadow-emerald-500/30 animate-bounce"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
         >
-          <span>✓</span>
-          <span>Copied: {copiedText}</span>
+          <span
+            style={monoStyle}
+            className="text-[11px] uppercase tracking-[0.18em] text-[#D8B979]"
+          >
+            COPIED TO FOLIO
+          </span>
+          <span className="text-sm font-medium">{copiedText}</span>
         </div>
       )}
 
-      {/* Romantic Hero Banner */}
-      <header className="relative overflow-hidden rounded-3xl border border-amber-500/25 bg-gradient-to-br from-slate-900/95 via-[#13111c] to-purple-950/60 p-6 sm:p-10 mb-8 shadow-2xl">
-        <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-rose-500/15 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex flex-wrap items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-xs sm:text-sm font-semibold tracking-wide">
-              <span>🎂 Celebrating Naana&apos;s 30th Birthday</span>
-              <span className="opacity-40">•</span>
-              <span>Shaquille &amp; Naana</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-amber-200 via-rose-200 to-purple-300 bg-clip-text text-transparent">
-              Thailand 2027 Escape
-            </h1>
-
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              <strong>{TRIP_METADATA.datesDisplay}</strong> (8 Luxury Nights in
-              Thailand) — <strong>3 Nights</strong> riverside glamour at{" "}
-              <span className="text-amber-300 font-medium">
-                Shangri-La Bangkok
-              </span>{" "}
-              followed by <strong>5 Nights</strong> hilltop sanctuary at{" "}
-              <span className="text-teal-300 font-medium">
-                The Pavilions Phuket
-              </span>
-              .
-            </p>
-
-            {/* Quick Route Pills */}
-            <div className="flex flex-wrap items-center gap-2 pt-1 text-xs text-slate-300">
-              <span className="px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 font-mono">
-                ✈️ LGW → SHJ → BKK (4–5 Feb)
-              </span>
-              <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-200">
-                🏙️ Bangkok (5–8 Feb)
-              </span>
-              <span className="px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 font-mono">
-                ✈️ BKK → HKT (8 Feb)
-              </span>
-              <span className="px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/30 text-teal-200">
-                🏝️ Phuket (8–13 Feb)
-              </span>
-              <span className="px-3 py-1 rounded-full bg-slate-800/90 border border-slate-700 font-mono">
-                ✈️ HKT → SHJ → LGW (13–14 Feb)
-              </span>
-            </div>
-          </div>
-
-          {/* Countdown & Readiness Card */}
-          <div className="bg-slate-950/70 backdrop-blur-md border border-slate-800/90 rounded-2xl p-5 min-w-[270px] sm:min-w-[310px] space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider font-semibold text-amber-400">
-                ⏳ Countdown Clock
-              </span>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
-                All Flights &amp; Hotels Confirmed
-              </span>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 px-2">
-                <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
-                  {countdown.days}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400">
-                  Days
-                </div>
-              </div>
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 px-2">
-                <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
-                  {countdown.hours}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400">
-                  Hours
-                </div>
-              </div>
-              <div className="bg-slate-900/90 border border-slate-800 rounded-xl py-2.5 px-2">
-                <div className="text-2xl sm:text-3xl font-extrabold font-mono text-white">
-                  {countdown.minutes}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-400">
-                  Mins
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-center text-slate-400">
-              {countdown.statusLabel}
-            </p>
-
-            {/* Overall Readiness Bar */}
-            <div className="pt-2 border-t border-slate-800/80">
-              <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-slate-300 font-medium">
-                  Trip Prep &amp; Packing Readiness
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 sm:pt-12">
+        {/* ===================================================================
+            EDITORIAL MASTHEAD & ARCHITECTURAL METADATA LEDGER
+           =================================================================== */}
+        <header className="mb-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 border-b border-[#1F1A16]/20 items-end">
+            <div className="lg:col-span-8 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="px-3 py-1 bg-[#A8442A] text-[#FBF8F3] text-[10px] uppercase tracking-[0.22em] font-semibold">
+                  Celebrating Naana&apos;s 30th Birthday
                 </span>
-                <span className="text-amber-300 font-bold">
-                  {overallReadinessPct}%
+                <span
+                  style={serifStyle}
+                  className="italic text-lg text-[#5C5248]"
+                >
+                  A Private Monograph for Shaquille Newell &amp; Naana Binfoh
                 </span>
               </div>
-              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+
+              <h1
+                style={serifStyle}
+                className="text-5xl sm:text-7xl font-normal tracking-tight text-[#1F1A16] leading-[0.98]"
+              >
+                Thailand 2027 Escape
+              </h1>
+
+              <p className="text-base sm:text-lg text-[#4A4036] max-w-2xl leading-relaxed font-normal pt-1">
+                <strong>{TRIP_METADATA.datesDisplay}</strong> &mdash; Eight
+                nights across the Kingdom of Siam. Three nights on the royal
+                riverfront at{" "}
+                <span
+                  style={serifStyle}
+                  className="italic font-semibold text-xl text-[#A8442A]"
+                >
+                  Shangri-La Bangkok
+                </span>
+                , followed by five nights in a private hilltop sanctuary at{" "}
+                <span
+                  style={serifStyle}
+                  className="italic font-semibold text-xl text-[#13382E]"
+                >
+                  The Pavilions Phuket
+                </span>
+                .
+              </p>
+
+              {/* Minimalist Route Line */}
+              <div
+                style={monoStyle}
+                className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-2 text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
+              >
+                <span className="text-[#1F1A16] font-semibold">
+                  LGW &rarr; SHJ &rarr; BKK
+                </span>
+                <span className="text-[#9E7B3B]">&bull;</span>
+                <span>CHAO PHRAYA RIVER (05&ndash;08 FEB)</span>
+                <span className="text-[#9E7B3B]">&bull;</span>
+                <span className="text-[#1F1A16] font-semibold">
+                  BKK &rarr; HKT
+                </span>
+                <span className="text-[#9E7B3B]">&bull;</span>
+                <span>LAYAN HILLS, PHUKET (08&ndash;13 FEB)</span>
+                <span className="text-[#9E7B3B]">&bull;</span>
+                <span className="text-[#1F1A16] font-semibold">
+                  HKT &rarr; SHJ &rarr; LGW
+                </span>
+              </div>
+            </div>
+
+            {/* Right Column: Sculptural Countdown & Readiness Dossier Box */}
+            <div className="lg:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 relative">
+              {/* Double-line inner frame accent */}
+              <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1F1A16]/15">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                >
+                  CHRONOMETER
+                </span>
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                >
+                  ALL RESERVATIONS VERIFIED
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 divide-x divide-[#1F1A16]/15 text-center my-2">
+                <div className="px-2">
+                  <div
+                    style={chronometerDigitalStyle}
+                    className="text-4xl sm:text-5xl font-bold text-[#1F1A16] leading-none"
+                  >
+                    {countdown.days}
+                  </div>
+                  <div
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                  >
+                    Days
+                  </div>
+                </div>
+                <div className="px-2">
+                  <div
+                    style={chronometerDigitalStyle}
+                    className="text-4xl sm:text-5xl font-bold text-[#1F1A16] leading-none"
+                  >
+                    {countdown.hours}
+                  </div>
+                  <div
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                  >
+                    Hours
+                  </div>
+                </div>
+                <div className="px-2">
+                  <div
+                    style={chronometerDigitalStyle}
+                    className="text-4xl sm:text-5xl font-bold text-[#1F1A16] leading-none"
+                  >
+                    {countdown.minutes}
+                  </div>
+                  <div
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                  >
+                    Mins
+                  </div>
+                </div>
+              </div>
+
+              <p
+                style={serifStyle}
+                className="italic text-center text-sm text-[#5C5248] mt-3 pb-4 border-b border-[#1F1A16]/15"
+              >
+                {countdown.statusLabel}
+              </p>
+
+              {/* Readiness Ink Bar */}
+              <div className="pt-4 space-y-2">
+                <div className="flex justify-between items-baseline">
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.18em] text-[#5C5248]"
+                  >
+                    DOSSIER READINESS
+                  </span>
+                  <span
+                    style={monoStyle}
+                    className="text-xs font-semibold text-[#13382E]"
+                  >
+                    {overallReadinessPct}% COMPLETE
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-[#E5DEC9] overflow-hidden">
+                  <div
+                    className="h-full bg-[#13382E] transition-all duration-500"
+                    style={{ width: `${overallReadinessPct}%` }}
+                  />
+                </div>
                 <div
-                  className="h-full bg-gradient-to-r from-amber-400 via-rose-400 to-purple-500 transition-all duration-500"
-                  style={{ width: `${overallReadinessPct}%` }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px] text-slate-400 mt-2">
-                <span>
-                  Prep: {prepProgress.done}/{prepProgress.total}
-                </span>
-                <span>
-                  Apps: {appsProgress.done}/{appsProgress.total}
-                </span>
-                <span>
-                  Packed: {packingProgress.done}/{packingProgress.total}
-                </span>
+                  style={monoStyle}
+                  className="flex justify-between text-[10px] text-[#8A7E71] pt-1"
+                >
+                  <span>
+                    PROTOCOL {prepProgress.done}/{prepProgress.total}
+                  </span>
+                  <span>
+                    APPS {appsProgress.done}/{appsProgress.total}
+                  </span>
+                  <span>
+                    TRUNKS {packingProgress.done}/{packingProgress.total}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Primary Interactive Navigation Tabs */}
-      <nav
-        aria-label="Trip Dashboard Views"
-        className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 mb-8"
-      >
-        {[
-          {
-            id: "itinerary" as ActiveTab,
-            icon: "🗓️",
-            label: "Itinerary & Plan",
-            sub: "11-Day Timeline",
-          },
-          {
-            id: "bookings" as ActiveTab,
-            icon: "✈️",
-            label: "Bookings Vault",
-            sub: "PNRs & Hotels",
-          },
-          {
-            id: "prep" as ActiveTab,
-            icon: "✅",
-            label: "Prep & Apps",
-            sub: `${prepProgress.done + appsProgress.done}/${
-              prepProgress.total + appsProgress.total
-            } Ready`,
-          },
-          {
-            id: "packing" as ActiveTab,
-            icon: "🧳",
-            label: "Packing Studio",
-            sub: `${packingProgress.done}/${packingProgress.total} Packed`,
-          },
-          {
-            id: "guide" as ActiveTab,
-            icon: "🧭",
-            label: "Field Guide & SOS",
-            sub: "Transit, Beaches, 1155",
-          },
-          {
-            id: "budget" as ActiveTab,
-            icon: "💷",
-            label: "Budget & THB",
-            sub: "+£72.65 Surplus",
-          },
-        ].map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-start p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
-                isActive
-                  ? "bg-gradient-to-br from-purple-600/30 to-amber-500/20 border-amber-400/50 text-white shadow-lg shadow-purple-500/10"
-                  : "bg-slate-900/60 border-slate-800/90 text-slate-300 hover:bg-slate-800/70 hover:border-slate-700"
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="text-xl">{tab.icon}</span>
-                {isActive && (
-                  <span className="h-2 w-2 rounded-full bg-amber-400" />
-                )}
-              </div>
-              <span className="font-bold text-sm leading-tight">
-                {tab.label}
-              </span>
-              <span className="text-[11px] text-slate-400 mt-0.5">
-                {tab.sub}
-              </span>
-            </button>
-          );
-        })}
-      </nav>
-
-      {/* =====================================================================
-          VIEW 1: ITINERARY & DAY-BY-DAY PLANNER
-         ===================================================================== */}
-      {activeTab === "itinerary" && (
-        <section className="space-y-6">
-          {/* Phase Filter & Day Quick-Jump Bar */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  Interactive Day-by-Day Itinerary &amp; Romantic Planner
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  Check off logistics as you go, tap quick suggestions, or add
-                  your own custom birthday plans to any day.
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {[
-                  { id: "all", label: "All 11 Days" },
-                  { id: "outbound", label: "🛫 Outbound (4 Feb)" },
-                  { id: "bangkok", label: "🏙️ Bangkok (5–7 Feb)" },
-                  { id: "transfer", label: "🔄 Island Hop (8 Feb)" },
-                  { id: "phuket", label: "🏝️ Phuket (9–12 Feb)" },
-                  { id: "return", label: "🛬 Return (13–14 Feb)" },
-                ].map((pf) => (
-                  <button
-                    key={pf.id}
-                    type="button"
-                    onClick={() => {
-                      setPhaseFilter(pf.id as PhaseFilter);
-                      setSelectedDayNum(null);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      phaseFilter === pf.id && selectedDayNum === null
-                        ? "bg-purple-600 text-white shadow"
-                        : "bg-slate-800/80 text-slate-300 hover:bg-slate-700"
+          {/* Editorial Table of Contents / Chapter Navigation */}
+          <nav
+            aria-label="Trip Dashboard Views"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-[#1F1A16]/20 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 bg-[#FBF8F3]/60"
+          >
+            {[
+              {
+                id: "itinerary" as ActiveTab,
+                numeral: "I",
+                label: "Itinerary & Plan",
+                sub: "Eleven-Day Chronicle",
+              },
+              {
+                id: "bookings" as ActiveTab,
+                numeral: "II",
+                label: "Bookings Vault",
+                sub: "Tickets & Residences",
+              },
+              {
+                id: "prep" as ActiveTab,
+                numeral: "III",
+                label: "Prep & Apps",
+                sub: `${prepProgress.done + appsProgress.done}/${
+                  prepProgress.total + appsProgress.total
+                } Verified`,
+              },
+              {
+                id: "packing" as ActiveTab,
+                numeral: "IV",
+                label: "Packing Studio",
+                sub: `${packingProgress.done}/${packingProgress.total} in Trunks`,
+              },
+              {
+                id: "guide" as ActiveTab,
+                numeral: "V",
+                label: "Field Guide & SOS",
+                sub: "Dispatches & 1155",
+              },
+              {
+                id: "budget" as ActiveTab,
+                numeral: "VI",
+                label: "Budget & THB",
+                sub: "+£72.65 Surplus",
+              },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`group flex flex-col items-start justify-between p-4 text-left transition-colors cursor-pointer relative ${
+                    isActive
+                      ? "bg-[#13382E] text-[#F6F1E7]"
+                      : "hover:bg-[#EFE7D8]/80 text-[#1F1A16]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-1.5">
+                    <span
+                      style={serifStyle}
+                      className={`italic text-sm ${
+                        isActive ? "text-[#D8B979]" : "text-[#9E7B3B]"
+                      }`}
+                    >
+                      Chapter {tab.numeral}
+                    </span>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#D8B979]" />
+                    )}
+                  </div>
+                  <span
+                    style={serifStyle}
+                    className="text-xl font-semibold leading-tight tracking-tight"
+                  >
+                    {tab.label}
+                  </span>
+                  <span
+                    style={monoStyle}
+                    className={`text-[10px] uppercase tracking-[0.14em] mt-1 ${
+                      isActive ? "text-[#F6F1E7]/75" : "text-[#8A7E71]"
                     }`}
                   >
-                    {pf.label}
+                    {tab.sub}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+        </header>
+
+        {/* ===================================================================
+            CHAPTER I: ITINERARY & DAY-BY-DAY PLANNER
+           =================================================================== */}
+        {activeTab === "itinerary" && (
+          <section className="space-y-10">
+            {/* Editorial Filter Header & Date Ruler */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 space-y-5">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+                  >
+                    CHAPTER I &bull; THE DAILY CHRONICLE
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl sm:text-4xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    Interactive Day-by-Day Itinerary &amp; Romantic Planner
+                  </h2>
+                  <p className="text-sm text-[#5C5248] mt-1">
+                    Strike off completed movements, adopt curated concierge
+                    notes from the left margin, or inscribe your own bespoke
+                    reservations.
+                  </p>
+                </div>
+
+                {/* Phase Filter Pills */}
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { id: "all", label: "All 11 Days" },
+                    { id: "outbound", label: "I. Outbound" },
+                    { id: "bangkok", label: "II. Bangkok (3N)" },
+                    { id: "transfer", label: "III. Island Transfer" },
+                    { id: "phuket", label: "IV. Phuket (5N)" },
+                    { id: "return", label: "V. Return" },
+                  ].map((pf) => {
+                    const active =
+                      phaseFilter === pf.id && selectedDayNum === null;
+                    return (
+                      <button
+                        key={pf.id}
+                        type="button"
+                        onClick={() => {
+                          setPhaseFilter(pf.id as PhaseFilter);
+                          setSelectedDayNum(null);
+                        }}
+                        className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                          active
+                            ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16] font-semibold"
+                            : "bg-transparent text-[#5C5248] border-[#1F1A16]/20 hover:border-[#1F1A16]"
+                        }`}
+                      >
+                        {pf.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Date Ruler Strip */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedDayNum(null)}
+                  style={monoStyle}
+                  className={`shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
+                    selectedDayNum === null
+                      ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
+                      : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                  }`}
+                >
+                  Full Spread
+                </button>
+                {TRIP_DAYS.map((d) => {
+                  const isSelected = selectedDayNum === d.dayNumber;
+                  return (
+                    <button
+                      key={d.dayNumber}
+                      type="button"
+                      onClick={() =>
+                        setSelectedDayNum(isSelected ? null : d.dayNumber)
+                      }
+                      style={monoStyle}
+                      className={`shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                        isSelected
+                          ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                          : "bg-[#F6F1E7] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                      }`}
+                    >
+                      D0{d.dayNumber} &bull; {d.shortDate}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Editorial Spreads for Each Day */}
+            <div className="space-y-8">
+              {filteredDays.map((day) => {
+                const customActs =
+                  tripState.customActivitiesByDay[day.dayNumber] || [];
+                const allDayActivities = [
+                  ...day.defaultActivities,
+                  ...customActs,
+                ];
+
+                return (
+                  <article
+                    key={day.dayNumber}
+                    className="bg-[#FBF8F3] border border-[#1F1A16]/20 shadow-[0_2px_12px_rgba(31,26,22,0.04)]"
+                  >
+                    <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#1F1A16]/15">
+                      {/* Left Column (4 cols): Day Title, Atmosphere, Weather & Curated Margin Suggestions */}
+                      <div className="lg:col-span-4 p-6 sm:p-8 bg-[#EFE7D8]/45 flex flex-col justify-between space-y-6">
+                        <div className="space-y-4">
+                          <div className="flex items-baseline justify-between border-b border-[#1F1A16]/15 pb-3">
+                            <span
+                              style={serifStyle}
+                              className="text-4xl sm:text-5xl font-normal text-[#A8442A]"
+                            >
+                              Day 0{day.dayNumber}
+                            </span>
+                            <span
+                              style={monoStyle}
+                              className="text-[11px] uppercase tracking-[0.16em] text-[#5C5248]"
+                            >
+                              {day.dateLabel}
+                            </span>
+                          </div>
+
+                          <div
+                            style={monoStyle}
+                            className="inline-block px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] bg-[#13382E] text-[#F6F1E7]"
+                          >
+                            {day.locationBadge}
+                          </div>
+
+                          <h3
+                            style={serifStyle}
+                            className="text-2xl sm:text-3xl font-normal text-[#1F1A16] leading-snug"
+                          >
+                            {day.title}
+                          </h3>
+
+                          <p
+                            style={serifStyle}
+                            className="italic text-base text-[#5C5248] leading-relaxed"
+                          >
+                            &ldquo;{day.vibe}&rdquo;
+                          </p>
+
+                          <div className="pt-2 space-y-2 border-t border-[#1F1A16]/10 text-xs text-[#4A4036]">
+                            <div className="flex items-start gap-2">
+                              <span
+                                style={monoStyle}
+                                className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
+                              >
+                                CLIMATE
+                              </span>
+                              <span>{day.weatherSummary}</span>
+                            </div>
+                            {day.accommodation && (
+                              <div className="flex items-start gap-2">
+                                <span
+                                  style={monoStyle}
+                                  className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
+                                >
+                                  RESIDENCE
+                                </span>
+                                <span className="font-semibold text-[#13382E]">
+                                  {day.accommodation}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Curated Concierge Suggestions */}
+                        {day.quickSuggestions &&
+                          day.quickSuggestions.length > 0 && (
+                            <div className="pt-5 border-t border-[#1F1A16]/15 space-y-2.5">
+                              <p
+                                style={monoStyle}
+                                className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71]"
+                              >
+                                CONCIERGE SUGGESTIONS (TAP TO INSCRIBE)
+                              </p>
+                              <div className="space-y-2">
+                                {day.quickSuggestions.map((sug, idx) => {
+                                  const alreadyAdded = allDayActivities.some(
+                                    (a) => a.title === sug.title
+                                  );
+                                  return (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      disabled={alreadyAdded}
+                                      onClick={() =>
+                                        addCustomActivity(day.dayNumber, {
+                                          time: sug.time,
+                                          title: sug.title,
+                                          category: sug.category,
+                                          location: sug.location,
+                                          notes: sug.notes,
+                                        })
+                                      }
+                                      className={`w-full text-left p-2.5 text-xs border transition-colors ${
+                                        alreadyAdded
+                                          ? "bg-[#13382E]/8 border-[#13382E]/30 text-[#13382E] cursor-default"
+                                          : "bg-[#FBF8F3] border-[#1F1A16]/15 text-[#1F1A16] hover:border-[#A8442A] cursor-pointer"
+                                      }`}
+                                    >
+                                      <span
+                                        style={monoStyle}
+                                        className="text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
+                                      >
+                                        {alreadyAdded
+                                          ? "✓ INSCRIBED"
+                                          : `+ ADD AT ${sug.time}`}
+                                      </span>
+                                      <span className="font-medium leading-snug">
+                                        {sug.title}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                      </div>
+
+                      {/* Right Column (8 cols): Chronological Schedule & Custom Entry Form */}
+                      <div className="lg:col-span-8 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                        <div className="divide-y divide-[#1F1A16]/12">
+                          {allDayActivities.map((act) => {
+                            const isDone =
+                              tripState.completedActivityIds.includes(act.id);
+                            const style =
+                              CATEGORY_EDITORIAL_STYLES[act.category];
+                            return (
+                              <div
+                                key={act.id}
+                                className={`py-4 first:pt-0 last:pb-0 flex items-start gap-4 transition-opacity ${
+                                  isDone ? "opacity-55" : ""
+                                }`}
+                              >
+                                {/* Editorial Ink Checkbox */}
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleActivityCompleted(act.id)
+                                  }
+                                  aria-label={`Mark ${act.title} as ${
+                                    isDone ? "incomplete" : "complete"
+                                  }`}
+                                  className={`mt-1 w-5 h-5 border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
+                                    isDone
+                                      ? "bg-[#13382E] border-[#13382E] text-[#F6F1E7] text-xs"
+                                      : "border-[#1F1A16]/40 hover:border-[#1F1A16] bg-[#F6F1E7]"
+                                  }`}
+                                >
+                                  {isDone ? "✓" : ""}
+                                </button>
+
+                                <div className="flex-1 min-w-0 space-y-1.5">
+                                  <div className="flex flex-wrap items-center gap-2.5">
+                                    <span
+                                      style={monoStyle}
+                                      className="text-xs font-semibold text-[#A8442A]"
+                                    >
+                                      {act.time}
+                                    </span>
+                                    <span
+                                      style={monoStyle}
+                                      className={`text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 border ${style.tag}`}
+                                    >
+                                      {style.label}
+                                    </span>
+                                    {act.isLocked && (
+                                      <span
+                                        style={monoStyle}
+                                        className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                                      >
+                                        &bull; CONFIRMED LOGISTICS
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <h4
+                                    style={serifStyle}
+                                    className={`text-xl sm:text-2xl font-medium ${
+                                      isDone
+                                        ? "line-through text-[#8A7E71]"
+                                        : "text-[#1F1A16]"
+                                    }`}
+                                  >
+                                    {act.title}
+                                  </h4>
+
+                                  {act.subtitle && (
+                                    <p className="text-xs sm:text-sm text-[#5C5248]">
+                                      {act.subtitle}
+                                    </p>
+                                  )}
+
+                                  {act.notes && (
+                                    <div className="text-xs text-[#4A4036] bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] pl-3 py-2 mt-1.5">
+                                      {act.notes}
+                                    </div>
+                                  )}
+
+                                  <div
+                                    style={monoStyle}
+                                    className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-[#5C5248]"
+                                  >
+                                    {act.location && (
+                                      <span>LOC: {act.location}</span>
+                                    )}
+                                    {act.mapUrl && (
+                                      <a
+                                        href={act.mapUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                      >
+                                        VIEW CARTOGRAPHY &nearr;
+                                      </a>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {!act.isLocked &&
+                                  act.id.startsWith("custom-") && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        removeCustomActivity(
+                                          day.dayNumber,
+                                          act.id
+                                        )
+                                      }
+                                      className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                                      title="Remove custom entry"
+                                    >
+                                      &#10005;
+                                    </button>
+                                  )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* Add Custom Activity Drawer */}
+                        <div className="pt-4 border-t border-[#1F1A16]/15">
+                          {addingToDay === day.dayNumber ? (
+                            <form
+                              onSubmit={(e) =>
+                                handleAddActivitySubmit(e, day.dayNumber)
+                              }
+                              className="bg-[#EFE7D8]/80 border border-[#1F1A16]/25 p-5 space-y-4"
+                            >
+                              <div className="flex items-center justify-between">
+                                <span
+                                  style={monoStyle}
+                                  className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[#13382E]"
+                                >
+                                  INSCRIBE NEW ENTRY FOR {day.shortDate}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setAddingToDay(null)}
+                                  className="text-xs text-[#5C5248] hover:text-[#1F1A16] underline"
+                                >
+                                  Close
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <input
+                                  type="text"
+                                  value={newActTime}
+                                  onChange={(e) =>
+                                    setNewActTime(e.target.value)
+                                  }
+                                  placeholder="Time (e.g. 19:30 ICT)"
+                                  className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                                />
+                                <input
+                                  type="text"
+                                  required
+                                  value={newActTitle}
+                                  onChange={(e) =>
+                                    setNewActTitle(e.target.value)
+                                  }
+                                  placeholder="Reservation, excursion, or birthday note..."
+                                  className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                                />
+                              </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <select
+                                  value={newActCategory}
+                                  onChange={(e) =>
+                                    setNewActCategory(
+                                      e.target
+                                        .value as ItineraryActivity["category"]
+                                    )
+                                  }
+                                  className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                                >
+                                  <option value="romance">
+                                    XXX Celebration &amp; Romance
+                                  </option>
+                                  <option value="dining">Gastronomy</option>
+                                  <option value="beach">Andaman Coast</option>
+                                  <option value="spa">
+                                    Sanctuary &amp; Spa
+                                  </option>
+                                  <option value="culture">
+                                    Heritage &amp; Temple
+                                  </option>
+                                  <option value="transit">Passage</option>
+                                  <option value="custom">Bespoke Note</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={newActLocation}
+                                  onChange={(e) =>
+                                    setNewActLocation(e.target.value)
+                                  }
+                                  placeholder="Venue / Location"
+                                  className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                                />
+                                <input
+                                  type="text"
+                                  value={newActNotes}
+                                  onChange={(e) =>
+                                    setNewActNotes(e.target.value)
+                                  }
+                                  placeholder="Dress code or concierge note"
+                                  className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                                />
+                              </div>
+                              <button
+                                type="submit"
+                                style={monoStyle}
+                                className="px-5 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] cursor-pointer"
+                              >
+                                Save to Day {day.dayNumber}
+                              </button>
+                            </form>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setAddingToDay(day.dayNumber)}
+                              style={monoStyle}
+                              className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] hover:text-[#A8442A] font-semibold flex items-center gap-2 cursor-pointer"
+                            >
+                              <span>+ INSCRIBE BESPOKE RESERVATION OR NOTE</span>
+                              <span>&rarr;</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            CHAPTER II: BOOKINGS & RESERVATIONS VAULT (PERFORATED PASSES)
+           =================================================================== */}
+        {activeTab === "bookings" && (
+          <section className="space-y-12">
+            {/* Master Reference Ledger Strip */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 mb-5 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+                  >
+                    CHAPTER II &bull; CONFIRMED DOSSIER CREDENTIALS
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-0.5"
+                  >
+                    Instant Booking Reference Index
+                  </h2>
+                </div>
+                <span
+                  style={serifStyle}
+                  className="italic text-sm text-[#5C5248]"
+                >
+                  Tap any reservation cipher to copy directly to your clipboard
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 border border-[#1F1A16]/15 bg-[#F6F1E7]/60">
+                {[
+                  {
+                    label: "Outbound Aviation",
+                    code: "6I8SOP",
+                    sub: "Air Arabia • LGW → BKK",
+                  },
+                  {
+                    label: "Bangkok Residence",
+                    code: "12891938794",
+                    sub: "Shangri-La • 3 Nights",
+                  },
+                  {
+                    label: "Domestic Aviation",
+                    code: "2GXDQP",
+                    sub: "Vietjet VZ306 • BKK → HKT",
+                  },
+                  {
+                    label: "Phuket Sanctuary",
+                    code: "78165SH099776",
+                    sub: "The Pavilions • 5 Nights",
+                  },
+                  {
+                    label: "Return Aviation",
+                    code: "6LDREI",
+                    sub: "Air Arabia • HKT → LGW",
+                  },
+                ].map((ref) => (
+                  <button
+                    key={ref.code}
+                    type="button"
+                    onClick={() =>
+                      handleCopy(ref.code, `${ref.label} (${ref.code})`)
+                    }
+                    className="p-4 text-left hover:bg-[#EFE7D8] transition-colors group cursor-pointer flex flex-col justify-between"
+                  >
+                    <span
+                      style={monoStyle}
+                      className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71]"
+                    >
+                      {ref.label}
+                    </span>
+                    <div className="flex items-baseline justify-between w-full my-1.5">
+                      <span
+                        style={monoStyle}
+                        className="text-lg font-bold text-[#13382E] group-hover:text-[#A8442A]"
+                      >
+                        {ref.code}
+                      </span>
+                      <span
+                        style={monoStyle}
+                        className="text-[10px] uppercase tracking-wider text-[#8A7E71] group-hover:text-[#1F1A16]"
+                      >
+                        [COPY]
+                      </span>
+                    </div>
+                    <span className="text-xs text-[#5C5248]">{ref.sub}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Day Pill Strip */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setSelectedDayNum(null)}
-                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                  selectedDayNum === null
-                    ? "bg-amber-500/20 border-amber-400/50 text-amber-200"
-                    : "bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white"
-                }`}
-              >
-                Show All
-              </button>
-              {TRIP_DAYS.map((d) => {
-                const isSelected = selectedDayNum === d.dayNumber;
-                return (
-                  <button
-                    key={d.dayNumber}
-                    type="button"
-                    onClick={() =>
-                      setSelectedDayNum(isSelected ? null : d.dayNumber)
-                    }
-                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-medium border transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-amber-500 text-slate-950 border-amber-400 font-bold"
-                        : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-600"
-                    }`}
-                  >
-                    Day {d.dayNumber} • {d.shortDate}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Day Cards */}
-          <div className="space-y-6">
-            {filteredDays.map((day) => {
-              const customActs =
-                tripState.customActivitiesByDay[day.dayNumber] || [];
-              const allDayActivities = [
-                ...day.defaultActivities,
-                ...customActs,
-              ];
-
-              const phaseAccent =
-                day.phase === "bangkok"
-                  ? "border-amber-500/30"
-                  : day.phase === "phuket"
-                  ? "border-teal-500/30"
-                  : day.phase === "transfer"
-                  ? "border-purple-500/40"
-                  : "border-slate-800";
-
-              return (
-                <article
-                  key={day.dayNumber}
-                  className={`bg-slate-900/55 backdrop-blur-sm border ${phaseAccent} rounded-3xl p-5 sm:p-7 shadow-xl`}
+            {/* Tactile Perforated Paper Boarding Passes */}
+            <div className="space-y-6">
+              <div className="border-b border-[#1F1A16]/20 pb-2">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
                 >
-                  {/* Day Header */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-5 border-b border-slate-800/80">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-purple-500/20 text-purple-300 font-mono text-xs font-bold">
-                          DAY {day.dayNumber}
-                        </span>
-                        <span className="text-sm font-semibold text-amber-300">
-                          {day.dateLabel}
-                        </span>
-                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
-                          📍 {day.locationBadge}
-                        </span>
-                      </div>
-                      <h3 className="text-xl sm:text-2xl font-bold text-white">
-                        {day.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-400 mt-1">
-                        ✨ {day.vibe}
-                      </p>
-                    </div>
+                  SECTION 01 &bull; AVIATION MANIFEST
+                </span>
+                <h3
+                  style={serifStyle}
+                  className="text-3xl font-normal text-[#1F1A16]"
+                >
+                  Confirmed Flight Coupons
+                </h3>
+              </div>
 
-                    <div className="flex flex-col sm:items-end gap-1.5 text-xs">
-                      <span className="px-3 py-1 rounded-xl bg-slate-950/70 border border-slate-800 text-slate-300">
-                        ☀️ {day.weatherSummary}
-                      </span>
-                      {day.accommodation && (
-                        <span className="px-3 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-200 font-medium">
-                          🏨 {day.accommodation}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+              {FLIGHT_BOOKINGS.map((flight) => (
+                <div
+                  key={flight.id}
+                  className="relative bg-[#FBF8F3] border border-[#1F1A16]/25 shadow-[0_4px_20px_rgba(31,26,22,0.05)] overflow-hidden"
+                >
+                  {/* Ticket Punch-Out Semicircles on Left & Right Edges */}
+                  <div className="hidden lg:block absolute top-1/2 -left-3 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F6F1E7] border border-[#1F1A16]/25" />
+                  <div className="hidden lg:block absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-6 rounded-full bg-[#F6F1E7] border border-[#1F1A16]/25" />
 
-                  {/* Timeline Activities */}
-                  <div className="mt-5 space-y-3">
-                    {allDayActivities.map((act) => {
-                      const isDone = tripState.completedActivityIds.includes(
-                        act.id
-                      );
-                      const style = CATEGORY_STYLES[act.category];
-                      return (
-                        <div
-                          key={act.id}
-                          className={`flex items-start gap-3.5 p-4 rounded-2xl border transition-all ${
-                            isDone
-                              ? "bg-slate-950/40 border-emerald-500/30 opacity-75"
-                              : "bg-slate-950/70 border-slate-800/90 hover:border-slate-700"
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            onClick={() => toggleActivityCompleted(act.id)}
-                            aria-label={`Mark ${act.title} as ${
-                              isDone ? "incomplete" : "complete"
-                            }`}
-                            className={`mt-1 w-6 h-6 rounded-lg border flex items-center justify-center shrink-0 transition-all cursor-pointer ${
-                              isDone
-                                ? "bg-emerald-500 border-emerald-400 text-slate-950 font-bold"
-                                : "border-slate-600 hover:border-purple-400"
-                            }`}
+                  <div className="grid grid-cols-1 lg:grid-cols-12">
+                    {/* Left Main Ticket Body (9 cols) */}
+                    <div className="lg:col-span-9 p-6 sm:p-8 space-y-6">
+                      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
+                        <div>
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
                           >
-                            {isDone ? "✓" : ""}
-                          </button>
+                            {flight.direction}
+                          </span>
+                          <h4
+                            style={serifStyle}
+                            className="text-2xl sm:text-3xl font-normal text-[#1F1A16]"
+                          >
+                            {flight.airline} &mdash;{" "}
+                            <span className="italic text-[#5C5248]">
+                              {flight.fareClass}
+                            </span>
+                          </h4>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block"
+                          >
+                            VERIFIED SETTLEMENT
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-sm font-semibold text-[#13382E]"
+                          >
+                            {flight.totalPaidDisplay} &bull;{" "}
+                            {flight.paymentMethod}
+                          </span>
+                        </div>
+                      </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex flex-wrap items-center gap-2 mb-1">
-                              <span className="font-mono text-xs font-bold text-amber-300 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20">
-                                {act.time}
+                      {/* Flight Segments */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {flight.segments.map((seg) => (
+                          <div
+                            key={seg.flightNumber}
+                            className="bg-[#EFE7D8]/55 border border-[#1F1A16]/15 p-5 space-y-4"
+                          >
+                            <div
+                              style={monoStyle}
+                              className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-[#5C5248] border-b border-[#1F1A16]/10 pb-2"
+                            >
+                              <span className="font-bold text-[#1F1A16]">
+                                FLIGHT {seg.flightNumber}
                               </span>
-                              <span
-                                className={`text-[11px] px-2.5 py-0.5 rounded-full border font-medium ${style.badge}`}
-                              >
-                                {style.icon} {style.label}
-                              </span>
-                              {act.isLocked && (
-                                <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400">
-                                  Confirmed Booking
-                                </span>
-                              )}
+                              <span>DURATION {seg.duration}</span>
                             </div>
 
-                            <h4
-                              className={`font-bold text-base ${
-                                isDone
-                                  ? "line-through text-slate-400"
-                                  : "text-white"
-                              }`}
-                            >
-                              {act.title}
-                            </h4>
-
-                            {act.subtitle && (
-                              <p className="text-xs sm:text-sm text-slate-300 mt-0.5">
-                                {act.subtitle}
-                              </p>
-                            )}
-
-                            {act.notes && (
-                              <p className="text-xs text-slate-400 mt-1.5 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800/80">
-                                💡 {act.notes}
-                              </p>
-                            )}
-
-                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs">
-                              {act.location && (
-                                <span className="text-slate-400">
-                                  📍 {act.location}
-                                </span>
-                              )}
-                              {act.mapUrl && (
-                                <a
-                                  href={act.mapUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-purple-400 hover:text-purple-300 underline font-medium"
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <div
+                                  style={serifStyle}
+                                  className="text-4xl font-normal text-[#1F1A16]"
                                 >
-                                  Open in Google Maps ↗
-                                </a>
-                              )}
+                                  {seg.fromCode}
+                                </div>
+                                <div className="text-xs text-[#5C5248] mt-0.5">
+                                  {seg.fromCity}
+                                </div>
+                                <div
+                                  style={monoStyle}
+                                  className="text-xs font-semibold text-[#A8442A] mt-2"
+                                >
+                                  {seg.depTime}
+                                </div>
+                                <div
+                                  style={monoStyle}
+                                  className="text-[10px] text-[#8A7E71]"
+                                >
+                                  {seg.depDate}
+                                </div>
+                              </div>
+
+                              <div className="flex-1 flex flex-col items-center px-2">
+                                <div className="w-full border-t border-dashed border-[#1F1A16]/35 relative">
+                                  <span
+                                    style={serifStyle}
+                                    className="italic text-xs text-[#8A7E71] bg-[#EFE7D8] px-2 absolute -top-2.5 left-1/2 -translate-x-1/2"
+                                  >
+                                    non-stop
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <div
+                                  style={serifStyle}
+                                  className="text-4xl font-normal text-[#1F1A16]"
+                                >
+                                  {seg.toCode}
+                                </div>
+                                <div className="text-xs text-[#5C5248] mt-0.5">
+                                  {seg.toCity}
+                                </div>
+                                <div
+                                  style={monoStyle}
+                                  className="text-xs font-semibold text-[#13382E] mt-2"
+                                >
+                                  {seg.arrTime}
+                                </div>
+                                <div
+                                  style={monoStyle}
+                                  className="text-[10px] text-[#8A7E71]"
+                                >
+                                  {seg.arrDate}
+                                </div>
+                              </div>
                             </div>
                           </div>
+                        ))}
+                      </div>
 
-                          {!act.isLocked &&
-                            act.id.startsWith("custom-") && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeCustomActivity(day.dayNumber, act.id)
-                                }
-                                className="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 rounded-lg cursor-pointer"
-                                title="Remove custom item"
-                              >
-                                ✕
-                              </button>
-                            )}
+                      {flight.layover && (
+                        <div
+                          style={monoStyle}
+                          className="px-4 py-2.5 bg-[#F6F1E7] border-l-2 border-[#A8442A] text-xs text-[#4A4036]"
+                        >
+                          TRANSIT CONNECTION: {flight.layover}
                         </div>
-                      );
-                    })}
+                      )}
+
+                      {/* Passenger Seat & Baggage Assignments (Domestic Vietjet) */}
+                      {flight.passengerDetails && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {flight.passengerDetails.map((pax) => (
+                            <div
+                              key={pax.name}
+                              className="p-4 bg-[#F6F1E7] border border-[#1F1A16]/15 flex items-center justify-between"
+                            >
+                              <div>
+                                <div
+                                  style={serifStyle}
+                                  className="text-lg font-semibold text-[#1F1A16]"
+                                >
+                                  {pax.name}
+                                </div>
+                                <div
+                                  style={monoStyle}
+                                  className="text-[11px] text-[#5C5248] mt-0.5"
+                                >
+                                  {pax.checkedBag} &bull; {pax.cabinBag}
+                                </div>
+                              </div>
+                              <span
+                                style={monoStyle}
+                                className="px-3 py-1 bg-[#13382E] text-[#F6F1E7] text-xs font-semibold"
+                              >
+                                Seat {pax.seat}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Included Perks */}
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {flight.farePerks.map((perk) => (
+                          <span
+                            key={perk}
+                            style={monoStyle}
+                            className="text-[11px] px-3 py-1 bg-[#EFE7D8] text-[#4A4036] border border-[#1F1A16]/15"
+                          >
+                            &#10003; {perk}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Right Perforated Tear-Off Stub (3 cols) */}
+                    <div className="lg:col-span-3 border-t lg:border-t-0 lg:border-l-2 border-dashed border-[#1F1A16]/25 bg-[#EFE7D8]/70 p-6 flex flex-col justify-between space-y-6">
+                      <div className="space-y-3">
+                        <span
+                          style={monoStyle}
+                          className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71] block"
+                        >
+                          PASSENGER COUPON / PNR
+                        </span>
+                        <div
+                          style={monoStyle}
+                          className="text-3xl font-bold tracking-wider text-[#13382E] border-y border-[#1F1A16]/15 py-3"
+                        >
+                          {flight.pnr}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(flight.pnr, `PNR ${flight.pnr}`)
+                          }
+                          style={monoStyle}
+                          className="w-full py-2.5 bg-[#1F1A16] hover:bg-[#A8442A] text-[#F6F1E7] text-[11px] uppercase tracking-[0.18em] transition-colors cursor-pointer"
+                        >
+                          Copy PNR Reference
+                        </button>
+                      </div>
+
+                      <div className="space-y-2 pt-4 border-t border-[#1F1A16]/15">
+                        <a
+                          href={flight.manageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={monoStyle}
+                          className="block w-full text-center py-2.5 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-[11px] uppercase tracking-[0.16em] transition-colors"
+                        >
+                          Manage Airline Portal &nearr;
+                        </a>
+                        {flight.extraLinks.map((lnk) => (
+                          <a
+                            key={lnk.url}
+                            href={lnk.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={monoStyle}
+                            className="block w-full text-center py-1.5 text-[10px] uppercase tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
+                          >
+                            {lnk.label} &nearr;
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Luxury Hotel Stationery Dossiers */}
+            <div className="space-y-6">
+              <div className="border-b border-[#1F1A16]/20 pb-2">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                >
+                  SECTION 02 &bull; SANCTUARIES &amp; RESIDENCES
+                </span>
+                <h3
+                  style={serifStyle}
+                  className="text-3xl font-normal text-[#1F1A16]"
+                >
+                  Confirmed Five-Star Accommodations
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {HOTEL_BOOKINGS.map((hotel) => (
+                  <div
+                    key={hotel.id}
+                    className="bg-[#FBF8F3] border border-[#1F1A16]/25 p-6 sm:p-8 flex flex-col justify-between space-y-6"
+                  >
+                    <div className="space-y-5">
+                      <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/15 pb-4">
+                        <div>
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                          >
+                            {hotel.city} &bull; {hotel.nights} NIGHTS
+                          </span>
+                          <h4
+                            style={serifStyle}
+                            className="text-3xl sm:text-4xl font-normal text-[#1F1A16] mt-1"
+                          >
+                            {hotel.name}
+                          </h4>
+                          <p
+                            style={serifStyle}
+                            className="italic text-base text-[#5C5248]"
+                          >
+                            {hotel.dates}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(
+                              hotel.bookingRef,
+                              `${hotel.name} Ref (${hotel.bookingRef})`
+                            )
+                          }
+                          style={monoStyle}
+                          className="px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-bold text-[#13382E] hover:border-[#1F1A16] shrink-0 cursor-pointer"
+                        >
+                          REF: {hotel.bookingRef}
+                        </button>
+                      </div>
+
+                      {/* Architectural Spec Box */}
+                      <div className="bg-[#EFE7D8]/50 border border-[#1F1A16]/15 p-4 space-y-2">
+                        <div
+                          style={serifStyle}
+                          className="text-xl font-semibold text-[#1F1A16]"
+                        >
+                          {hotel.roomCategory}
+                        </div>
+                        {hotel.roomDescription && (
+                          <p className="text-xs text-[#4A4036] leading-relaxed">
+                            {hotel.roomDescription}
+                          </p>
+                        )}
+                        <div
+                          style={monoStyle}
+                          className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[#1F1A16]/10 text-[11px] text-[#5C5248]"
+                        >
+                          <span>CHECK-IN: {hotel.checkIn}</span>
+                          <span>CHECK-OUT: {hotel.checkOut}</span>
+                        </div>
+                      </div>
+
+                      {/* Financial Ledger Box */}
+                      <div className="border border-[#13382E]/30 bg-[#13382E]/5 p-4 space-y-2">
+                        <div className="flex items-baseline justify-between">
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.16em] text-[#5C5248]"
+                          >
+                            CONFIRMED TARIFF
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-sm font-bold text-[#13382E]"
+                          >
+                            THB {hotel.totalThb.toLocaleString()} (~£
+                            {hotel.totalGbp.toFixed(2)})
+                          </span>
+                        </div>
+                        <p className="text-xs text-[#5C5248]">
+                          {hotel.paymentNote}
+                        </p>
+
+                        {hotel.balanceDueThb > 0 && (
+                          <label className="flex items-center gap-2.5 pt-2.5 border-t border-[#13382E]/20 text-xs text-[#1F1A16] font-medium cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={tripState.pavilionsBalancePaid}
+                              onChange={() =>
+                                updateTripState((prev) => ({
+                                  ...prev,
+                                  pavilionsBalancePaid:
+                                    !prev.pavilionsBalancePaid,
+                                }))
+                              }
+                              className="w-4 h-4 accent-[#13382E]"
+                            />
+                            <span>
+                              {tripState.pavilionsBalancePaid
+                                ? "✓ Remaining THB 1,190.00 Airport Transfer Balance Settled"
+                                : "Mark THB 1,190.00 (~£26.75) Airport Transfer Balance as Settled"}
+                            </span>
+                          </label>
+                        )}
+                      </div>
+
+                      {/* Property Highlights */}
+                      <ul className="space-y-2 text-xs sm:text-sm text-[#4A4036]">
+                        {hotel.highlights.map((hl) => (
+                          <li key={hl} className="flex items-start gap-2.5">
+                            <span className="text-[#9E7B3B] mt-0.5">
+                              &diams;
+                            </span>
+                            <span>{hl}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Coordinates & Chauffeur Copy Actions */}
+                    <div className="pt-4 border-t border-[#1F1A16]/15 space-y-3">
+                      <div className="text-xs text-[#5C5248]">
+                        {hotel.address}{" "}
+                        <span
+                          style={monoStyle}
+                          className="text-[11px] text-[#8A7E71] block mt-0.5"
+                        >
+                          GEO: {hotel.coordinates}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2.5">
+                        <a
+                          href={hotel.mapUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={monoStyle}
+                          className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.15em]"
+                        >
+                          Open Google Maps &nearr;
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopy(hotel.address, `${hotel.name} Address`)
+                          }
+                          style={monoStyle}
+                          className="px-4 py-2 border border-[#1F1A16]/30 hover:border-[#1F1A16] text-[#1F1A16] text-[11px] uppercase tracking-[0.15em] cursor-pointer"
+                        >
+                          Copy Chauffeur / Grab Address
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            CHAPTER III: ENTRY PROTOCOL, BANKING & DIGITAL CONCIERGE
+           =================================================================== */}
+        {activeTab === "prep" && (
+          <section className="space-y-10">
+            {/* Pre-Trip Protocol Checklist */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+                  >
+                    CHAPTER III &bull; ENTRY &amp; IMMIGRATION PROTOCOL
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl sm:text-4xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    Pre-Departure Clearance Ledger
+                  </h2>
+                </div>
+                <div className="flex gap-1.5">
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "both", label: "Joint" },
+                    { id: "shaq", label: "Shaquille" },
+                    { id: "naana", label: "Naana" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        setPrepAssigneeFilter(
+                          f.id as "all" | "both" | "shaq" | "naana"
+                        )
+                      }
+                      style={monoStyle}
+                      className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        prepAssigneeFilter === f.id
+                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="divide-y divide-[#1F1A16]/15">
+                {PREP_CHECKLIST.filter(
+                  (item) =>
+                    prepAssigneeFilter === "all" ||
+                    item.assignee === prepAssigneeFilter
+                ).map((item) => {
+                  const isDone = tripState.completedPrepIds.includes(item.id);
+                  return (
+                    <label
+                      key={item.id}
+                      className={`py-4 first:pt-0 last:pb-0 flex items-start gap-4 cursor-pointer transition-opacity ${
+                        isDone ? "opacity-60" : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isDone}
+                        onChange={() => togglePrepItem(item.id)}
+                        className="mt-1.5 w-4 h-4 accent-[#13382E]"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2.5">
+                          <span
+                            style={serifStyle}
+                            className={`text-xl font-medium ${
+                              isDone
+                                ? "line-through text-[#8A7E71]"
+                                : "text-[#1F1A16]"
+                            }`}
+                          >
+                            {item.title}
+                          </span>
+                          {item.urgentTag && (
+                            <span
+                              style={monoStyle}
+                              className="text-[10px] uppercase tracking-[0.14em] px-2 py-0.5 bg-[#A8442A]/12 text-[#A8442A] border border-[#A8442A]/30"
+                            >
+                              {item.urgentTag}
+                            </span>
+                          )}
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                          >
+                            [{item.assignee}]
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#5C5248]">
+                          {item.detail}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Framed Editorial Callouts: ATM Golden Rule & SuperRich Exchange */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-[#EFE7D8] border-2 border-[#1F1A16] p-6 space-y-3">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                >
+                  MONETARY ADVISORY I &bull; THAI ATMS
+                </span>
+                <h3
+                  style={serifStyle}
+                  className="text-2xl sm:text-3xl font-normal text-[#1F1A16]"
+                >
+                  Always Choose “Without Conversion”
+                </h3>
+                <p className="text-xs sm:text-sm text-[#4A4036] leading-relaxed">
+                  Thai ATMs levy a mandatory{" "}
+                  <strong>220 THB flat fee (~£4.94)</strong> per foreign card
+                  withdrawal. Always decline the machine&apos;s dynamic currency
+                  conversion and select{" "}
+                  <strong className="underline text-[#13382E]">
+                    &ldquo;Continue Without Conversion&rdquo;
+                  </strong>{" "}
+                  so your zero-FX UK bank (Monzo, Starling, Revolut, Chase)
+                  sets the interbank exchange rate.
+                </p>
+              </div>
+
+              <div className="bg-[#FBF8F3] border border-[#1F1A16]/25 p-6 space-y-3">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#13382E] font-semibold"
+                >
+                  MONETARY ADVISORY II &bull; CURRENCY DESK
+                </span>
+                <h3
+                  style={serifStyle}
+                  className="text-2xl sm:text-3xl font-normal text-[#1F1A16]"
+                >
+                  SuperRich (Orange or Green Booths)
+                </h3>
+                <p className="text-xs sm:text-sm text-[#4A4036] leading-relaxed">
+                  Thailand remains cash-essential for street markets, longtail
+                  boats, tipping, and beach kiosks. Exchange crisp UK £20/£50
+                  sterling notes at <strong>SuperRich</strong> in the{" "}
+                  <strong>
+                    basement (Floor B) of Suvarnabhumi Airport (adjacent to the
+                    Airport Rail Link)
+                  </strong>{" "}
+                  or major BTS stations.
+                </p>
+              </div>
+            </div>
+
+            {/* Digital Concierge & Essential Apps Directory */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#8A7E71]"
+                  >
+                    DIGITAL UTILITIES DIRECTORY
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-0.5"
+                  >
+                    Essential Applications to Configure Before Departure
+                  </h2>
+                </div>
+                <span
+                  style={monoStyle}
+                  className="text-xs font-semibold text-[#13382E]"
+                >
+                  {appsProgress.done} OF {appsProgress.total} CONFIGURED
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {ESSENTIAL_APPS.map((app) => {
+                  const installed = tripState.installedAppIds.includes(app.id);
+                  return (
+                    <label
+                      key={app.id}
+                      className={`p-5 border cursor-pointer transition-colors flex items-start gap-4 ${
+                        installed
+                          ? "bg-[#13382E]/6 border-[#13382E]/35"
+                          : "bg-[#F6F1E7]/70 border-[#1F1A16]/15 hover:border-[#1F1A16]/40"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={installed}
+                        onChange={() => toggleAppInstalled(app.id)}
+                        className="mt-1.5 w-4 h-4 accent-[#13382E]"
+                      />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-baseline justify-between gap-2">
+                          <span
+                            style={serifStyle}
+                            className="text-xl font-semibold text-[#1F1A16]"
+                          >
+                            {app.name}
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-[0.14em] px-2 py-0.5 bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/15"
+                          >
+                            {app.badge}
+                          </span>
+                        </div>
+                        <div
+                          style={monoStyle}
+                          className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A]"
+                        >
+                          {app.category}
+                        </div>
+                        <p className="text-xs text-[#4A4036] leading-relaxed">
+                          {app.description}
+                        </p>
+                        <p className="text-xs text-[#5C5248] italic pt-1 border-t border-[#1F1A16]/10">
+                          Note: {app.proTip}
+                        </p>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            CHAPTER IV: THE WARDROBE, ETIQUETTE & TRUNKS
+           =================================================================== */}
+        {activeTab === "packing" && (
+          <section className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Climate Monograph */}
+              <div className="lg:col-span-5 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 space-y-4">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                >
+                  METEOROLOGICAL PROFILE &bull; FEBRUARY
+                </span>
+                <h2
+                  style={serifStyle}
+                  className="text-3xl font-normal text-[#1F1A16]"
+                >
+                  Dry Season Sunshine
+                </h2>
+                <p className="text-xs sm:text-sm text-[#5C5248] leading-relaxed">
+                  February represents Thailand&apos;s dry, calm zenith &mdash;
+                  translucent seas and uninterrupted sunshine across both legs.
+                </p>
+
+                <div className="divide-y divide-[#1F1A16]/15 border-t border-[#1F1A16]/15 pt-2">
+                  <div className="py-3">
+                    <div className="flex justify-between items-baseline">
+                      <span
+                        style={serifStyle}
+                        className="text-xl font-semibold text-[#1F1A16]"
+                      >
+                        Bangkok (05&ndash;08 Feb)
+                      </span>
+                      <span
+                        style={monoStyle}
+                        className="text-xs font-semibold text-[#A8442A]"
+                      >
+                        32°C&ndash;34°C / 24°C Night
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#5C5248] mt-1">
+                      Tropical urban warmth. Favour unlined linen, lightweight
+                      cotton, and bamboo weaves.
+                    </p>
                   </div>
 
-                  {/* Quick-Add Curated Ideas for this Day */}
-                  {day.quickSuggestions && day.quickSuggestions.length > 0 && (
-                    <div className="mt-5 pt-4 border-t border-slate-800/60">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
-                        ✨ Curated Ideas for {day.shortDate} (Click to Add to
-                        Your Schedule):
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {day.quickSuggestions.map((sug, idx) => {
-                          const alreadyAdded = allDayActivities.some(
-                            (a) => a.title === sug.title
+                  <div className="py-3">
+                    <div className="flex justify-between items-baseline">
+                      <span
+                        style={serifStyle}
+                        className="text-xl font-semibold text-[#1F1A16]"
+                      >
+                        Phuket (08&ndash;13 Feb)
+                      </span>
+                      <span
+                        style={monoStyle}
+                        className="text-xs font-semibold text-[#13382E]"
+                      >
+                        31°C&ndash;33°C / 25°C Night
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#5C5248] mt-1">
+                      Coastal trade winds.{" "}
+                      <strong className="text-[#A8442A]">
+                        UV Index 10&ndash;11 (Extreme)
+                      </strong>{" "}
+                      &mdash; SPF 50+ and polarized lenses are mandatory.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sartorial & Dress Code Lookbook */}
+              <div className="lg:col-span-7 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 space-y-5">
+                <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#1F1A16]/15 pb-4">
+                  <div>
+                    <span
+                      style={monoStyle}
+                      className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                    >
+                      SARTORIAL ETIQUETTE
+                    </span>
+                    <h2
+                      style={serifStyle}
+                      className="text-3xl font-normal text-[#1F1A16]"
+                    >
+                      Dress Code Lookbook
+                    </h2>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: "temple", label: "Temple Rules" },
+                      { id: "rooftop", label: "Rooftop & Fine Dining" },
+                      { id: "daytime", label: "Daytime City" },
+                      { id: "beach", label: "Phuket Resort" },
+                    ].map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() =>
+                          setDressCodeTab(
+                            t.id as "temple" | "rooftop" | "daytime" | "beach"
+                          )
+                        }
+                        style={monoStyle}
+                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                          dressCodeTab === t.id
+                            ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                            : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {dressCodeTab === "temple" && (
+                  <div className="p-5 bg-[#EFE7D8]/70 border-l-2 border-[#A8442A] space-y-2.5 text-xs sm:text-sm">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      Strictly Enforced at Grand Palace, Wat Pho &amp; Wat Arun
+                    </div>
+                    <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
+                      <li>
+                        <strong>
+                          Shoulders and knees must be completely covered
+                        </strong>{" "}
+                        for both gentlemen and ladies.
+                      </li>
+                      <li>
+                        <strong>Prohibited:</strong> Sleeveless tops, tank tops,
+                        crop tops, sheer fabrics, shorts, or tight athletic
+                        leggings.
+                      </li>
+                      <li>
+                        <strong>Daypack Essential:</strong> Carry a lightweight
+                        linen overshirt or sarong in your daypack.
+                      </li>
+                      <li>
+                        <strong>Footwear:</strong> Slip-on loafers or sandals
+                        (footwear is removed before entering sacred halls).
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {dressCodeTab === "rooftop" && (
+                  <div className="p-5 bg-[#EFE7D8]/70 border-l-2 border-[#13382E] space-y-2.5 text-xs sm:text-sm">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      Smart Casual for Bangkok Sky-Bars (Lebua, Vertigo,
+                      Mahanakhon) &amp; Fine Dining
+                    </div>
+                    <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
+                      <li>
+                        <strong>Shaquille (Gentlemen):</strong> Collared linen
+                        shirts, tailored lightweight chinos/trousers, and{" "}
+                        <strong className="text-[#1F1A16] underline">
+                          closed-toe loafers or clean smart sneakers
+                        </strong>{" "}
+                        (sky-bars strictly refuse flip-flops, athletic shorts,
+                        and sleeveless vests).
+                      </li>
+                      <li>
+                        <strong>Naana (Ladies):</strong> Maxi/midi evening
+                        dresses, tailored jumpsuits, or elevated resort
+                        separates.
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {dressCodeTab === "daytime" && (
+                  <div className="p-5 bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] space-y-2.5 text-xs sm:text-sm">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      Bangkok Riverfront &amp; Daytime Sightseeing
+                    </div>
+                    <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
+                      <li>
+                        Prioritize breathable natural fibres: linen, fine
+                        cotton, and bamboo.
+                      </li>
+                      <li>
+                        Avoid heavy denim or unbreathable synthetics in 34°C
+                        humidity.
+                      </li>
+                      <li>
+                        Keep pocket tissues, wet wipes, and Dioralyte
+                        electrolyte sachets in your day bag.
+                      </li>
+                    </ul>
+                  </div>
+                )}
+
+                {dressCodeTab === "beach" && (
+                  <div className="p-5 bg-[#EFE7D8]/70 border-l-2 border-[#13382E] space-y-2.5 text-xs sm:text-sm">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      The Pavilions Phuket, Layan Beach &amp; Bang Tao Clubs
+                    </div>
+                    <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
+                      <li>
+                        Multiple swimwear rotations, linen beach cover-ups,
+                        polarized UV sunglasses, and wide-brimmed sunhats.
+                      </li>
+                      <li>
+                        Reef-safe SPF 50+ sunscreen brought from London (resort
+                        sun care carries a steep premium).
+                      </li>
+                      <li>
+                        10L dry bag and waterproof phone pouch for Banana Beach
+                        and longtail boat charters.
+                      </li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* The Trunk Ledger (Categorized Packing List) */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                  >
+                    BAGGAGE ALLOWANCE: AIR ARABIA 20KG + 10KG &bull; VIETJET
+                    25KG (SHAQ) / 30KG (NAANA) + 7KG
+                  </span>
+                  <h3
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    The Trunk Ledger ({packingProgress.done}/
+                    {packingProgress.total} Packed)
+                  </h3>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "both", label: "Shared" },
+                    { id: "shaq", label: "Shaquille" },
+                    { id: "naana", label: "Naana" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        setPackingOwnerFilter(
+                          f.id as "all" | "both" | "shaq" | "naana"
+                        )
+                      }
+                      style={monoStyle}
+                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        packingOwnerFilter === f.id
+                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setShowUnpackedOnly(!showUnpackedOnly)}
+                    style={monoStyle}
+                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                      showUnpackedOnly
+                        ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
+                        : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                    }`}
+                  >
+                    {showUnpackedOnly ? "Showing Unpacked" : "Unpacked Only"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Add Custom Packing Item Form */}
+              <form
+                onSubmit={handleAddPackingSubmit}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-[#EFE7D8]/60 p-4 border border-[#1F1A16]/15"
+              >
+                <input
+                  type="text"
+                  value={newPackLabel}
+                  onChange={(e) => setNewPackLabel(e.target.value)}
+                  placeholder="Add a custom item to pack (e.g. 35mm film camera, linen evening shawl)..."
+                  className="sm:col-span-6 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs sm:text-sm text-[#1F1A16]"
+                />
+                <select
+                  value={newPackCategory}
+                  onChange={(e) =>
+                    setNewPackCategory(
+                      e.target.value as PackingItem["category"]
+                    )
+                  }
+                  className="sm:col-span-3 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                >
+                  <option value="Daytime & Temple Wear">
+                    Daytime &amp; Temple Wear
+                  </option>
+                  <option value="Evening & Fine Dining">
+                    Evening &amp; Fine Dining
+                  </option>
+                  <option value="Resort & Beach (Phuket)">
+                    Resort &amp; Beach (Phuket)
+                  </option>
+                  <option value="Health & Pharmacy">
+                    Health &amp; Pharmacy
+                  </option>
+                  <option value="Toiletries & Sun Care">
+                    Toiletries &amp; Sun Care
+                  </option>
+                  <option value="Electronics & Power">
+                    Electronics &amp; Power
+                  </option>
+                  <option value="Carry-On & Documents">
+                    Carry-On &amp; Documents
+                  </option>
+                </select>
+                <select
+                  value={newPackForWho}
+                  onChange={(e) =>
+                    setNewPackForWho(e.target.value as PackingItem["forWho"])
+                  }
+                  className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                >
+                  <option value="both">Shared</option>
+                  <option value="shaq">Shaquille</option>
+                  <option value="naana">Naana</option>
+                </select>
+                <button
+                  type="submit"
+                  style={monoStyle}
+                  className="sm:col-span-1 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
+                >
+                  + Add
+                </button>
+              </form>
+
+              {/* Categories Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(
+                  [
+                    "Daytime & Temple Wear",
+                    "Evening & Fine Dining",
+                    "Resort & Beach (Phuket)",
+                    "Health & Pharmacy",
+                    "Toiletries & Sun Care",
+                    "Electronics & Power",
+                    "Carry-On & Documents",
+                  ] as PackingItem["category"][]
+                ).map((cat) => {
+                  const items = allPackingItems.filter((item) => {
+                    if (item.category !== cat) return false;
+                    if (
+                      packingOwnerFilter !== "all" &&
+                      item.forWho !== packingOwnerFilter
+                    )
+                      return false;
+                    if (
+                      showUnpackedOnly &&
+                      tripState.packedItemIds.includes(item.id)
+                    )
+                      return false;
+                    return true;
+                  });
+
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div
+                      key={cat}
+                      className="bg-[#F6F1E7]/70 border border-[#1F1A16]/15 p-5 space-y-3"
+                    >
+                      <h4
+                        style={serifStyle}
+                        className="text-xl font-semibold text-[#1F1A16] border-b border-[#1F1A16]/15 pb-2"
+                      >
+                        {cat}
+                      </h4>
+                      <div className="divide-y divide-[#1F1A16]/10">
+                        {items.map((item) => {
+                          const isPacked = tripState.packedItemIds.includes(
+                            item.id
                           );
                           return (
-                            <button
-                              key={idx}
-                              type="button"
-                              disabled={alreadyAdded}
-                              onClick={() =>
-                                addCustomActivity(day.dayNumber, {
-                                  time: sug.time,
-                                  title: sug.title,
-                                  category: sug.category,
-                                  location: sug.location,
-                                  notes: sug.notes,
-                                })
-                              }
-                              className={`text-xs px-3 py-2 rounded-xl border text-left transition-all ${
-                                alreadyAdded
-                                  ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-400 cursor-default"
-                                  : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-purple-500/50 hover:text-white cursor-pointer"
+                            <label
+                              key={item.id}
+                              className={`py-2.5 first:pt-0 last:pb-0 flex items-start gap-3 cursor-pointer ${
+                                isPacked ? "opacity-55" : ""
                               }`}
                             >
-                              {alreadyAdded ? "✓ Added: " : "+ "}
-                              <span className="font-semibold">
-                                {sug.time}
-                              </span>{" "}
-                              — {sug.title}
-                            </button>
+                              <input
+                                type="checkbox"
+                                checked={isPacked}
+                                onChange={() => togglePackingItem(item.id)}
+                                className="mt-1 w-4 h-4 accent-[#13382E]"
+                              />
+                              <div className="flex-1 text-xs">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span
+                                    className={`font-semibold text-sm ${
+                                      isPacked
+                                        ? "line-through text-[#8A7E71]"
+                                        : "text-[#1F1A16]"
+                                    }`}
+                                  >
+                                    {item.label}
+                                  </span>
+                                  {item.forWho !== "both" && (
+                                    <span
+                                      style={monoStyle}
+                                      className="px-1.5 py-0.5 bg-[#EFE7D8] border border-[#1F1A16]/15 text-[#A8442A] text-[10px] uppercase tracking-wider"
+                                    >
+                                      {item.forWho}
+                                    </span>
+                                  )}
+                                </div>
+                                {item.note && (
+                                  <p className="text-[#5C5248] mt-0.5">
+                                    {item.note}
+                                  </p>
+                                )}
+                              </div>
+                            </label>
                           );
                         })}
                       </div>
                     </div>
-                  )}
-
-                  {/* Add Custom Plan Button & Form */}
-                  <div className="mt-4 pt-3 border-t border-slate-800/50 flex flex-col gap-3">
-                    {addingToDay === day.dayNumber ? (
-                      <form
-                        onSubmit={(e) =>
-                          handleAddActivitySubmit(e, day.dayNumber)
-                        }
-                        className="bg-slate-950/90 border border-purple-500/40 rounded-2xl p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-sm font-bold text-purple-300">
-                            + Add Custom Plan for {day.shortDate}
-                          </h4>
-                          <button
-                            type="button"
-                            onClick={() => setAddingToDay(null)}
-                            className="text-xs text-slate-400 hover:text-white"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <input
-                            type="text"
-                            value={newActTime}
-                            onChange={(e) => setNewActTime(e.target.value)}
-                            placeholder="Time (e.g. 19:30 ICT)"
-                            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                          />
-                          <input
-                            type="text"
-                            required
-                            value={newActTitle}
-                            onChange={(e) => setNewActTitle(e.target.value)}
-                            placeholder="Activity / Restaurant / Surprise..."
-                            className="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <select
-                            value={newActCategory}
-                            onChange={(e) =>
-                              setNewActCategory(
-                                e.target.value as ItineraryActivity["category"]
-                              )
-                            }
-                            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                          >
-                            <option value="romance">
-                              💖 Birthday &amp; Romance
-                            </option>
-                            <option value="dining">🍽️ Dining &amp; Bars</option>
-                            <option value="beach">🏖️ Beach &amp; Boats</option>
-                            <option value="spa">💆🏽‍♀️ Spa &amp; Pool</option>
-                            <option value="culture">
-                              🛕 Culture &amp; Temples
-                            </option>
-                            <option value="transit">🚕 Transit</option>
-                            <option value="custom">✨ Custom Plan</option>
-                          </select>
-                          <input
-                            type="text"
-                            value={newActLocation}
-                            onChange={(e) => setNewActLocation(e.target.value)}
-                            placeholder="Location (optional)"
-                            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                          />
-                          <input
-                            type="text"
-                            value={newActNotes}
-                            onChange={(e) => setNewActNotes(e.target.value)}
-                            placeholder="Notes / Dress code / Reservation ref"
-                            className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white"
-                          />
-                        </div>
-                        <button
-                          type="submit"
-                          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold cursor-pointer"
-                        >
-                          Save to Day {day.dayNumber}
-                        </button>
-                      </form>
-                    ) : (
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setAddingToDay(day.dayNumber)}
-                          className="text-xs font-semibold text-purple-300 hover:text-purple-200 px-3.5 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 transition-all cursor-pointer"
-                        >
-                          + Add Custom Activity / Reservation to {day.shortDate}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          VIEW 2: BOOKINGS & RESERVATIONS VAULT
-         ===================================================================== */}
-      {activeTab === "bookings" && (
-        <section className="space-y-8">
-          {/* Quick PNR Copy Strip */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-5">
-            <h2 className="text-lg font-bold text-white mb-1">
-              🔑 Instant Booking Reference Vault (Tap any code to copy)
-            </h2>
-            <p className="text-xs text-slate-400 mb-4">
-              All 5 core trip bookings are confirmed and verified. Tap a PNR or
-              hotel confirmation number to copy it to your clipboard.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-              {[
-                {
-                  label: "Outbound Air Arabia",
-                  code: "6I8SOP",
-                  sub: "LGW → SHJ → BKK",
-                },
-                {
-                  label: "Shangri-La Bangkok",
-                  code: "12891938794",
-                  sub: "5–8 Feb (3 Nights)",
-                },
-                {
-                  label: "Thai Vietjet VZ306",
-                  code: "2GXDQP",
-                  sub: "BKK → HKT (8 Feb)",
-                },
-                {
-                  label: "The Pavilions Phuket",
-                  code: "78165SH099776",
-                  sub: "8–13 Feb (5 Nights)",
-                },
-                {
-                  label: "Return Air Arabia",
-                  code: "6LDREI",
-                  sub: "HKT → SHJ → LGW",
-                },
-              ].map((ref) => (
-                <button
-                  key={ref.code}
-                  type="button"
-                  onClick={() => handleCopy(ref.code, `${ref.label} (${ref.code})`)}
-                  className="flex flex-col items-start p-3.5 rounded-xl bg-slate-950/90 border border-slate-800 hover:border-amber-400/50 transition-all text-left group cursor-pointer"
-                >
-                  <span className="text-[11px] text-slate-400">
-                    {ref.label}
-                  </span>
-                  <div className="flex items-center justify-between w-full mt-1">
-                    <span className="font-mono text-base font-extrabold text-amber-300 group-hover:text-amber-200">
-                      {ref.code}
-                    </span>
-                    <span className="text-xs text-slate-500 group-hover:text-amber-300">
-                      📋 Copy
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-slate-500 mt-0.5">
-                    {ref.sub}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Confirmed Flight Boarding Cards */}
-          <div className="space-y-5">
-            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-              <span>✈️</span> Confirmed Flight Segments
-            </h3>
-
-            {FLIGHT_BOOKINGS.map((flight) => (
-              <div
-                key={flight.id}
-                className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-5"
-              >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="px-3 py-0.5 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-bold">
-                        {flight.direction}
-                      </span>
-                      <span className="text-sm font-semibold text-slate-300">
-                        {flight.airline} • {flight.fareClass}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 mt-1">
-                      <span>
-                        Paid:{" "}
-                        <strong className="text-emerald-300">
-                          {flight.totalPaidDisplay}
-                        </strong>{" "}
-                        ({flight.paymentMethod})
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleCopy(flight.pnr, `PNR ${flight.pnr}`)
-                      }
-                      className="px-4 py-2 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 font-mono text-sm font-bold hover:bg-amber-500/25 cursor-pointer"
-                    >
-                      PNR: {flight.pnr} 📋
-                    </button>
-                    <a
-                      href={flight.manageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all"
-                    >
-                      Manage Booking ↗
-                    </a>
-                    {flight.extraLinks.map((lnk) => (
-                      <a
-                        key={lnk.url}
-                        href={lnk.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium"
-                      >
-                        {lnk.label} ↗
-                      </a>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Flight Segments */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {flight.segments.map((seg) => (
-                    <div
-                      key={seg.flightNumber}
-                      className="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-4 flex flex-col justify-between"
-                    >
-                      <div className="flex items-center justify-between text-xs text-slate-400 mb-3">
-                        <span className="font-mono font-bold text-sky-300 bg-sky-500/10 px-2.5 py-0.5 rounded border border-sky-500/20">
-                          Flight {seg.flightNumber}
-                        </span>
-                        <span>Duration: {seg.duration}</span>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-3 my-2">
-                        <div>
-                          <div className="text-2xl font-extrabold text-white">
-                            {seg.fromCode}
-                          </div>
-                          <div className="text-xs text-slate-400">
-                            {seg.fromCity}
-                          </div>
-                          <div className="text-sm font-bold text-amber-300 mt-1">
-                            {seg.depTime}
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            {seg.depDate}
-                          </div>
-                        </div>
-
-                        <div className="flex-1 flex flex-col items-center px-2">
-                          <div className="w-full h-[2px] bg-gradient-to-r from-sky-500/30 via-amber-400/60 to-sky-500/30 relative">
-                            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-xs">
-                              ✈️
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <div className="text-2xl font-extrabold text-white">
-                            {seg.toCode}
-                          </div>
-                          <div className="text-xs text-slate-400">
-                            {seg.toCity}
-                          </div>
-                          <div className="text-sm font-bold text-emerald-300 mt-1">
-                            {seg.arrTime}
-                          </div>
-                          <div className="text-[11px] text-slate-500">
-                            {seg.arrDate}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {flight.layover && (
-                  <div className="px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-200 text-xs font-medium">
-                    ⏱️ <strong>Transit Layover:</strong> {flight.layover}
-                  </div>
-                )}
-
-                {/* Domestic Seat & Baggage Breakdown */}
-                {flight.passengerDetails && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {flight.passengerDetails.map((pax) => (
-                      <div
-                        key={pax.name}
-                        className="p-3.5 rounded-xl bg-slate-950/60 border border-purple-500/30 flex items-center justify-between"
-                      >
-                        <div>
-                          <div className="text-sm font-bold text-white">
-                            👤 {pax.name}
-                          </div>
-                          <div className="text-xs text-slate-400 mt-0.5">
-                            🧳 {pax.checkedBag} + {pax.cabinBag}
-                          </div>
-                        </div>
-                        <span className="px-3 py-1 rounded-lg bg-purple-500/20 text-purple-200 font-mono text-xs font-bold">
-                          Seat {pax.seat}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Included Perks */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {flight.farePerks.map((perk) => (
-                    <span
-                      key={perk}
-                      className="text-xs px-3 py-1 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700"
-                    >
-                      ✓ {perk}
-                    </span>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            </div>
+          </section>
+        )}
 
-          {/* Luxury Accommodations Vault */}
-          <div className="space-y-5">
-            <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-              <span>🏨</span> Confirmed Luxury Accommodations
-            </h3>
+        {/* ===================================================================
+            CHAPTER V: FIELD DISPATCHES & CONSULAR SOS
+           =================================================================== */}
+        {activeTab === "guide" && (
+          <section className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Bangkok Field Dispatch */}
+              <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-5">
+                <div className="border-b border-[#1F1A16]/15 pb-3">
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                  >
+                    DISPATCH 01 &bull; BANGKOK (05&ndash;08 FEB)
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    Suvarnabhumi Arrival &amp; River Transit
+                  </h2>
+                </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {HOTEL_BOOKINGS.map((hotel) => (
-                <div
-                  key={hotel.id}
-                  className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between space-y-5"
-                >
-                  <div className="space-y-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                          {hotel.city} • {hotel.nights} Nights
-                        </span>
-                        <h4 className="text-2xl font-extrabold text-white mt-0.5">
-                          {hotel.name}
-                        </h4>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {hotel.dates}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopy(
-                            hotel.bookingRef,
-                            `${hotel.name} Ref (${hotel.bookingRef})`
-                          )
-                        }
-                        className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-200 font-mono text-xs font-bold hover:bg-amber-500/25 shrink-0 cursor-pointer"
-                      >
-                        Ref: {hotel.bookingRef} 📋
-                      </button>
+                <div className="space-y-4 text-xs sm:text-sm text-[#4A4036]">
+                  <div className="p-4 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 space-y-2">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      I. Arrival Protocol at BKK (Fri 05 Feb @ 17:05)
                     </div>
+                    <ol className="list-decimal pl-5 space-y-1.5">
+                      <li>
+                        Clear immigration (present saved TDAC QR code) and
+                        reclaim checked luggage.
+                      </li>
+                      <li>
+                        <strong>Sterling Exchange:</strong> Descend to{" "}
+                        <strong>Floor B (Airport Rail Link level)</strong> for
+                        SuperRich Orange/Green booths.
+                      </li>
+                      <li>
+                        <strong>Chauffeur / Grab:</strong> Proceed to{" "}
+                        <strong>Level 1 (Ground)</strong> for metered public
+                        taxis, or <strong>Level 4, Door 4</strong> for Grab
+                        pickup.
+                      </li>
+                      <li>
+                        Transfer to Shangri-La Bangkok takes{" "}
+                        <strong>~40&ndash;50 mins via Sirat Expressway</strong>{" "}
+                        (~400&ndash;500 THB + expressway tolls).
+                      </li>
+                    </ol>
+                  </div>
 
-                    <div className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-1.5 text-xs">
-                      <div className="text-sm font-bold text-purple-300">
-                        🛏️ {hotel.roomCategory}
-                      </div>
-                      {hotel.roomDescription && (
-                        <p className="text-slate-300">{hotel.roomDescription}</p>
-                      )}
-                      <div className="flex flex-wrap gap-4 pt-1 text-slate-400">
-                        <span>
-                          <strong>Check-in:</strong> {hotel.checkIn}
-                        </span>
-                        <span>
-                          <strong>Check-out:</strong> {hotel.checkOut}
-                        </span>
-                      </div>
+                  <div className="p-4 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 space-y-2">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      II. Navigating from Shangri-La Bangkok
                     </div>
-
-                    {/* Financials & Balance Tracker */}
-                    <div className="p-3.5 rounded-2xl bg-emerald-950/20 border border-emerald-500/25 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-slate-300 font-medium">
-                          Total Confirmed Charges:
-                        </span>
-                        <span className="text-sm font-extrabold text-emerald-300">
-                          THB {hotel.totalThb.toLocaleString()} (~£
-                          {hotel.totalGbp.toFixed(2)})
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400">
-                        {hotel.paymentNote}
-                      </p>
-
-                      {hotel.balanceDueThb > 0 && (
-                        <label className="flex items-center gap-2.5 pt-2 border-t border-emerald-500/20 text-xs text-amber-200 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={tripState.pavilionsBalancePaid}
-                            onChange={() =>
-                              setTripState((prev) => ({
-                                ...prev,
-                                pavilionsBalancePaid: !prev.pavilionsBalancePaid,
-                              }))
-                            }
-                            className="rounded border-slate-600 text-emerald-500 focus:ring-emerald-500"
-                          />
-                          <span>
-                            {tripState.pavilionsBalancePaid
-                              ? "✓ Remaining THB 1,190.00 Airport Transfer Balance Settled!"
-                              : "Mark THB 1,190.00 (~£26.75) Airport Transfer Balance as Paid"}
-                          </span>
-                        </label>
-                      )}
-                    </div>
-
-                    {/* Property Highlights */}
-                    <ul className="space-y-1.5 text-xs text-slate-300">
-                      {hotel.highlights.map((hl) => (
-                        <li key={hl} className="flex items-start gap-2">
-                          <span className="text-amber-400 mt-0.5">✦</span>
-                          <span>{hl}</span>
-                        </li>
-                      ))}
+                    <ul className="list-disc pl-5 space-y-1.5">
+                      <li>
+                        <strong>BTS Skytrain:</strong> Direct 2-minute walk to{" "}
+                        <strong>Saphan Taksin Station</strong> (Silom Line) for
+                        Siam, Silom, and Sukhumvit.
+                      </li>
+                      <li>
+                        <strong>Chao Phraya Express Boats:</strong> Embark at
+                        adjacent <strong>Sathorn Central Pier</strong> for
+                        scenic river hops north to Wat Arun, Wat Pho, and the
+                        Grand Palace.
+                      </li>
+                      <li>
+                        <strong>ICONSIAM &amp; Asiatique:</strong> Board the{" "}
+                        <strong>complimentary Shangri-La shuttle boat</strong>{" "}
+                        from Sathorn Pier directly to ICONSIAM &amp; SookSiam.
+                      </li>
                     </ul>
                   </div>
-
-                  {/* Address & Map Actions */}
-                  <div className="pt-4 border-t border-slate-800 space-y-3">
-                    <div className="text-xs text-slate-400">
-                      📍 {hotel.address}{" "}
-                      <span className="font-mono text-[11px] text-slate-500">
-                        ({hotel.coordinates})
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href={hotel.mapUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
-                      >
-                        Open in Google Maps ↗
-                      </a>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopy(hotel.address, `${hotel.name} Address`)
-                        }
-                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium cursor-pointer"
-                      >
-                        Copy Address for Grab/Taxi 📋
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          VIEW 3: PRE-TRIP PREPARATION, BANKING & ESSENTIAL APPS
-         ===================================================================== */}
-      {activeTab === "prep" && (
-        <section className="space-y-8">
-          {/* Pre-Trip Entry & Immigration Checklist */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  🛂 Pre-Trip Preparation &amp; Entry Checklist
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  UK passport holders qualify for the Thailand tourist visa
-                  exemption. Complete these items before departure on 4 Feb
-                  2027.
-                </p>
-              </div>
-              <div className="flex gap-1.5">
-                {[
-                  { id: "all", label: "All" },
-                  { id: "both", label: "Shared" },
-                  { id: "shaq", label: "Shaquille" },
-                  { id: "naana", label: "Naana" },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() =>
-                      setPrepAssigneeFilter(
-                        f.id as "all" | "both" | "shaq" | "naana"
-                      )
-                    }
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                      prepAssigneeFilter === f.id
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {PREP_CHECKLIST.filter(
-                (item) =>
-                  prepAssigneeFilter === "all" ||
-                  item.assignee === prepAssigneeFilter
-              ).map((item) => {
-                const isDone = tripState.completedPrepIds.includes(item.id);
-                return (
-                  <label
-                    key={item.id}
-                    className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
-                      isDone
-                        ? "bg-emerald-950/20 border-emerald-500/30 opacity-80"
-                        : "bg-slate-950/70 border-slate-800 hover:border-purple-500/40"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isDone}
-                      onChange={() => togglePrepItem(item.id)}
-                      className="mt-1 w-5 h-5 rounded border-slate-600 text-purple-600 focus:ring-purple-500"
-                    />
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <span
-                          className={`font-bold text-sm sm:text-base ${
-                            isDone ? "line-through text-slate-400" : "text-white"
-                          }`}
-                        >
-                          {item.title}
-                        </span>
-                        {item.urgentTag && (
-                          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold">
-                            {item.urgentTag}
-                          </span>
-                        )}
-                        <span className="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase">
-                          {item.assignee === "both"
-                            ? "👥 Shaq & Naana"
-                            : item.assignee === "shaq"
-                            ? "👤 Shaquille"
-                            : "👤 Naana"}
-                        </span>
-                      </div>
-                      <p className="text-xs sm:text-sm text-slate-400">
-                        {item.detail}
-                      </p>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Banking, ATM Golden Rule & SuperRich Exchange Guide */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gradient-to-br from-amber-950/40 to-slate-900 border border-amber-500/30 rounded-3xl p-6 space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-bold">
-                ⚠️ Crucial Thai ATM Rule
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                Always Choose &ldquo;Without Conversion&rdquo;
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Thai ATMs charge a mandatory{" "}
-                <strong className="text-amber-300">220 THB flat fee</strong>{" "}
-                (~£4.94) per foreign card withdrawal. When the ATM screen asks
-                whether to convert to GBP,{" "}
-                <strong className="text-emerald-300 underline">
-                  ALWAYS select &ldquo;Continue Without Conversion&rdquo;
-                </strong>{" "}
-                so your zero-FX UK bank (Monzo, Starling, Revolut, Chase)
-                handles the exchange rate.
-              </p>
-            </div>
-
-            <div className="bg-gradient-to-br from-teal-950/40 to-slate-900 border border-teal-500/30 rounded-3xl p-6 space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/20 text-teal-300 text-xs font-bold">
-                💷 Best Cash Exchange in Bangkok
-              </div>
-              <h3 className="text-xl font-bold text-white">
-                SuperRich (Orange or Green Booths)
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Thailand remains cash-heavy for street markets, longtail boats,
-                tipping, and beach kiosks. Get the best exchange rates at{" "}
-                <strong className="text-teal-300">SuperRich</strong> located in
-                the{" "}
-                <strong>
-                  basement (Floor B) of Suvarnabhumi Airport (near the Airport
-                  Rail Link)
-                </strong>{" "}
-                and inside major BTS Skytrain stations.
-              </p>
-            </div>
-          </div>
-
-          {/* Essential Apps Tracker */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  📱 Essential Digital Utilities &amp; Apps Tracker
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  Check off each app once installed and set up on both phones
-                  before flying.
-                </p>
-              </div>
-              <span className="text-xs font-bold px-3 py-1.5 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                {appsProgress.done} of {appsProgress.total} Installed
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {ESSENTIAL_APPS.map((app) => {
-                const installed = tripState.installedAppIds.includes(app.id);
-                return (
-                  <label
-                    key={app.id}
-                    className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
-                      installed
-                        ? "bg-emerald-950/20 border-emerald-500/30"
-                        : "bg-slate-950/70 border-slate-800 hover:border-purple-500/40"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={installed}
-                      onChange={() => toggleAppInstalled(app.id)}
-                      className="mt-1 w-5 h-5 rounded border-slate-600 text-emerald-500 focus:ring-emerald-500"
-                    />
-                    <div className="space-y-1.5 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-base text-white flex items-center gap-2">
-                          <span>{app.icon}</span> {app.name}
-                        </span>
-                        <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30 font-semibold">
-                          {app.badge}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-amber-400 font-medium">
-                        {app.category}
-                      </div>
-                      <p className="text-xs text-slate-300 leading-relaxed">
-                        {app.description}
-                      </p>
-                      <p className="text-[11px] text-slate-400 bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-                        💡 <strong>Pro Tip:</strong> {app.proTip}
-                      </p>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          VIEW 4: INTERACTIVE PACKING STUDIO & DRESS CODE ADVISOR
-         ===================================================================== */}
-      {activeTab === "packing" && (
-        <section className="space-y-8">
-          {/* Climate Profile & Interactive Dress Code Advisor */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* February Climate Profile */}
-            <div className="lg:col-span-5 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold">
-                ☀️ February Peak Dry Season Profile
-              </div>
-              <h2 className="text-xl font-bold text-white">
-                Cool &amp; Dry Tropical Sunshine
-              </h2>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                February is Thailand&apos;s premier season—virtually zero
-                rainfall, calm turquoise seas, and bright sunshine.
-              </p>
-
-              <div className="space-y-3">
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-amber-500/25">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-sm text-amber-300">
-                      🏙️ Bangkok (5–8 Feb)
-                    </span>
-                    <span className="font-mono text-xs text-white font-bold">
-                      32°C–34°C Day • 23°C–25°C Night
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    High humidity &amp; urban heat. Pack ultra-breathable linen,
-                    cotton, and bamboo fabrics.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-teal-500/25">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-sm text-teal-300">
-                      🏝️ Phuket (8–13 Feb)
-                    </span>
-                    <span className="font-mono text-xs text-white font-bold">
-                      31°C–33°C Day • 24°C–26°C Night
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400">
-                    Gentle Andaman sea breezes.{" "}
-                    <strong className="text-rose-300">
-                      UV Index 10–11 (Very High)
-                    </strong>{" "}
-                    — high-SPF 50+ &amp; polarized sunglasses are essential.
-                  </p>
                 </div>
               </div>
-            </div>
 
-            {/* Interactive Dress Code Advisor */}
-            <div className="lg:col-span-7 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-xl font-bold text-white">
-                  👗 Interactive Dress Code &amp; Outfit Guide
-                </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: "temple", label: "🛕 Temple Rules" },
-                    { id: "rooftop", label: "🍸 Rooftop & Fine Dining" },
-                    { id: "daytime", label: "☀️ Daytime City" },
-                    { id: "beach", label: "🏖️ Phuket Resort" },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() =>
-                        setDressCodeTab(
-                          t.id as "temple" | "rooftop" | "daytime" | "beach"
-                        )
-                      }
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
-                        dressCodeTab === t.id
-                          ? "bg-purple-600 text-white"
-                          : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                      }`}
+              {/* Phuket Field Dispatch */}
+              <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-5">
+                <div className="border-b border-[#1F1A16]/15 pb-3">
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[#13382E] font-semibold"
+                  >
+                    DISPATCH 02 &bull; PHUKET (08&ndash;13 FEB)
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    The Pavilions Sanctuary &amp; Andaman Coves
+                  </h2>
+                </div>
+
+                <div className="space-y-4 text-xs sm:text-sm text-[#4A4036]">
+                  <div className="p-4 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 space-y-1.5">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
                     >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {dressCodeTab === "temple" && (
-                <div className="p-4 rounded-2xl bg-amber-950/25 border border-amber-500/30 space-y-2.5 text-xs sm:text-sm">
-                  <div className="font-bold text-amber-300 text-base">
-                    🛕 Strictly Enforced at Grand Palace, Wat Pho &amp; Wat Arun
-                  </div>
-                  <ul className="space-y-1.5 text-slate-200 list-disc pl-5">
-                    <li>
-                      <strong>Shoulders and knees must be completely covered</strong>{" "}
-                      for both men and women.
-                    </li>
-                    <li>
-                      <strong>Forbidden:</strong> Sleeveless tops, tank tops,
-                      crop tops, sheer fabrics, shorts, or tight athletic
-                      leggings.
-                    </li>
-                    <li>
-                      <strong>Daypack Tip:</strong> Carry a lightweight linen
-                      shirt or sarong in your daypack for spontaneous temple
-                      visits.
-                    </li>
-                    <li>
-                      <strong>Footwear:</strong> Wear slip-on shoes or sandals
-                      (shoes must be removed before entering temple halls).
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {dressCodeTab === "rooftop" && (
-                <div className="p-4 rounded-2xl bg-purple-950/25 border border-purple-500/30 space-y-2.5 text-xs sm:text-sm">
-                  <div className="font-bold text-purple-300 text-base">
-                    🍸 Smart Casual for Bangkok Rooftops (Lebua, Vertigo,
-                    Mahanakhon) &amp; Fine Dining
-                  </div>
-                  <ul className="space-y-1.5 text-slate-200 list-disc pl-5">
-                    <li>
-                      <strong>Shaquille (Men):</strong> Collared linen shirts,
-                      lightweight chinos/trousers, and{" "}
-                      <strong className="text-amber-300">
-                        closed-toe loafers or clean smart sneakers
-                      </strong>{" "}
-                      (rooftops strictly forbid flip-flops, athletic shorts, and
-                      sleeveless vests).
-                    </li>
-                    <li>
-                      <strong>Naana (Women):</strong> Romantic maxi/midi
-                      dresses, dressy jumpsuits, or elegant separates.
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {dressCodeTab === "daytime" && (
-                <div className="p-4 rounded-2xl bg-sky-950/25 border border-sky-500/30 space-y-2.5 text-xs sm:text-sm">
-                  <div className="font-bold text-sky-300 text-base">
-                    ☀️ Bangkok Daytime Sightseeing Strategy
-                  </div>
-                  <ul className="space-y-1.5 text-slate-200 list-disc pl-5">
-                    <li>
-                      Choose ultra-breathable, moisture-wicking fabrics: linen,
-                      lightweight cotton, and bamboo.
-                    </li>
-                    <li>
-                      Avoid thick denim or heavy synthetics in 34°C Bangkok
-                      humidity.
-                    </li>
-                    <li>
-                      Keep pocket tissues, wet wipes, and rehydration salts
-                      (Dioralyte) in your daypack.
-                    </li>
-                  </ul>
-                </div>
-              )}
-
-              {dressCodeTab === "beach" && (
-                <div className="p-4 rounded-2xl bg-teal-950/25 border border-teal-500/30 space-y-2.5 text-xs sm:text-sm">
-                  <div className="font-bold text-teal-300 text-base">
-                    🏖️ The Pavilions Phuket, Layan Beach &amp; Bang Tao Clubs
-                  </div>
-                  <ul className="space-y-1.5 text-slate-200 list-disc pl-5">
-                    <li>
-                      Multiple sets of swimwear, breathable beach cover-ups,
-                      polarized UV sunglasses, and wide-brimmed sunhats.
-                    </li>
-                    <li>
-                      High-SPF 50+ sunscreen &amp; reef-safe sunscreen for
-                      Andaman ocean swimming.
-                    </li>
-                    <li>
-                      Waterproof phone pouch &amp; 10L dry bag for Banana Beach
-                      and island boat hops.
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Interactive Categorized Packing Checklist */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <h3 className="text-2xl font-bold text-white">
-                  🧳 Interactive Packing Checklist ({packingProgress.done}/
-                  {packingProgress.total} Packed)
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Baggage Allowances: Air Arabia (20kg checked + 10kg cabin each)
-                  • Thai Vietjet (Shaq 25kg, Naana 30kg checked + 7kg carry-on
-                  each).
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                {[
-                  { id: "all", label: "All Items" },
-                  { id: "both", label: "👥 Shared" },
-                  { id: "shaq", label: "👤 Shaquille" },
-                  { id: "naana", label: "👤 Naana" },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() =>
-                      setPackingOwnerFilter(
-                        f.id as "all" | "both" | "shaq" | "naana"
-                      )
-                    }
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
-                      packingOwnerFilter === f.id
-                        ? "bg-purple-600 text-white"
-                        : "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setShowUnpackedOnly(!showUnpackedOnly)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border cursor-pointer ${
-                    showUnpackedOnly
-                      ? "bg-amber-500/20 border-amber-400 text-amber-200"
-                      : "bg-slate-950 border-slate-800 text-slate-400"
-                  }`}
-                >
-                  {showUnpackedOnly ? "Showing Unpacked" : "Unpacked Only"}
-                </button>
-              </div>
-            </div>
-
-            {/* Add Custom Packing Item Form */}
-            <form
-              onSubmit={handleAddPackingSubmit}
-              className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800"
-            >
-              <input
-                type="text"
-                value={newPackLabel}
-                onChange={(e) => setNewPackLabel(e.target.value)}
-                placeholder="Add a custom item to pack (e.g. Birthday sash, film camera, tripod)..."
-                className="sm:col-span-6 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm text-white"
-              />
-              <select
-                value={newPackCategory}
-                onChange={(e) =>
-                  setNewPackCategory(e.target.value as PackingItem["category"])
-                }
-                className="sm:col-span-3 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-              >
-                <option value="Daytime & Temple Wear">
-                  Daytime &amp; Temple Wear
-                </option>
-                <option value="Evening & Fine Dining">
-                  Evening &amp; Fine Dining
-                </option>
-                <option value="Resort & Beach (Phuket)">
-                  Resort &amp; Beach (Phuket)
-                </option>
-                <option value="Health & Pharmacy">Health &amp; Pharmacy</option>
-                <option value="Toiletries & Sun Care">
-                  Toiletries &amp; Sun Care
-                </option>
-                <option value="Electronics & Power">
-                  Electronics &amp; Power
-                </option>
-                <option value="Carry-On & Documents">
-                  Carry-On &amp; Documents
-                </option>
-              </select>
-              <select
-                value={newPackForWho}
-                onChange={(e) =>
-                  setNewPackForWho(e.target.value as PackingItem["forWho"])
-                }
-                className="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-              >
-                <option value="both">👥 Shared</option>
-                <option value="shaq">👤 Shaq</option>
-                <option value="naana">👤 Naana</option>
-              </select>
-              <button
-                type="submit"
-                className="sm:col-span-1 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl py-2 cursor-pointer"
-              >
-                + Add
-              </button>
-            </form>
-
-            {/* Packing Categories Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {(
-                [
-                  "Daytime & Temple Wear",
-                  "Evening & Fine Dining",
-                  "Resort & Beach (Phuket)",
-                  "Health & Pharmacy",
-                  "Toiletries & Sun Care",
-                  "Electronics & Power",
-                  "Carry-On & Documents",
-                ] as PackingItem["category"][]
-              ).map((cat) => {
-                const items = allPackingItems.filter((item) => {
-                  if (item.category !== cat) return false;
-                  if (
-                    packingOwnerFilter !== "all" &&
-                    item.forWho !== packingOwnerFilter
-                  )
-                    return false;
-                  if (
-                    showUnpackedOnly &&
-                    tripState.packedItemIds.includes(item.id)
-                  )
-                    return false;
-                  return true;
-                });
-
-                if (items.length === 0) return null;
-
-                return (
-                  <div
-                    key={cat}
-                    className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4 space-y-3"
-                  >
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-amber-300 border-b border-slate-800 pb-2">
-                      {cat}
-                    </h4>
-                    <div className="space-y-2.5">
-                      {items.map((item) => {
-                        const isPacked = tripState.packedItemIds.includes(
-                          item.id
-                        );
-                        return (
-                          <label
-                            key={item.id}
-                            className={`flex items-start gap-3 p-2.5 rounded-xl border cursor-pointer transition-all ${
-                              isPacked
-                                ? "bg-emerald-950/20 border-emerald-500/25 opacity-70"
-                                : "bg-slate-900/70 border-slate-800/80 hover:border-slate-700"
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isPacked}
-                              onChange={() => togglePackingItem(item.id)}
-                              className="mt-1 w-4 h-4 rounded border-slate-600 text-emerald-500"
-                            />
-                            <div className="flex-1 text-xs">
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <span
-                                  className={`font-semibold ${
-                                    isPacked
-                                      ? "line-through text-slate-400"
-                                      : "text-white"
-                                  }`}
-                                >
-                                  {item.label}
-                                </span>
-                                {item.forWho !== "both" && (
-                                  <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold uppercase">
-                                    {item.forWho}
-                                  </span>
-                                )}
-                              </div>
-                              {item.note && (
-                                <p className="text-slate-400 mt-0.5">
-                                  {item.note}
-                                </p>
-                              )}
-                            </div>
-                          </label>
-                        );
-                      })}
+                      I. Hilltop Buggy Service &amp; Amenities
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================================
-          VIEW 5: ON-THE-GROUND FIELD GUIDE & EMERGENCY SOS
-         ===================================================================== */}
-      {activeTab === "guide" && (
-        <section className="space-y-8">
-          {/* Bangkok & Phuket Field Logistics Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Bangkok Field Guide */}
-            <div className="bg-slate-900/60 border border-amber-500/30 rounded-3xl p-6 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 text-xs font-bold">
-                🏙️ Bangkok Field Guide (5 Feb – 8 Feb)
-              </div>
-              <h2 className="text-xl font-bold text-white">
-                Suvarnabhumi Arrival &amp; Riverside Mobility
-              </h2>
-
-              <div className="space-y-2.5 text-xs sm:text-sm">
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
-                  <div className="font-bold text-amber-300">
-                    🛬 Step-by-Step Arrival at BKK (Fri 5 Feb @ 17:05)
-                  </div>
-                  <ol className="list-decimal pl-5 space-y-1 text-slate-300">
-                    <li>
-                      Clear immigration (present TDAC QR code) &amp; collect
-                      checked luggage.
-                    </li>
-                    <li>
-                      <strong>Optional Cash Exchange:</strong> Visit{" "}
-                      <strong>SuperRich on Floor B</strong> (Airport Rail Link
-                      level) for top THB rates.
-                    </li>
-                    <li>
-                      <strong>Taxi / Grab Pickup:</strong> Exit to{" "}
-                      <strong>Level 1 (Ground Floor)</strong> for public taxi
-                      queue kiosks, OR head to{" "}
-                      <strong>Level 4 / Door 4</strong> for Grab pickup.
-                    </li>
-                    <li>
-                      Drive to Shangri-La Bangkok takes{" "}
-                      <strong>~40–50 mins via Sirat Expressway</strong> (~400–500
-                      THB + expressway tolls).
-                    </li>
-                  </ol>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
-                  <div className="font-bold text-purple-300">
-                    ⛴️ Getting Around from Shangri-La Bangkok
-                  </div>
-                  <ul className="list-disc pl-5 space-y-1 text-slate-300">
-                    <li>
-                      <strong>BTS Skytrain:</strong> Walk 2 minutes to{" "}
-                      <strong>Saphan Taksin Station</strong> (Silom Line) to
-                      ride directly into Siam, Silom, and Sukhumvit.
-                    </li>
-                    <li>
-                      <strong>Chao Phraya Express Boats:</strong> Board right
-                      next door at <strong>Sathorn Central Pier</strong> for
-                      scenic river hops to Wat Arun, Wat Pho, and the Grand
-                      Palace.
-                    </li>
-                    <li>
-                      <strong>ICONSIAM &amp; Asiatique:</strong> Take the{" "}
-                      <strong>free hotel shuttle boat</strong> from Sathorn Pier
-                      across to ICONSIAM (and SookSiam indoor floating market).
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            {/* Phuket Field Guide */}
-            <div className="bg-slate-900/60 border border-teal-500/30 rounded-3xl p-6 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/15 text-teal-300 text-xs font-bold">
-                🏝️ Phuket Field Guide (8 Feb – 13 Feb)
-              </div>
-              <h2 className="text-xl font-bold text-white">
-                The Pavilions Sanctuary &amp; West Coast Beaches
-              </h2>
-
-              <div className="space-y-2.5 text-xs sm:text-sm">
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1.5">
-                  <div className="font-bold text-teal-300">
-                    🌺 Resort Mobility &amp; Perks
-                  </div>
-                  <p className="text-slate-300">
-                    The Pavilions is a serene hilltop sanctuary. Call front desk{" "}
-                    <strong>golf buggies</strong> anytime to whisk you between
-                    your 81 sqm Deluxe Tropical View Suite,{" "}
-                    <strong>Firefly Pool</strong>, <strong>360 Bar</strong>, and{" "}
-                    <strong>Pavilions Spa</strong>.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-2">
-                  <div className="font-bold text-amber-300">
-                    🏖️ Nearby Beaches Explorer
-                  </div>
-                  <div className="space-y-1.5 text-slate-300">
-                    <div>
-                      • <strong>Layan Beach (5 mins):</strong> Free scheduled
-                      hotel shuttle. Quiet, shaded, shallow crystal water.
-                    </div>
-                    <div>
-                      • <strong>Bang Tao Beach (10 mins south):</strong> Home to
-                      vibrant beach clubs (<em>Catch Beach Club</em>,{" "}
-                      <em>Maya Beach Club</em>) and long stretches of white
-                      sand.
-                    </div>
-                    <div>
-                      • <strong>Banana Beach (12 mins north):</strong> Hidden
-                      romantic cove with turquoise water.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-1">
-                  <div className="font-bold text-rose-300">
-                    🛫 Departure Day Gameplan (Sat 13 Feb)
-                  </div>
-                  <p className="text-slate-300">
-                    Check out at <strong>12:00 PM</strong> (store luggage with
-                    concierge). Take your late-afternoon transfer to Phuket
-                    International Airport (<code>HKT</code>) by{" "}
-                    <strong>15:30 PM</strong> for Air Arabia flight{" "}
-                    <code>G9715</code> (18:20 departure).
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Emergency & Critical Support Contacts */}
-          <div className="bg-slate-900/60 border border-rose-500/30 rounded-3xl p-6 space-y-5">
-            <div>
-              <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span>🚨</span> Emergency &amp; Critical Support Contacts
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400">
-                One-tap emergency dialing and JCI-accredited international
-                hospitals in Bangkok and Phuket.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {EMERGENCY_CONTACTS.map((c) => (
-                <div
-                  key={c.title}
-                  className="p-4 rounded-2xl bg-slate-950/80 border border-rose-500/25 flex flex-col justify-between space-y-3"
-                >
-                  <div>
-                    <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30 font-semibold">
-                      {c.badge}
-                    </span>
-                    <h4 className="font-bold text-white text-base mt-2">
-                      {c.title}
-                    </h4>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {c.description}
+                    <p>
+                      Summon front-desk golf buggies from your 81 sqm Deluxe
+                      Tropical View Suite to move effortlessly between{" "}
+                      <strong>Firefly Pool</strong>,{" "}
+                      <strong>360 Bar (hilltop sunset)</strong>, and{" "}
+                      <strong>Pavilions Spa</strong>.
                     </p>
                   </div>
 
-                  <div className="space-y-2 pt-2">
-                    <a
-                      href={c.telHref}
-                      className="block w-full text-center py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-sm transition-all"
+                  <div className="p-4 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 space-y-2">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
                     >
-                      📞 Dial {c.number}
-                    </a>
-                    {c.linkUrl && (
-                      <a
-                        href={c.linkUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-center text-xs text-purple-300 hover:text-purple-200 underline"
-                      >
-                        {c.linkLabel} ↗
-                      </a>
-                    )}
+                      II. Curated Coastal Index
+                    </div>
+                    <ul className="space-y-1.5">
+                      <li>
+                        &bull; <strong>Layan Beach (5 mins):</strong> Complimentary
+                        scheduled resort shuttle. Tranquil, Casuarina-shaded,
+                        shallow crystal water.
+                      </li>
+                      <li>
+                        &bull; <strong>Bang Tao Beach (10 mins south):</strong>{" "}
+                        Home to premier beach clubs (<em>Catch Beach Club</em>,{" "}
+                        <em>Maya Beach Club</em>) and sweeping white sand.
+                      </li>
+                      <li>
+                        &bull; <strong>Banana Beach (12 mins north):</strong>{" "}
+                        Secluded romantic cove framed by palms.
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="p-4 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 space-y-1">
+                    <div
+                      style={serifStyle}
+                      className="text-xl font-semibold text-[#1F1A16]"
+                    >
+                      III. Departure Protocol (Sat 13 Feb)
+                    </div>
+                    <p>
+                      Check out at <strong>12:00 PM</strong> (leave trunks with
+                      concierge). Depart for Phuket International Airport (
+                      <code>HKT</code>) by <strong>15:30 PM</strong> ahead of
+                      Air Arabia flight <code>G9715</code> (18:20 departure).
+                    </p>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
 
-            {/* International Hospitals */}
-            <div className="pt-2">
-              <h4 className="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">
-                🏥 International Standard Hospital Facilities
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {INTERNATIONAL_HOSPITALS.map((hosp) => (
-                  <a
-                    key={hosp.name}
-                    href={hosp.mapUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-purple-500/40 transition-all block"
+            {/* Consular & Emergency Red Book */}
+            <div className="bg-[#FBF8F3] border-2 border-[#A8442A] p-6 sm:p-8 space-y-6">
+              <div className="border-b border-[#1F1A16]/15 pb-3">
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                >
+                  CRITICAL ASSISTANCE &bull; CONSULAR &amp; MEDICAL DIRECTORY
+                </span>
+                <h3
+                  style={serifStyle}
+                  className="text-3xl font-normal text-[#1F1A16] mt-1"
+                >
+                  Emergency Dispatch &amp; International Hospitals
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                {EMERGENCY_CONTACTS.map((c) => (
+                  <div
+                    key={c.title}
+                    className="p-5 bg-[#EFE7D8]/60 border border-[#1F1A16]/20 flex flex-col justify-between space-y-4"
                   >
-                    <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-slate-800 text-amber-300">
-                      {hosp.city}
-                    </span>
-                    <div className="font-bold text-sm text-white mt-1.5">
-                      {hosp.name} ↗
+                    <div>
+                      <span
+                        style={monoStyle}
+                        className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A] font-semibold"
+                      >
+                        {c.badge}
+                      </span>
+                      <h4
+                        style={serifStyle}
+                        className="text-2xl font-semibold text-[#1F1A16] mt-1"
+                      >
+                        {c.title}
+                      </h4>
+                      <p className="text-xs text-[#5C5248] mt-1">
+                        {c.description}
+                      </p>
                     </div>
-                    <p className="text-xs text-slate-400 mt-1">{hosp.note}</p>
-                  </a>
+
+                    <div className="space-y-2 pt-2">
+                      <a
+                        href={c.telHref}
+                        style={monoStyle}
+                        className="block w-full text-center py-2.5 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-xs uppercase tracking-[0.16em] font-semibold transition-colors"
+                      >
+                        Dial {c.number}
+                      </a>
+                      {c.linkUrl && (
+                        <a
+                          href={c.linkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={monoStyle}
+                          className="block text-center text-[10px] uppercase tracking-[0.14em] text-[#13382E] underline"
+                        >
+                          {c.linkLabel} &nearr;
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-2">
+                <h4
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.2em] text-[#5C5248] mb-3"
+                >
+                  ACCREDITED INTERNATIONAL HOSPITALS
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {INTERNATIONAL_HOSPITALS.map((hosp) => (
+                    <a
+                      key={hosp.name}
+                      href={hosp.mapUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-4 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] transition-colors block"
+                    >
+                      <span
+                        style={monoStyle}
+                        className="text-[10px] uppercase tracking-[0.15em] text-[#A8442A] font-semibold"
+                      >
+                        {hosp.city}
+                      </span>
+                      <div
+                        style={serifStyle}
+                        className="text-lg font-semibold text-[#1F1A16] mt-1"
+                      >
+                        {hosp.name} &nearr;
+                      </div>
+                      <p className="text-xs text-[#5C5248] mt-1">{hosp.note}</p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ===================================================================
+            CHAPTER VI: FINANCIAL LEDGER, SURPLUS & CURRENCY BUREAU
+           =================================================================== */}
+        {activeTab === "budget" && (
+          <section className="space-y-10">
+            {/* Interactive THB <-> GBP Exchange Bureau */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/25 p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+                  >
+                    CHAPTER VI &bull; CURRENCY BUREAU &amp; FINANCIAL LEDGER
+                  </span>
+                  <h2
+                    style={serifStyle}
+                    className="text-3xl sm:text-4xl font-normal text-[#1F1A16] mt-1"
+                  >
+                    Interactive Baht &amp; Sterling Desk
+                  </h2>
+                </div>
+                <span
+                  style={monoStyle}
+                  className="text-xs text-[#13382E] font-semibold"
+                >
+                  BENCHMARK: 1 GBP &approx; {tripState.exchangeRate.toFixed(2)}{" "}
+                  THB
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                <div className="md:col-span-5 bg-[#EFE7D8]/70 border border-[#1F1A16]/20 p-5">
+                  <label
+                    style={monoStyle}
+                    className="block text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mb-1"
+                  >
+                    SIAMESE BAHT (THB &#3647;)
+                  </label>
+                  <input
+                    type="number"
+                    value={thbInput}
+                    onChange={(e) => handleThbChange(e.target.value)}
+                    style={serifStyle}
+                    className="w-full bg-transparent text-4xl font-normal text-[#1F1A16] focus:outline-none"
+                  />
+                </div>
+
+                <div
+                  style={serifStyle}
+                  className="md:col-span-2 text-center text-3xl italic text-[#8A7E71]"
+                >
+                  &harr;
+                </div>
+
+                <div className="md:col-span-5 bg-[#EFE7D8]/70 border border-[#1F1A16]/20 p-5">
+                  <label
+                    style={monoStyle}
+                    className="block text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mb-1"
+                  >
+                    BRITISH STERLING (GBP &pound;)
+                  </label>
+                  <input
+                    type="number"
+                    value={gbpInput}
+                    onChange={(e) => handleGbpChange(e.target.value)}
+                    style={serifStyle}
+                    className="w-full bg-transparent text-4xl font-normal text-[#13382E] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Tariff Presets */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { label: "100 THB Market", thb: 100 },
+                  { label: "220 THB ATM Levy", thb: 220 },
+                  { label: "500 THB BKK Chauffeur", thb: 500 },
+                  { label: "1,000 THB (~£22.47)", thb: 1000 },
+                  { label: "1,190 THB Pavilions Transfer", thb: 1190 },
+                  { label: "3,233 THB (£72.65 Hotel Surplus)", thb: 3233 },
+                  { label: "5,000 THB Celebration Dinner", thb: 5000 },
+                ].map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => setQuickThbPreset(preset.thb)}
+                    style={monoStyle}
+                    className="px-3 py-1.5 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] text-[11px] text-[#4A4036] hover:text-[#1F1A16] cursor-pointer"
+                  >
+                    {preset.label}
+                  </button>
                 ))}
               </div>
             </div>
-          </div>
-        </section>
-      )}
 
-      {/* =====================================================================
-          VIEW 6: BUDGET, VERIFIED FINANCIALS & THB CONVERTER
-         ===================================================================== */}
-      {activeTab === "budget" && (
-        <section className="space-y-8">
-          {/* Interactive THB <-> GBP Converter */}
-          <div className="bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 border border-purple-500/30 rounded-3xl p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  💱 Interactive THB ⇄ GBP Currency Converter
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-400">
-                  Benchmark rate:{" "}
-                  <strong className="text-amber-300">
-                    1 GBP ≈ {tripState.exchangeRate.toFixed(2)} THB
-                  </strong>
-                  . Type in either box or tap a common Thai price preset.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-              <div className="md:col-span-5 bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
-                <label className="block text-xs text-slate-400 uppercase font-bold mb-1">
-                  🇹🇭 Thai Baht (THB ฿)
-                </label>
-                <input
-                  type="number"
-                  value={thbInput}
-                  onChange={(e) => handleThbChange(e.target.value)}
-                  className="w-full bg-transparent text-2xl sm:text-3xl font-extrabold font-mono text-amber-300 focus:outline-none"
-                />
-              </div>
-
-              <div className="md:col-span-2 text-center text-2xl text-slate-400 font-bold">
-                ⇄
-              </div>
-
-              <div className="md:col-span-5 bg-slate-950/80 border border-slate-800 rounded-2xl p-4">
-                <label className="block text-xs text-slate-400 uppercase font-bold mb-1">
-                  🇬🇧 British Pounds (GBP £)
-                </label>
-                <input
-                  type="number"
-                  value={gbpInput}
-                  onChange={(e) => handleGbpChange(e.target.value)}
-                  className="w-full bg-transparent text-2xl sm:text-3xl font-extrabold font-mono text-emerald-300 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            {/* Quick Presets */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: "100 THB Street Snack", thb: 100 },
-                { label: "220 THB ATM Fee", thb: 220 },
-                { label: "500 THB BKK Airport Taxi", thb: 500 },
-                { label: "1,000 THB (~£22.47)", thb: 1000 },
-                { label: "1,190 THB Pavilions Transfer", thb: 1190 },
-                { label: "3,233 THB (£72.65 Hotel Surplus)", thb: 3233 },
-                { label: "5,000 THB Fine Dining", thb: 5000 },
-              ].map((preset) => (
-                <button
-                  key={preset.label}
-                  type="button"
-                  onClick={() => setQuickThbPreset(preset.thb)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-amber-400/50 text-xs text-slate-300 hover:text-white cursor-pointer"
-                >
-                  {preset.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Accommodation Budget Surplus Highlight + Verified Financial Matrix */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-4 bg-emerald-950/20 border border-emerald-500/30 rounded-3xl p-6 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300">
-                  🎯 Accommodation Budget Win
-                </span>
-                <h3 className="text-2xl font-extrabold text-white">
-                  £72.65 Under Budget Surplus!
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Both 5-star properties (Shangri-La Bangkok &amp; The Pavilions
-                  Phuket) came in under the £1,405.00 accommodation target—saving{" "}
-                  <strong>£72.65 (~3,233 THB)</strong> for birthday dining &amp;
-                  activities.
-                </p>
-              </div>
-
-              <div className="space-y-2 pt-3 border-t border-emerald-500/20 text-xs">
-                <div className="flex justify-between text-slate-400">
-                  <span>Max Target Budget:</span>
-                  <span className="font-mono text-white">£1,405.00</span>
-                </div>
-                <div className="flex justify-between text-slate-400">
-                  <span>Actual Booked (THB 59,304.26):</span>
-                  <span className="font-mono text-emerald-300 font-bold">
-                    ~£1,332.35
+            {/* Surplus Callout & Master Accounting Ledger */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4 bg-[#13382E] text-[#F6F1E7] p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                <div className="space-y-3">
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[#D8B979]"
+                  >
+                    ACCOMMODATION SURPLUS
                   </span>
+                  <h3
+                    style={serifStyle}
+                    className="text-3xl sm:text-4xl font-normal text-[#F6F1E7]"
+                  >
+                    £72.65 Under Budget Surplus!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#F6F1E7]/85 leading-relaxed">
+                    Both five-star residences (Shangri-La Bangkok &amp; The
+                    Pavilions Phuket) were secured below the £1,405.00 ceiling,
+                    yielding a <strong>£72.65 (~3,233 THB)</strong> reserve
+                    dedicated to Naana&apos;s 30th birthday gastronomy and spa
+                    rituals.
+                  </p>
                 </div>
-                <div className="flex justify-between text-amber-300 font-bold text-sm pt-1">
-                  <span>Birthday Surplus Saved:</span>
-                  <span className="font-mono">+£72.65 (~3,233 THB)</span>
-                </div>
-              </div>
-            </div>
 
-            {/* Verified Financial Matrix Table */}
-            <div className="lg:col-span-8 bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 overflow-x-auto">
-              <h3 className="text-xl font-bold text-white">
-                📊 Verified Core Trip Financial Matrix
-              </h3>
-              <table className="w-full text-left border-collapse text-xs sm:text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400">
-                    <th className="py-2.5 pr-3">Component</th>
-                    <th className="py-2.5 px-3">Currency Amount</th>
-                    <th className="py-2.5 px-3">GBP Equivalent</th>
-                    <th className="py-2.5 pl-3">Notes / Payment Method</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/70">
-                  {FINANCIAL_MATRIX.map((row) => (
-                    <tr key={row.component}>
-                      <td className="py-3 pr-3 font-semibold text-white">
-                        {row.component}
-                      </td>
-                      <td className="py-3 px-3 font-mono text-slate-300">
-                        {row.currencyAmount}
-                      </td>
-                      <td className="py-3 px-3 font-mono font-bold text-emerald-300">
-                        ~£{row.gbpEquivalent.toFixed(2)}
-                      </td>
-                      <td className="py-3 pl-3 text-slate-400 text-xs">
-                        {row.notes}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="border-t-2 border-amber-500/40 bg-amber-500/5">
-                    <td
-                      colSpan={2}
-                      className="py-3.5 pr-3 font-extrabold text-amber-300 text-base"
-                    >
-                      Grand Total (All Confirmed Flights + 8 Nights Luxury
-                      Hotels)
-                    </td>
-                    <td className="py-3.5 px-3 font-mono font-extrabold text-amber-300 text-base">
-                      ~£{TRIP_METADATA.grandTotalGbp.toLocaleString("en-GB", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="py-3.5 pl-3 text-xs text-slate-400">
-                      Complete core trip infrastructure
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-
-          {/* Interactive On-The-Ground Activity & Dining Expense Planner */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <h3 className="text-xl font-bold text-white">
-                  🥂 Interactive On-The-Ground Treats &amp; Expense Planner
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Plan how to spend your £72.65 (~3,233 THB) hotel budget
-                  surplus and track extra dining, beach club, or spa treats.
-                </p>
-              </div>
-              <div className="text-right">
-                <div className="text-xs text-slate-400">
-                  Planned On-The-Ground Total:
-                </div>
-                <div className="font-mono text-lg font-extrabold text-purple-300">
-                  THB{" "}
-                  {tripState.plannedExpenses
-                    .reduce((acc, e) => acc + e.amountThb, 0)
-                    .toLocaleString()}{" "}
-                  (~£
-                  {(
-                    tripState.plannedExpenses.reduce(
-                      (acc, e) => acc + e.amountThb,
-                      0
-                    ) / tripState.exchangeRate
-                  ).toFixed(2)}
-                  )
-                </div>
-              </div>
-            </div>
-
-            <form
-              onSubmit={handleAddExpense}
-              className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800"
-            >
-              <input
-                type="text"
-                value={newExpTitle}
-                onChange={(e) => setNewExpTitle(e.target.value)}
-                placeholder="Expense / Experience (e.g. Couples Spa at Pavilions, Catch Beach Club)..."
-                className="sm:col-span-4 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-              />
-              <input
-                type="number"
-                step="any"
-                value={newExpAmount}
-                onChange={(e) => setNewExpAmount(e.target.value)}
-                placeholder="Amount"
-                className="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white"
-              />
-              <select
-                value={newExpCurrency}
-                onChange={(e) =>
-                  setNewExpCurrency(e.target.value as "THB" | "GBP")
-                }
-                className="sm:col-span-1 bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white"
-              >
-                <option value="THB">THB</option>
-                <option value="GBP">GBP</option>
-              </select>
-              <select
-                value={newExpCategory}
-                onChange={(e) =>
-                  setNewExpCategory(
-                    e.target.value as PlannedExpense["category"]
-                  )
-                }
-                className="sm:col-span-2 bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white"
-              >
-                <option value="Birthday Treat">🎂 Birthday Treat</option>
-                <option value="Dining">🍽️ Dining</option>
-                <option value="Spa & Wellness">💆🏽‍♀️ Spa &amp; Wellness</option>
-                <option value="Beach & Excursions">🏖️ Beach &amp; Boats</option>
-                <option value="Transit & Cash">🚕 Transit &amp; Cash</option>
-              </select>
-              <select
-                value={newExpCity}
-                onChange={(e) =>
-                  setNewExpCity(
-                    e.target.value as "Bangkok" | "Phuket" | "Both"
-                  )
-                }
-                className="sm:col-span-1 bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-white"
-              >
-                <option value="Bangkok">Bangkok</option>
-                <option value="Phuket">Phuket</option>
-                <option value="Both">Both</option>
-              </select>
-              <button
-                type="submit"
-                className="sm:col-span-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl py-2 cursor-pointer"
-              >
-                + Add Expense
-              </button>
-            </form>
-
-            <div className="space-y-2.5">
-              {tripState.plannedExpenses.map((exp) => (
                 <div
-                  key={exp.id}
-                  className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800"
+                  style={monoStyle}
+                  className="space-y-2 pt-4 border-t border-[#F6F1E7]/20 text-xs"
                 >
-                  <label className="flex items-center gap-3 cursor-pointer flex-1">
-                    <input
-                      type="checkbox"
-                      checked={!!exp.isBooked}
-                      onChange={() => toggleExpenseBooked(exp.id)}
-                      className="w-4 h-4 rounded border-slate-600 text-emerald-500"
-                    />
-                    <div>
-                      <div className="text-sm font-bold text-white">
-                        {exp.title}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        {exp.city} • {exp.category}{" "}
-                        {exp.isBooked ? "• ✓ Paid / Reserved" : "• Planned"}
-                      </div>
-                    </div>
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <div className="text-right font-mono">
-                      <div className="text-sm font-bold text-amber-300">
-                        THB {exp.amountThb.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-slate-400">
-                        ~£{(exp.amountThb / tripState.exchangeRate).toFixed(2)}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteExpense(exp.id)}
-                      className="text-xs text-slate-500 hover:text-rose-400 px-2 py-1 cursor-pointer"
-                    >
-                      ✕
-                    </button>
+                  <div className="flex justify-between text-[#F6F1E7]/75">
+                    <span>CEILING ALLOCATION:</span>
+                    <span>£1,405.00</span>
+                  </div>
+                  <div className="flex justify-between text-[#F6F1E7]/75">
+                    <span>BOOKED (THB 59,304.26):</span>
+                    <span>~£1,332.35</span>
+                  </div>
+                  <div className="flex justify-between text-[#D8B979] font-bold text-sm pt-1">
+                    <span>BIRTHDAY RESERVE:</span>
+                    <span>+£72.65 (~3,233 THB)</span>
                   </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Verified Accounting Matrix */}
+              <div className="lg:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-4 overflow-x-auto">
+                <h3
+                  style={serifStyle}
+                  className="text-2xl sm:text-3xl font-normal text-[#1F1A16]"
+                >
+                  Verified Core Infrastructure Ledger
+                </h3>
+                <table className="w-full text-left border-collapse text-xs sm:text-sm">
+                  <thead>
+                    <tr
+                      style={monoStyle}
+                      className="border-b-2 border-[#1F1A16] text-[10px] uppercase tracking-[0.15em] text-[#5C5248]"
+                    >
+                      <th className="py-2.5 pr-3">Component</th>
+                      <th className="py-2.5 px-3">Settled Currency</th>
+                      <th className="py-2.5 px-3">Sterling Equivalent</th>
+                      <th className="py-2.5 pl-3">Verification &amp; Folio</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1F1A16]/15">
+                    {FINANCIAL_MATRIX.map((row) => (
+                      <tr key={row.component}>
+                        <td className="py-3 pr-3 font-semibold text-[#1F1A16]">
+                          {row.component}
+                        </td>
+                        <td
+                          style={monoStyle}
+                          className="py-3 px-3 text-[#4A4036]"
+                        >
+                          {row.currencyAmount}
+                        </td>
+                        <td
+                          style={monoStyle}
+                          className="py-3 px-3 font-bold text-[#13382E]"
+                        >
+                          ~£{row.gbpEquivalent.toFixed(2)}
+                        </td>
+                        <td className="py-3 pl-3 text-[#5C5248] text-xs">
+                          {row.notes}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-b-2 border-[#1F1A16] bg-[#EFE7D8]/70">
+                      <td
+                        colSpan={2}
+                        style={serifStyle}
+                        className="py-3.5 pr-3 text-xl font-semibold text-[#1F1A16]"
+                      >
+                        Grand Total (Confirmed Aviation &amp; Eight Nights
+                        Residence)
+                      </td>
+                      <td
+                        style={monoStyle}
+                        className="py-3.5 px-3 font-bold text-[#A8442A] text-base"
+                      >
+                        ~£
+                        {TRIP_METADATA.grandTotalGbp.toLocaleString("en-GB", {
+                          minimumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td
+                        style={monoStyle}
+                        className="py-3.5 pl-3 text-[10px] uppercase tracking-wider text-[#5C5248]"
+                      >
+                        SETTLED IN FULL
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
-          </div>
-        </section>
-      )}
-    </NaanasSpaceLayout>
+
+            {/* Interactive On-The-Ground Expense Planner */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-[#1F1A16]/15">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                  >
+                    BESPOKE DISCRETIONARY LEDGER
+                  </span>
+                  <h3
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-0.5"
+                  >
+                    On-The-Ground Celebration &amp; Dining Planner
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <div
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71]"
+                  >
+                    PLANNED DISCRETIONARY TOTAL
+                  </div>
+                  <div
+                    style={monoStyle}
+                    className="text-base font-bold text-[#13382E]"
+                  >
+                    THB{" "}
+                    {tripState.plannedExpenses
+                      .reduce((acc, e) => acc + e.amountThb, 0)
+                      .toLocaleString()}{" "}
+                    (~£
+                    {(
+                      tripState.plannedExpenses.reduce(
+                        (acc, e) => acc + e.amountThb,
+                        0
+                      ) / tripState.exchangeRate
+                    ).toFixed(2)}
+                    )
+                  </div>
+                </div>
+              </div>
+
+              <form
+                onSubmit={handleAddExpense}
+                className="grid grid-cols-1 sm:grid-cols-12 gap-3 bg-[#EFE7D8]/60 p-4 border border-[#1F1A16]/15"
+              >
+                <input
+                  type="text"
+                  value={newExpTitle}
+                  onChange={(e) => setNewExpTitle(e.target.value)}
+                  placeholder="Experience or reservation (e.g. Couples Spa at Pavilions, Catch Beach Club)..."
+                  className="sm:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  value={newExpAmount}
+                  onChange={(e) => setNewExpAmount(e.target.value)}
+                  placeholder="Amount"
+                  className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                />
+                <select
+                  value={newExpCurrency}
+                  onChange={(e) =>
+                    setNewExpCurrency(e.target.value as "THB" | "GBP")
+                  }
+                  className="sm:col-span-1 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+                >
+                  <option value="THB">THB</option>
+                  <option value="GBP">GBP</option>
+                </select>
+                <select
+                  value={newExpCategory}
+                  onChange={(e) =>
+                    setNewExpCategory(
+                      e.target.value as PlannedExpense["category"]
+                    )
+                  }
+                  className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+                >
+                  <option value="Birthday Treat">Birthday Treat</option>
+                  <option value="Dining">Dining</option>
+                  <option value="Spa & Wellness">Spa &amp; Wellness</option>
+                  <option value="Beach & Excursions">Beach &amp; Boats</option>
+                  <option value="Transit & Cash">Transit &amp; Cash</option>
+                </select>
+                <select
+                  value={newExpCity}
+                  onChange={(e) =>
+                    setNewExpCity(
+                      e.target.value as "Bangkok" | "Phuket" | "Both"
+                    )
+                  }
+                  className="sm:col-span-1 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+                >
+                  <option value="Bangkok">Bangkok</option>
+                  <option value="Phuket">Phuket</option>
+                  <option value="Both">Both</option>
+                </select>
+                <button
+                  type="submit"
+                  style={monoStyle}
+                  className="sm:col-span-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
+                >
+                  + Inscribe
+                </button>
+              </form>
+
+              <div className="divide-y divide-[#1F1A16]/15">
+                {tripState.plannedExpenses.map((exp) => (
+                  <div
+                    key={exp.id}
+                    className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
+                  >
+                    <label className="flex items-center gap-3 cursor-pointer flex-1">
+                      <input
+                        type="checkbox"
+                        checked={!!exp.isBooked}
+                        onChange={() => toggleExpenseBooked(exp.id)}
+                        className="w-4 h-4 accent-[#13382E]"
+                      />
+                      <div>
+                        <div
+                          style={serifStyle}
+                          className="text-xl font-medium text-[#1F1A16]"
+                        >
+                          {exp.title}
+                        </div>
+                        <div
+                          style={monoStyle}
+                          className="text-[10px] uppercase tracking-[0.15em] text-[#5C5248]"
+                        >
+                          {exp.city} &bull; {exp.category} &bull;{" "}
+                          {exp.isBooked ? "SETTLED / RESERVED" : "PLANNED"}
+                        </div>
+                      </div>
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <div style={monoStyle} className="text-right">
+                        <div className="text-sm font-bold text-[#1F1A16]">
+                          THB {exp.amountThb.toLocaleString()}
+                        </div>
+                        <div className="text-[11px] text-[#5C5248]">
+                          ~£{(exp.amountThb / tripState.exchangeRate).toFixed(2)}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteExpense(exp.id)}
+                        className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    </div>
   );
 }
