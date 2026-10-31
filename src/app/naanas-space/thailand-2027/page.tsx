@@ -794,26 +794,67 @@ export default function ThailandTripDashboard() {
                 </div>
                 <div
                   style={monoStyle}
-                  className="flex justify-between text-[10px] text-[#8A7E71] pt-1"
+                  className="flex justify-between text-[11px] text-[#5C5248] pt-1.5"
                 >
-                  <span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("prep");
+                      setTimeout(() => {
+                        document
+                          .getElementById("prep-protocol-section")
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }, 50);
+                    }}
+                    className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                    title="Jump to Pre-Departure Clearance Ledger (Step III)"
+                  >
                     PREP {prepProgress.done}/{prepProgress.total}
-                  </span>
-                  <span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("prep");
+                      setTimeout(() => {
+                        document
+                          .getElementById("essential-apps-section")
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }, 50);
+                    }}
+                    className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                    title="Jump to Essential Applications Directory (Step III)"
+                  >
                     APPS {appsProgress.done}/{appsProgress.total}
-                  </span>
-                  <span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab("packing");
+                      setTimeout(() => {
+                        document
+                          .getElementById("trunk-ledger-section")
+                          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }, 50);
+                    }}
+                    className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                    title="Jump to The Trunk Ledger (Step IV)"
+                  >
                     PACKING {packingProgress.done}/{packingProgress.total}
-                  </span>
+                  </button>
                 </div>
               </div>
             </div>
           </div>
+        </header>
 
-          {/* Editorial Table of Contents / Step Navigation */}
+        {/* Sticky Editorial Table of Contents / Step Navigation + Quick Date Strip */}
+        <div
+          id="step-content-anchor"
+          className="sticky top-0 z-30 mb-8 bg-[#F6F1E7]/95 backdrop-blur-md border-y border-[#1F1A16]/20 shadow-[0_4px_16px_rgba(31,26,22,0.06)]"
+        >
           <nav
             aria-label="Trip Dashboard Views"
-            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border-b border-[#1F1A16]/20 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 bg-[#FBF8F3]/60"
+            className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 bg-[#FBF8F3]/90"
           >
             {[
               {
@@ -861,16 +902,16 @@ export default function ThailandTripDashboard() {
                   key={tab.id}
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
-                  className={`group flex flex-col items-start justify-between p-4 text-left transition-colors cursor-pointer relative ${
+                  className={`group flex flex-col items-start justify-between p-3 sm:p-4 text-left transition-colors cursor-pointer relative ${
                     isActive
                       ? "bg-[#13382E] text-[#F6F1E7]"
                       : "hover:bg-[#EFE7D8]/80 text-[#1F1A16]"
                   }`}
                 >
-                  <div className="flex items-center justify-between w-full mb-1.5">
+                  <div className="flex items-center justify-between w-full mb-1">
                     <span
                       style={serifStyle}
-                      className={`italic text-sm ${
+                      className={`italic text-xs sm:text-sm ${
                         isActive ? "text-[#D8B979]" : "text-[#9E7B3B]"
                       }`}
                     >
@@ -882,13 +923,13 @@ export default function ThailandTripDashboard() {
                   </div>
                   <span
                     style={serifStyle}
-                    className="text-xl font-semibold leading-tight tracking-tight"
+                    className="text-lg sm:text-xl font-semibold leading-tight tracking-tight"
                   >
                     {tab.label}
                   </span>
                   <span
                     style={monoStyle}
-                    className={`text-[10px] uppercase tracking-[0.14em] mt-1 ${
+                    className={`text-[11px] uppercase tracking-[0.14em] mt-1 ${
                       isActive ? "text-[#F6F1E7]/75" : "text-[#8A7E71]"
                     }`}
                   >
@@ -898,20 +939,62 @@ export default function ThailandTripDashboard() {
               );
             })}
           </nav>
-        </header>
+
+          {/* Compact Sticky Date Ruler when viewing Step I */}
+          {activeTab === "itinerary" && (
+            <div className="flex items-center gap-1.5 overflow-x-auto px-3 py-2 bg-[#EFE7D8]/85 border-t border-[#1F1A16]/15">
+              <button
+                type="button"
+                onClick={() => setSelectedDayNum(null)}
+                style={monoStyle}
+                className={`shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] border transition-colors cursor-pointer ${
+                  selectedDayNum === null
+                    ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
+                    : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                }`}
+              >
+                Full Spread
+              </button>
+              {TRIP_DAYS.map((d) => {
+                const isSelected = selectedDayNum === d.dayNumber;
+                return (
+                  <button
+                    key={d.dayNumber}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setSelectedDayNum(null);
+                      } else {
+                        setSelectedDayNum(d.dayNumber);
+                      }
+                    }}
+                    style={monoStyle}
+                    className={`shrink-0 px-2.5 py-1.5 text-[11px] uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                      isSelected
+                        ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                        : "bg-[#FBF8F3] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                    }`}
+                  >
+                    D0{d.dayNumber} &bull; {d.shortDate}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* ===================================================================
             STEP I: ITINERARY & DAY-BY-DAY PLANNER
            =================================================================== */}
         {activeTab === "itinerary" && (
           <section className="space-y-10">
-            {/* Editorial Filter Header & Date Ruler */}
-            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 space-y-5">
-              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-5 border-b border-[#1F1A16]/15">
+            {/* Editorial Filter Header */}
+            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6">
+              <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
                   <span
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+                    className="text-[11px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
                   >
                     STEP I &bull; THE DAILY CHRONICLE
                   </span>
@@ -959,42 +1042,6 @@ export default function ThailandTripDashboard() {
                     );
                   })}
                 </div>
-              </div>
-
-              {/* Date Ruler Strip */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedDayNum(null)}
-                  style={monoStyle}
-                  className={`shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.15em] border transition-colors cursor-pointer ${
-                    selectedDayNum === null
-                      ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
-                      : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/15 hover:border-[#1F1A16]"
-                  }`}
-                >
-                  Full Spread
-                </button>
-                {TRIP_DAYS.map((d) => {
-                  const isSelected = selectedDayNum === d.dayNumber;
-                  return (
-                    <button
-                      key={d.dayNumber}
-                      type="button"
-                      onClick={() =>
-                        setSelectedDayNum(isSelected ? null : d.dayNumber)
-                      }
-                      style={monoStyle}
-                      className={`shrink-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
-                        isSelected
-                          ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
-                          : "bg-[#F6F1E7] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
-                      }`}
-                    >
-                      D0{d.dayNumber} &bull; {d.shortDate}
-                    </button>
-                  );
-                })}
               </div>
             </div>
 
@@ -1988,7 +2035,10 @@ export default function ThailandTripDashboard() {
         {activeTab === "prep" && (
           <section className="space-y-10">
             {/* Pre-Trip Protocol Checklist */}
-            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+            <div
+              id="prep-protocol-section"
+              className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+            >
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
                 <div>
                   <span
@@ -2144,7 +2194,10 @@ export default function ThailandTripDashboard() {
             </div>
 
             {/* Digital Concierge & Essential Apps Directory */}
-            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+            <div
+              id="essential-apps-section"
+              className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+            >
               <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 pb-4 border-b border-[#1F1A16]/15">
                 <div>
                   <span
@@ -2453,7 +2506,10 @@ export default function ThailandTripDashboard() {
             </div>
 
             {/* The Trunk Ledger (Categorized Packing List) */}
-            <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+            <div
+              id="trunk-ledger-section"
+              className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+            >
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
                 <div>
                   <span
