@@ -138,6 +138,26 @@ const ExternalArrow = () => (
   </svg>
 );
 
+function parseActivitySortMinutes(
+  timeStr: string,
+  fallbackIndex: number
+): number {
+  const match = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+    const mins = parseInt(match[2], 10);
+    return hours * 60 + mins;
+  }
+  const lower = timeStr.toLowerCase();
+  if (lower.includes("morning") || lower.includes("breakfast")) return 9 * 60;
+  if (lower.includes("midday") || lower.includes("noon")) return 12 * 60;
+  if (lower.includes("afternoon")) return 14 * 60;
+  if (lower.includes("sunset")) return 17 * 60 + 30;
+  if (lower.includes("evening") || lower.includes("dinner")) return 19 * 60;
+  if (lower.includes("night")) return 21 * 60 + 30;
+  return 23 * 60 + fallbackIndex;
+}
+
 export default function ThailandTripDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("itinerary");
   const [tripState, setTripState] = useState<PersistedTripState>(
@@ -148,9 +168,10 @@ export default function ThailandTripDashboard() {
   );
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
-  // Itinerary filters & custom activity drawer state
+  // Itinerary filters, day collapse & custom activity drawer/edit state
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [selectedDayNum, setSelectedDayNum] = useState<number | null>(null);
+  const [collapsedDayNums, setCollapsedDayNums] = useState<number[]>([]);
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
   const [openSuggestionInfoKey, setOpenSuggestionInfoKey] = useState<
     string | null
@@ -161,6 +182,17 @@ export default function ThailandTripDashboard() {
   const [newActCategory, setNewActCategory] =
     useState<ItineraryActivity["category"]>("romance");
   const [newActNotes, setNewActNotes] = useState("");
+
+  // Inline editing state for custom activities
+  const [editingActivityId, setEditingActivityId] = useState<string | null>(
+    null
+  );
+  const [editActTime, setEditActTime] = useState("");
+  const [editActTitle, setEditActTitle] = useState("");
+  const [editActLocation, setEditActLocation] = useState("");
+  const [editActCategory, setEditActCategory] =
+    useState<ItineraryActivity["category"]>("romance");
+  const [editActNotes, setEditActNotes] = useState("");
 
   // Prep & Packing filters
   const [prepAssigneeFilter, setPrepAssigneeFilter] = useState<
@@ -477,6 +509,94 @@ export default function ThailandTripDashboard() {
         },
       };
     });
+    if (editingActivityId === activityId) {
+      setEditingActivityId(null);
+    }
+  };
+
+  const startEditingActivity = (act: ItineraryActivity) => {
+    setEditingActivityId(act.id);
+    setEditActTime(act.time);
+    setEditActTitle(act.title);
+    setEditActLocation(act.location || "");
+    setEditActCategory(act.category);
+    setEditActNotes(act.notes || "");
+  };
+
+  const saveEditedActivity = (
+    e: React.FormEvent,
+    dayNumber: number,
+    activityId: string
+  ) => {
+    e.preventDefault();
+    if (!editActTitle.trim()) return;
+    updateTripState((prev) => {
+      const existing = prev.customActivitiesByDay[dayNumber] || [];
+      return {
+        ...prev,
+        customActivitiesByDay: {
+          ...prev.customActivitiesByDay,
+          [dayNumber]: existing.map((act) =>
+            act.id === activityId
+              ? {
+                  ...act,
+                  time: editActTime.trim() || "Flexible",
+                  title: editActTitle.trim(),
+                  category: editActCategory,
+                  location: editActLocation.trim() || undefined,
+                  notes: editActNotes.trim() || undefined,
+                }
+              : act
+          ),
+        },
+      };
+    });
+    setEditingActivityId(null);
+  };
+
+  const toggleDayCollapsed = (dayNumber: number) => {
+    setCollapsedDayNums((prev) =>
+      prev.includes(dayNumber)
+        ? prev.filter((d) => d !== dayNumber)
+        : [...prev, dayNumber]
+    );
+  };
+
+  const filteredDays = useMemo(() => {
+    return TRIP_DAYS.filter((day) => {
+      if (selectedDayNum !== null) return day.dayNumber === selectedDayNum;
+      if (phaseFilter === "all") return true;
+      return day.phase === phaseFilter;
+    });
+  }, [phaseFilter, selectedDayNum]);
+
+  const allDaysCollapsed = useMemo(
+    () =>
+      filteredDays.length > 0 &&
+      filteredDays.every((d) => collapsedDayNums.includes(d.dayNumber)),
+    [filteredDays, collapsedDayNums]
+  );
+
+  const toggleAllDaysCollapsed = () => {
+    if (allDaysCollapsed) {
+      setCollapsedDayNums([]);
+    } else {
+      setCollapsedDayNums(TRIP_DAYS.map((d) => d.dayNumber));
+    }
+  };
+
+  const jumpToActiveOrFirstDay = () => {
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const matchedDay = TRIP_DAYS.find((d) => d.isoDate === todayIso);
+    const targetDayNum = matchedDay ? matchedDay.dayNumber : 0;
+    setSelectedDayNum(null);
+    setPhaseFilter("all");
+    setCollapsedDayNums((prev) => prev.filter((d) => d !== targetDayNum));
+    setTimeout(() => {
+      document
+        .getElementById(`day-card-${targetDayNum}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const handleAddActivitySubmit = (e: React.FormEvent, dayNumber: number) => {
@@ -577,14 +697,6 @@ export default function ThailandTripDashboard() {
       plannedExpenses: prev.plannedExpenses.filter((e) => e.id !== id),
     }));
   };
-
-  const filteredDays = useMemo(() => {
-    return TRIP_DAYS.filter((day) => {
-      if (selectedDayNum !== null) return day.dayNumber === selectedDayNum;
-      if (phaseFilter === "all") return true;
-      return day.phase === phaseFilter;
-    });
-  }, [phaseFilter, selectedDayNum]);
 
   return (
     <div className="min-h-screen bg-[#F6F1E7] text-[#1F1A16] pb-24">
@@ -1011,36 +1123,57 @@ export default function ThailandTripDashboard() {
                   </p>
                 </div>
 
-                {/* Phase Filter Pills */}
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: "all", label: "All 11 Days" },
-                    { id: "outbound", label: "I. Outbound" },
-                    { id: "bangkok", label: "II. Bangkok (3N)" },
-                    { id: "transfer", label: "III. Island Transfer" },
-                    { id: "phuket", label: "IV. Phuket (5N)" },
-                    { id: "return", label: "V. Return" },
-                  ].map((pf) => {
-                    const active =
-                      phaseFilter === pf.id && selectedDayNum === null;
-                    return (
-                      <button
-                        key={pf.id}
-                        type="button"
-                        onClick={() => {
-                          setPhaseFilter(pf.id as PhaseFilter);
-                          setSelectedDayNum(null);
-                        }}
-                        className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
-                          active
-                            ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16] font-semibold"
-                            : "bg-transparent text-[#5C5248] border-[#1F1A16]/20 hover:border-[#1F1A16]"
-                        }`}
-                      >
-                        {pf.label}
-                      </button>
-                    );
-                  })}
+                {/* Phase Filter Pills & Expand/Collapse Actions */}
+                <div className="flex flex-col sm:items-end gap-2">
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { id: "all", label: "All 11 Days" },
+                      { id: "outbound", label: "I. Outbound" },
+                      { id: "bangkok", label: "II. Bangkok (3N)" },
+                      { id: "transfer", label: "III. Island Transfer" },
+                      { id: "phuket", label: "IV. Phuket (5N)" },
+                      { id: "return", label: "V. Return" },
+                    ].map((pf) => {
+                      const active =
+                        phaseFilter === pf.id && selectedDayNum === null;
+                      return (
+                        <button
+                          key={pf.id}
+                          type="button"
+                          onClick={() => {
+                            setPhaseFilter(pf.id as PhaseFilter);
+                            setSelectedDayNum(null);
+                          }}
+                          className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                            active
+                              ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16] font-semibold"
+                              : "bg-transparent text-[#5C5248] border-[#1F1A16]/20 hover:border-[#1F1A16]"
+                          }`}
+                        >
+                          {pf.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={jumpToActiveOrFirstDay}
+                      style={monoStyle}
+                      className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 hover:bg-[#13382E] hover:text-[#F6F1E7] transition-colors cursor-pointer"
+                    >
+                      Jump to Current / Departure Day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={toggleAllDaysCollapsed}
+                      style={monoStyle}
+                      className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/20 hover:text-[#1F1A16] hover:border-[#1F1A16] transition-colors cursor-pointer"
+                    >
+                      {allDaysCollapsed ? "Expand All Days" : "Collapse All Days"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1050,34 +1183,109 @@ export default function ThailandTripDashboard() {
               {filteredDays.map((day) => {
                 const customActs =
                   tripState.customActivitiesByDay[day.dayNumber] || [];
-                const allDayActivities = [
-                  ...day.defaultActivities,
-                  ...customActs,
-                ];
+                const rawActivities = [...day.defaultActivities, ...customActs];
+                const allDayActivities = rawActivities
+                  .map((act, idx) => ({
+                    act,
+                    sortKey: parseActivitySortMinutes(act.time, idx),
+                    idx,
+                  }))
+                  .sort((a, b) =>
+                    a.sortKey !== b.sortKey
+                      ? a.sortKey - b.sortKey
+                      : a.idx - b.idx
+                  )
+                  .map((entry) => entry.act);
+
+                const completedDayCount = allDayActivities.filter((a) =>
+                  tripState.completedActivityIds.includes(a.id)
+                ).length;
+                const isDayCollapsed = collapsedDayNums.includes(day.dayNumber);
 
                 return (
                   <article
+                    id={`day-card-${day.dayNumber}`}
                     key={day.dayNumber}
-                    className="bg-[#FBF8F3] border border-[#1F1A16]/20 shadow-[0_2px_12px_rgba(31,26,22,0.04)]"
+                    className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 shadow-[0_2px_12px_rgba(31,26,22,0.04)]"
                   >
-                    <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#1F1A16]/15">
-                      {/* Left Column (4 cols): Day Title, Atmosphere, Weather & Curated Margin Suggestions */}
-                      <div className="lg:col-span-4 p-6 sm:p-8 bg-[#EFE7D8]/45 flex flex-col justify-between space-y-6">
-                        <div className="space-y-4">
-                          <div className="flex items-baseline justify-between border-b border-[#1F1A16]/15 pb-3">
-                            <span
-                              style={serifStyle}
-                              className="text-4xl sm:text-5xl font-normal text-[#A8442A]"
-                            >
-                              Day 0{day.dayNumber}
-                            </span>
-                            <span
-                              style={monoStyle}
-                              className="text-[11px] uppercase tracking-[0.16em] text-[#5C5248]"
-                            >
-                              {day.dateLabel}
-                            </span>
-                          </div>
+                    {/* Compact Top Day Accordion Header when Collapsed */}
+                    {isDayCollapsed ? (
+                      <div className="p-5 sm:p-6 bg-[#EFE7D8]/50 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-baseline gap-3 sm:gap-5">
+                          <span
+                            style={serifStyle}
+                            className="text-2xl sm:text-3xl font-normal text-[#A8442A]"
+                          >
+                            Day 0{day.dayNumber}
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-[11px] uppercase tracking-[0.15em] text-[#5C5248]"
+                          >
+                            {day.dateLabel}
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] bg-[#13382E] text-[#F6F1E7]"
+                          >
+                            {day.locationBadge}
+                          </span>
+                          <h3
+                            style={serifStyle}
+                            className="text-xl sm:text-2xl font-normal text-[#1F1A16]"
+                          >
+                            {day.title}
+                          </h3>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span
+                            style={monoStyle}
+                            className="text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
+                          >
+                            {completedDayCount}/{allDayActivities.length} DONE
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleDayCollapsed(day.dayNumber)}
+                            style={monoStyle}
+                            className="px-3 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#1F1A16] text-[11px] uppercase tracking-[0.14em] text-[#1F1A16] cursor-pointer"
+                          >
+                            Expand Day +
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#1F1A16]/15">
+                        {/* Left Column (4 cols): Day Title, Atmosphere, Weather & Curated Margin Suggestions */}
+                        <div className="lg:col-span-4 p-6 sm:p-8 bg-[#EFE7D8]/45 flex flex-col justify-between space-y-6">
+                          <div className="space-y-4">
+                            <div className="flex items-baseline justify-between border-b border-[#1F1A16]/15 pb-3">
+                              <span
+                                style={serifStyle}
+                                className="text-4xl sm:text-5xl font-normal text-[#A8442A]"
+                              >
+                                Day 0{day.dayNumber}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  style={monoStyle}
+                                  className="text-[11px] uppercase tracking-[0.16em] text-[#5C5248]"
+                                >
+                                  {day.dateLabel}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    toggleDayCollapsed(day.dayNumber)
+                                  }
+                                  style={monoStyle}
+                                  title="Collapse this day card"
+                                  className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#1F1A16] text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+                                >
+                                  Collapse &ndash;
+                                </button>
+                              </div>
+                            </div>
 
                           <div
                             style={monoStyle}
@@ -1295,88 +1503,211 @@ export default function ThailandTripDashboard() {
                                   {isDone ? "✓" : ""}
                                 </button>
 
-                                <div className="flex-1 min-w-0 space-y-1.5">
-                                  <div className="flex flex-wrap items-center gap-2.5">
-                                    <span
-                                      style={monoStyle}
-                                      className="text-xs font-semibold text-[#A8442A]"
-                                    >
-                                      {act.time}
-                                    </span>
-                                    <span
-                                      style={monoStyle}
-                                      className={`text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 border ${style.tag}`}
-                                    >
-                                      {style.label}
-                                    </span>
-                                    {act.isLocked && (
+                                {editingActivityId === act.id ? (
+                                  <form
+                                    onSubmit={(e) =>
+                                      saveEditedActivity(
+                                        e,
+                                        day.dayNumber,
+                                        act.id
+                                      )
+                                    }
+                                    className="flex-1 bg-[#EFE7D8]/90 border border-[#1F1A16]/25 p-4 space-y-3"
+                                  >
+                                    <div className="flex items-center justify-between">
                                       <span
                                         style={monoStyle}
-                                        className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                                        className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
                                       >
-                                        &bull; CONFIRMED LOGISTICS
+                                        EDIT ENTRY
                                       </span>
-                                    )}
-                                  </div>
-
-                                  <h4
-                                    style={serifStyle}
-                                    className={`text-xl sm:text-2xl font-medium ${
-                                      isDone
-                                        ? "line-through text-[#8A7E71]"
-                                        : "text-[#1F1A16]"
-                                    }`}
-                                  >
-                                    {act.title}
-                                  </h4>
-
-                                  {act.subtitle && (
-                                    <p className="text-xs sm:text-sm text-[#5C5248]">
-                                      {act.subtitle}
-                                    </p>
-                                  )}
-
-                                  {act.notes && (
-                                    <div className="text-xs text-[#4A4036] bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] pl-3 py-2 mt-1.5">
-                                      {act.notes}
-                                    </div>
-                                  )}
-
-                                  <div
-                                    style={monoStyle}
-                                    className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-[#5C5248]"
-                                  >
-                                    {act.location && (
-                                      <span>LOC: {act.location}</span>
-                                    )}
-                                    {act.mapUrl && (
-                                      <a
-                                        href={act.mapUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setEditingActivityId(null)
+                                        }
+                                        className="text-xs text-[#5C5248] hover:text-[#1F1A16] underline cursor-pointer"
                                       >
-                                        VIEW CARTOGRAPHY <ExternalArrow />
-                                      </a>
+                                        Cancel
+                                      </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                      <input
+                                        type="text"
+                                        value={editActTime}
+                                        onChange={(e) =>
+                                          setEditActTime(e.target.value)
+                                        }
+                                        placeholder="Time (e.g. 19:30 ICT)"
+                                        className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                      />
+                                      <input
+                                        type="text"
+                                        required
+                                        value={editActTitle}
+                                        onChange={(e) =>
+                                          setEditActTitle(e.target.value)
+                                        }
+                                        placeholder="Activity title..."
+                                        className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                      />
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                      <select
+                                        value={editActCategory}
+                                        onChange={(e) =>
+                                          setEditActCategory(
+                                            e.target
+                                              .value as ItineraryActivity["category"]
+                                          )
+                                        }
+                                        className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                      >
+                                        <option value="romance">
+                                          Celebration &amp; Romance
+                                        </option>
+                                        <option value="dining">
+                                          Gastronomy
+                                        </option>
+                                        <option value="beach">
+                                          Andaman Coast
+                                        </option>
+                                        <option value="spa">
+                                          Sanctuary &amp; Spa
+                                        </option>
+                                        <option value="culture">
+                                          Heritage &amp; Temple
+                                        </option>
+                                        <option value="transit">Passage</option>
+                                        <option value="custom">
+                                          Bespoke Note
+                                        </option>
+                                      </select>
+                                      <input
+                                        type="text"
+                                        value={editActLocation}
+                                        onChange={(e) =>
+                                          setEditActLocation(e.target.value)
+                                        }
+                                        placeholder="Venue / Location"
+                                        className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                      />
+                                      <input
+                                        type="text"
+                                        value={editActNotes}
+                                        onChange={(e) =>
+                                          setEditActNotes(e.target.value)
+                                        }
+                                        placeholder="Dress code or note"
+                                        className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                      />
+                                    </div>
+                                    <button
+                                      type="submit"
+                                      style={monoStyle}
+                                      className="px-4 py-1.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.16em] cursor-pointer"
+                                    >
+                                      Save Changes
+                                    </button>
+                                  </form>
+                                ) : (
+                                  <div className="flex-1 min-w-0 space-y-1.5">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                      <span
+                                        style={monoStyle}
+                                        className="text-xs font-semibold text-[#A8442A]"
+                                      >
+                                        {act.time}
+                                      </span>
+                                      <span
+                                        style={monoStyle}
+                                        className={`text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 border ${style.tag}`}
+                                      >
+                                        {style.label}
+                                      </span>
+                                      {act.isLocked && (
+                                        <span
+                                          style={monoStyle}
+                                          className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                                        >
+                                          &bull; CONFIRMED LOGISTICS
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    <h4
+                                      style={serifStyle}
+                                      className={`text-xl sm:text-2xl font-medium ${
+                                        isDone
+                                          ? "line-through text-[#8A7E71]"
+                                          : "text-[#1F1A16]"
+                                      }`}
+                                    >
+                                      {act.title}
+                                    </h4>
+
+                                    {act.subtitle && (
+                                      <p className="text-xs sm:text-sm text-[#5C5248]">
+                                        {act.subtitle}
+                                      </p>
                                     )}
+
+                                    {act.notes && (
+                                      <div className="text-xs text-[#4A4036] bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] pl-3 py-2 mt-1.5">
+                                        {act.notes}
+                                      </div>
+                                    )}
+
+                                    <div
+                                      style={monoStyle}
+                                      className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-[#5C5248]"
+                                    >
+                                      {act.location && (
+                                        <span>LOC: {act.location}</span>
+                                      )}
+                                      {act.mapUrl && (
+                                        <a
+                                          href={act.mapUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                        >
+                                          VIEW CARTOGRAPHY <ExternalArrow />
+                                        </a>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
+                                )}
 
                                 {!act.isLocked &&
-                                  act.id.startsWith("custom-") && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        removeCustomActivity(
-                                          day.dayNumber,
-                                          act.id
-                                        )
-                                      }
-                                      className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
-                                      title="Remove custom entry"
-                                    >
-                                      &#10005;
-                                    </button>
+                                  act.id.startsWith("custom-") &&
+                                  editingActivityId !== act.id && (
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          startEditingActivity(act)
+                                        }
+                                        style={monoStyle}
+                                        className="text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                                        title="Edit entry"
+                                      >
+                                        EDIT
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          removeCustomActivity(
+                                            day.dayNumber,
+                                            act.id
+                                          )
+                                        }
+                                        className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                                        title="Remove custom entry"
+                                      >
+                                        &#10005;
+                                      </button>
+                                    </div>
                                   )}
                               </div>
                             );
@@ -1494,6 +1825,7 @@ export default function ThailandTripDashboard() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </article>
                 );
               })}
