@@ -263,6 +263,12 @@ export const HOTEL_BOOKINGS = [
     totalGbp: 433.15,
     paymentNote: "All taxes & 10% service charge included",
     address: "89 Soi Wat Suan Plu, New Road, Bangrak, Bangkok 10500, Thailand",
+    thaiName: "โรงแรมแชงกรี-ลา กรุงเทพฯ (อาคารแชงกรี-ลา วิง)",
+    thaiAddress:
+      "89 ซอยวัดสวนพลู ถนนเจริญกรุง แขวงบางรัก เขตบางรัก กรุงเทพมหานคร 10500",
+    thaiDirectionsNote:
+      "อยู่ติดท่าเรือสาทร (ตากสิน) และสถานีรถไฟฟ้า BTS สะพานตากสิน กรุณาส่งที่ฝั่ง Shangri-La Wing",
+    phone: "+66 2 236 7777",
     coordinates: "13.7203° N, 100.5142° E",
     mapUrl: "https://maps.google.com/?q=Shangri-La+Bangkok",
     highlights: [
@@ -292,6 +298,12 @@ export const HOTEL_BOOKINGS = [
     paymentNote:
       "Prepaid THB 38,625.00 via Red Dot Payment • Remaining Balance: THB 1,190.00 (Airport Transfer)",
     address: "31/1 Moo 6, Choeng Thale, Thalang District, Phuket 83110, Thailand",
+    thaiName: "เดอะ พาวิลเลี่ยนส์ ภูเก็ต (The Pavilions Phuket)",
+    thaiAddress:
+      "31/1 หมู่ 6 ตำบลเชิงทะเล อำเภอถลาง จังหวัดภูเก็ต 83110",
+    thaiDirectionsNote:
+      "ตั้งอยู่บนเนินเขาหาดลายัน (Layan Beach) ตำบลเชิงทะเล อำเภอถลาง",
+    phone: "+66 76 317 600",
     coordinates: "8.0215° N, 98.2982° E",
     mapUrl: "https://maps.google.com/?q=The+Pavilions+Phuket",
     highlights: [

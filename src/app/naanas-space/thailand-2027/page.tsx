@@ -220,6 +220,12 @@ export default function ThailandTripDashboard() {
     (1000 / TRIP_METADATA.exchangeRateBenchmark).toFixed(2)
   );
 
+  // On-the-ground quick drawer & Thai taxi driver card modal state
+  const [isQuickDeskOpen, setIsQuickDeskOpen] = useState(false);
+  const [driverModalHotelId, setDriverModalHotelId] = useState<string | null>(
+    null
+  );
+
   // New planned expense state
   const [newExpTitle, setNewExpTitle] = useState("");
   const [newExpAmount, setNewExpAmount] = useState("");
@@ -747,6 +753,252 @@ export default function ThailandTripDashboard() {
           <span className="text-sm font-medium">{copiedText}</span>
         </div>
       )}
+
+      {/* Full-Screen Thai Taxi / Chauffeur Address Modal */}
+      {driverModalHotelId &&
+        (() => {
+          const activeHotel = HOTEL_BOOKINGS.find(
+            (h) => h.id === driverModalHotelId
+          );
+          if (!activeHotel) return null;
+          return (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Show driver card for ${activeHotel.name}`}
+              className="fixed inset-0 z-50 bg-[#1F1A16]/85 backdrop-blur-sm flex items-center justify-center p-4"
+              onClick={() => setDriverModalHotelId(null)}
+            >
+              <div
+                className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/20 pb-4">
+                  <div>
+                    <span
+                      style={monoStyle}
+                      className="text-[11px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                    >
+                      CHAUFFEUR &amp; TAXI DISPATCH CARD &bull; SHOW TO DRIVER
+                    </span>
+                    <h3
+                      style={serifStyle}
+                      className="text-2xl sm:text-3xl font-normal text-[#1F1A16] mt-1"
+                    >
+                      {activeHotel.name}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDriverModalHotelId(null)}
+                    style={monoStyle}
+                    className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer"
+                  >
+                    Close &#10005;
+                  </button>
+                </div>
+
+                {/* High-Contrast Large Thai Script Block for Driver */}
+                <div className="bg-[#EFE7D8] border-2 border-[#13382E] p-5 sm:p-6 space-y-3">
+                  <div
+                    style={monoStyle}
+                    className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                  >
+                    กรุณาไปส่งที่โรงแรมนี้ (PLEASE TAKE US TO THIS HOTEL):
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-bold text-[#1F1A16] leading-snug">
+                    {activeHotel.thaiName}
+                  </div>
+                  <div className="text-lg sm:text-xl font-medium text-[#1F1A16] leading-relaxed pt-1 border-t border-[#1F1A16]/15">
+                    {activeHotel.thaiAddress}
+                  </div>
+                  {activeHotel.thaiDirectionsNote && (
+                    <div className="text-sm sm:text-base text-[#A8442A] font-medium pt-1">
+                      หมายเหตุ: {activeHotel.thaiDirectionsNote}
+                    </div>
+                  )}
+                </div>
+
+                {/* English & Reception Telephone */}
+                <div className="space-y-2 text-xs sm:text-sm text-[#4A4036]">
+                  <div>
+                    <strong>English Address:</strong> {activeHotel.address}
+                  </div>
+                  <div>
+                    <strong>Hotel Reception Phone (พนักงานต้อนรับ):</strong>{" "}
+                    <a
+                      href={`tel:${activeHotel.phone.replace(/\s+/g, "")}`}
+                      className="text-[#13382E] font-bold underline"
+                    >
+                      {activeHotel.phone}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 pt-2 border-t border-[#1F1A16]/15">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleCopy(
+                        `${activeHotel.thaiName} - ${activeHotel.thaiAddress}`,
+                        `${activeHotel.name} Thai Address`
+                      )
+                    }
+                    style={monoStyle}
+                    className="flex-1 py-3 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
+                  >
+                    Copy Thai Script for Grab
+                  </button>
+                  <a
+                    href={activeHotel.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={monoStyle}
+                    className="px-5 py-3 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-xs uppercase tracking-[0.16em] text-center"
+                  >
+                    Open Google Maps <ExternalArrow />
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+      {/* Floating On-The-Ground Quick Utility Desk (Available From Any Tab) */}
+      <div className="fixed bottom-5 left-5 z-40">
+        {isQuickDeskOpen ? (
+          <div className="bg-[#FBF8F3] border-2 border-[#1F1A16] shadow-2xl w-80 sm:w-96 p-4 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#1F1A16]/15 pb-2.5">
+              <span
+                style={monoStyle}
+                className="text-[11px] uppercase tracking-[0.18em] text-[#13382E] font-bold"
+              >
+                QUICK POCKET DESK (THB &bull; PNR &bull; TAXI)
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsQuickDeskOpen(false)}
+                style={monoStyle}
+                className="px-2 py-0.5 bg-[#EFE7D8] border border-[#1F1A16]/20 text-[11px] text-[#1F1A16] cursor-pointer"
+              >
+                CLOSE &#10005;
+              </button>
+            </div>
+
+            {/* Instant Mini Currency Converter */}
+            <div className="space-y-1.5">
+              <span
+                style={monoStyle}
+                className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block"
+              >
+                INSTANT CURRENCY (1 GBP &approx; {tripState.exchangeRate} THB)
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2.5 py-1.5">
+                  <label
+                    style={monoStyle}
+                    className="text-[10px] uppercase text-[#5C5248] block"
+                  >
+                    THB (&#3647;)
+                  </label>
+                  <input
+                    type="number"
+                    aria-label="Quick THB input"
+                    value={thbInput}
+                    onChange={(e) => handleThbChange(e.target.value)}
+                    style={serifStyle}
+                    className="w-full bg-transparent text-lg font-semibold text-[#1F1A16] focus:outline-none"
+                  />
+                </div>
+                <div className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2.5 py-1.5">
+                  <label
+                    style={monoStyle}
+                    className="text-[10px] uppercase text-[#5C5248] block"
+                  >
+                    GBP (&pound;)
+                  </label>
+                  <input
+                    type="number"
+                    aria-label="Quick GBP input"
+                    value={gbpInput}
+                    onChange={(e) => handleGbpChange(e.target.value)}
+                    style={serifStyle}
+                    className="w-full bg-transparent text-lg font-semibold text-[#13382E] focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* One-Tap Booking Reference Ciphers */}
+            <div className="space-y-1.5 pt-2 border-t border-[#1F1A16]/15">
+              <span
+                style={monoStyle}
+                className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block"
+              >
+                TAP TO COPY BOOKING CIPHER
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {[
+                  { label: "LGW→BKK", code: "6I8SOP" },
+                  { label: "BKK→HKT", code: "2GXDQP" },
+                  { label: "HKT→LGW", code: "6LDREI" },
+                  { label: "Shangri-La", code: "12891938794" },
+                  { label: "Pavilions", code: "78165SH099776" },
+                ].map((item) => (
+                  <button
+                    key={item.code}
+                    type="button"
+                    onClick={() =>
+                      handleCopy(item.code, `${item.label} (${item.code})`)
+                    }
+                    style={monoStyle}
+                    className="px-2.5 py-1.5 bg-[#F6F1E7] border border-[#1F1A16]/20 hover:border-[#13382E] text-left text-[11px] flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="text-[#5C5248]">{item.label}</span>
+                    <span className="font-bold text-[#13382E]">{item.code}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Show Driver Thai Script Triggers */}
+            <div className="space-y-1.5 pt-2 border-t border-[#1F1A16]/15">
+              <span
+                style={monoStyle}
+                className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block"
+              >
+                SHOW TAXI DRIVER (THAI SCRIPT)
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {HOTEL_BOOKINGS.map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => setDriverModalHotelId(h.id)}
+                    style={monoStyle}
+                    className="py-2 px-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[10px] uppercase tracking-wider text-center cursor-pointer"
+                  >
+                    {h.name.includes("Shangri-La")
+                      ? "Shangri-La (Thai)"
+                      : "Pavilions (Thai)"}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsQuickDeskOpen(true)}
+            style={monoStyle}
+            className="px-4 py-3 bg-[#1F1A16] hover:bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl text-[11px] uppercase tracking-[0.16em] font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+            title="Open Quick Currency Converter, PNR Ciphers & Thai Taxi Cards"
+          >
+            <span className="text-[#D8B979]">&#3647;</span>
+            <span>Quick Desk &bull; PNR &amp; Taxi</span>
+          </button>
+        )}
+      </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 sm:pt-12">
         {/* ===================================================================
@@ -2329,10 +2581,18 @@ export default function ThailandTripDashboard() {
                           style={monoStyle}
                           className="text-[11px] text-[#8A7E71] block mt-0.5"
                         >
-                          GEO: {hotel.coordinates}
+                          GEO: {hotel.coordinates} &bull; TEL: {hotel.phone}
                         </span>
                       </div>
                       <div className="flex flex-wrap gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setDriverModalHotelId(hotel.id)}
+                          style={monoStyle}
+                          className="px-4 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.15em] font-semibold cursor-pointer"
+                        >
+                          Show Driver (Thai Script)
+                        </button>
                         <a
                           href={hotel.mapUrl}
                           target="_blank"
