@@ -1088,11 +1088,6 @@ export default function ThailandTripDashboard() {
                       >
                         No recorded changes yet.
                       </p>
-                      <p className="text-xs text-[#8A7E71]">
-                        Whenever you or Naana check off an item, inscribe a
-                        suggestion, or edit a reservation, it will be
-                        timestamped here automatically.
-                      </p>
                     </div>
                   );
                 }
