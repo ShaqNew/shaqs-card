@@ -111,4 +111,29 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/~£3,051.90/i)).toBeInTheDocument();
   });
+
+  it("records changes in the Folio Change Log when items are completed or added", () => {
+    render(<ThailandTripDashboard />);
+
+    // Switch active editor to Naana
+    fireEvent.click(screen.getByRole("button", { name: /^Naana$/i }));
+
+    // Complete a prep item
+    fireEvent.click(screen.getByRole("button", { name: /Prep & Apps/i }));
+    const grabCheckbox = screen.getByRole("checkbox", {
+      name: /Southeast Asia's Uber equivalent/i,
+    });
+    fireEvent.click(grabCheckbox);
+
+    // Open Change Log drawer
+    const logBtn = screen.getByRole("button", { name: /CHANGE LOG \(1\)/i });
+    fireEvent.click(logBtn);
+
+    expect(
+      screen.getByRole("heading", { name: /Folio Change Log/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Configured essential app/i)
+    ).toBeInTheDocument();
+  });
 });

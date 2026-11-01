@@ -36,6 +36,16 @@ type PhaseFilter =
   | "return";
 
 const STORAGE_KEY = "naanas_space_thailand_2027_v1";
+const ACTOR_STORAGE_KEY = "naanas_space_thailand_2027_actor";
+
+export interface ChangeLogEntry {
+  id: string;
+  timestamp: number;
+  actor: "Shaq" | "Naana";
+  section: "itinerary" | "bookings" | "prep" | "packing" | "budget";
+  action: string;
+  detail: string;
+}
 
 interface PersistedTripState {
   completedPrepIds: string[];
@@ -48,6 +58,7 @@ interface PersistedTripState {
   pavilionsBalancePaid: boolean;
   plannedExpenses: PlannedExpense[];
   exchangeRate: number;
+  changeLog?: ChangeLogEntry[];
   updatedAt?: number;
 }
 
@@ -62,6 +73,7 @@ const DEFAULT_PERSISTED_STATE: PersistedTripState = {
   pavilionsBalancePaid: false,
   plannedExpenses: DEFAULT_PLANNED_EXPENSES,
   exchangeRate: TRIP_METADATA.exchangeRateBenchmark,
+  changeLog: [],
 };
 
 const CATEGORY_EDITORIAL_STYLES: Record<
@@ -220,11 +232,16 @@ export default function ThailandTripDashboard() {
     (1000 / TRIP_METADATA.exchangeRateBenchmark).toFixed(2)
   );
 
-  // On-the-ground quick drawer & Thai taxi driver card modal state
+  // On-the-ground quick drawer, Thai taxi driver card modal & Change Log drawer state
   const [isQuickDeskOpen, setIsQuickDeskOpen] = useState(false);
   const [driverModalHotelId, setDriverModalHotelId] = useState<string | null>(
     null
   );
+  const [activeActor, setActiveActor] = useState<"Shaq" | "Naana">("Shaq");
+  const [isChangeLogOpen, setIsChangeLogOpen] = useState(false);
+  const [logSectionFilter, setLogSectionFilter] = useState<
+    "all" | ChangeLogEntry["section"]
+  >("all");
 
   // New planned expense state
   const [newExpTitle, setNewExpTitle] = useState("");
@@ -248,6 +265,15 @@ export default function ThailandTripDashboard() {
     minutes: 0,
     statusLabel: "Until Departure • London Gatwick",
   });
+
+  const handleSetActiveActor = (actor: "Shaq" | "Naana") => {
+    setActiveActor(actor);
+    try {
+      localStorage.setItem(ACTOR_STORAGE_KEY, actor);
+    } catch {
+      // Ignore storage errors
+    }
+  };
 
   const fetchFromCloud = useCallback(async () => {
     if (typeof fetch === "undefined") return;
@@ -294,11 +320,36 @@ export default function ThailandTripDashboard() {
   }, []);
 
   const updateTripState = useCallback(
-    (updater: (prev: PersistedTripState) => PersistedTripState) => {
+    (
+      updater: (prev: PersistedTripState) => PersistedTripState,
+      logMeta?: {
+        section: ChangeLogEntry["section"];
+        action: string;
+        detail: string;
+      }
+    ) => {
       setTripState((prev) => {
+        const now = Date.now();
+        const updatedBase = updater(prev);
+        const existingLogs = updatedBase.changeLog || prev.changeLog || [];
+        const nextLogs = logMeta
+          ? [
+              {
+                id: `log-${now}-${Math.random().toString(36).slice(2, 6)}`,
+                timestamp: now,
+                actor: activeActor,
+                section: logMeta.section,
+                action: logMeta.action,
+                detail: logMeta.detail,
+              },
+              ...existingLogs,
+            ].slice(0, 150)
+          : existingLogs;
+
         const next: PersistedTripState = {
-          ...updater(prev),
-          updatedAt: Date.now(),
+          ...updatedBase,
+          changeLog: nextLogs,
+          updatedAt: now,
         };
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -327,12 +378,16 @@ export default function ThailandTripDashboard() {
         return next;
       });
     },
-    []
+    [activeActor]
   );
 
   // Load persisted state from localStorage + sync with Vercel KV
   useEffect(() => {
     try {
+      const savedActor = localStorage.getItem(ACTOR_STORAGE_KEY);
+      if (savedActor === "Shaq" || savedActor === "Naana") {
+        setActiveActor(savedActor);
+      }
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -447,41 +502,89 @@ export default function ThailandTripDashboard() {
     tripState.packedItemIds.length,
   ]);
 
-  // Toggle helpers
+  // Toggle helpers with automatic Change Log attribution
   const togglePrepItem = (id: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      completedPrepIds: prev.completedPrepIds.includes(id)
-        ? prev.completedPrepIds.filter((item) => item !== id)
-        : [...prev.completedPrepIds, id],
-    }));
+    const item = PREP_CHECKLIST.find((p) => p.id === id);
+    const wasDone = tripState.completedPrepIds.includes(id);
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        completedPrepIds: prev.completedPrepIds.includes(id)
+          ? prev.completedPrepIds.filter((i) => i !== id)
+          : [...prev.completedPrepIds, id],
+      }),
+      {
+        section: "prep",
+        action: wasDone ? "Reopened prep task" : "Completed prep task",
+        detail: item ? item.title : id,
+      }
+    );
   };
 
   const toggleAppInstalled = (id: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      installedAppIds: prev.installedAppIds.includes(id)
-        ? prev.installedAppIds.filter((item) => item !== id)
-        : [...prev.installedAppIds, id],
-    }));
+    const app = ESSENTIAL_APPS.find((a) => a.id === id);
+    const wasInstalled = tripState.installedAppIds.includes(id);
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        installedAppIds: prev.installedAppIds.includes(id)
+          ? prev.installedAppIds.filter((i) => i !== id)
+          : [...prev.installedAppIds, id],
+      }),
+      {
+        section: "prep",
+        action: wasInstalled
+          ? "Unchecked essential app"
+          : "Configured essential app",
+        detail: app ? app.name : id,
+      }
+    );
   };
 
   const togglePackingItem = (id: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      packedItemIds: prev.packedItemIds.includes(id)
-        ? prev.packedItemIds.filter((item) => item !== id)
-        : [...prev.packedItemIds, id],
-    }));
+    const item = allPackingItems.find((p) => p.id === id);
+    const wasPacked = tripState.packedItemIds.includes(id);
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        packedItemIds: prev.packedItemIds.includes(id)
+          ? prev.packedItemIds.filter((i) => i !== id)
+          : [...prev.packedItemIds, id],
+      }),
+      {
+        section: "packing",
+        action: wasPacked ? "Unpacked item" : "Packed item",
+        detail: item ? `${item.label} (${item.category})` : id,
+      }
+    );
   };
 
   const toggleActivityCompleted = (id: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      completedActivityIds: prev.completedActivityIds.includes(id)
-        ? prev.completedActivityIds.filter((item) => item !== id)
-        : [...prev.completedActivityIds, id],
-    }));
+    const wasDone = tripState.completedActivityIds.includes(id);
+    let foundLabel = id;
+    for (const day of TRIP_DAYS) {
+      const customActs = tripState.customActivitiesByDay[day.dayNumber] || [];
+      const match = [...day.defaultActivities, ...customActs].find(
+        (a) => a.id === id
+      );
+      if (match) {
+        foundLabel = `Day 0${day.dayNumber} • ${match.title} (${match.time})`;
+        break;
+      }
+    }
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        completedActivityIds: prev.completedActivityIds.includes(id)
+          ? prev.completedActivityIds.filter((i) => i !== id)
+          : [...prev.completedActivityIds, id],
+      }),
+      {
+        section: "itinerary",
+        action: wasDone ? "Reopened schedule item" : "Completed schedule item",
+        detail: foundLabel,
+      }
+    );
   };
 
   const addCustomActivity = (
@@ -492,29 +595,47 @@ export default function ThailandTripDashboard() {
       ...activityData,
       id: `custom-${dayNumber}-${Date.now()}`,
     };
-    updateTripState((prev) => {
-      const existing = prev.customActivitiesByDay[dayNumber] || [];
-      return {
-        ...prev,
-        customActivitiesByDay: {
-          ...prev.customActivitiesByDay,
-          [dayNumber]: [...existing, newActivity],
-        },
-      };
-    });
+    updateTripState(
+      (prev) => {
+        const existing = prev.customActivitiesByDay[dayNumber] || [];
+        return {
+          ...prev,
+          customActivitiesByDay: {
+            ...prev.customActivitiesByDay,
+            [dayNumber]: [...existing, newActivity],
+          },
+        };
+      },
+      {
+        section: "itinerary",
+        action: `Inscribed to Day 0${dayNumber}`,
+        detail: `${activityData.title} (${activityData.time})`,
+      }
+    );
   };
 
   const removeCustomActivity = (dayNumber: number, activityId: string) => {
-    updateTripState((prev) => {
-      const existing = prev.customActivitiesByDay[dayNumber] || [];
-      return {
-        ...prev,
-        customActivitiesByDay: {
-          ...prev.customActivitiesByDay,
-          [dayNumber]: existing.filter((a) => a.id !== activityId),
-        },
-      };
-    });
+    const existingList = tripState.customActivitiesByDay[dayNumber] || [];
+    const targetAct = existingList.find((a) => a.id === activityId);
+    updateTripState(
+      (prev) => {
+        const existing = prev.customActivitiesByDay[dayNumber] || [];
+        return {
+          ...prev,
+          customActivitiesByDay: {
+            ...prev.customActivitiesByDay,
+            [dayNumber]: existing.filter((a) => a.id !== activityId),
+          },
+        };
+      },
+      {
+        section: "itinerary",
+        action: `Removed from Day 0${dayNumber}`,
+        detail: targetAct
+          ? `${targetAct.title} (${targetAct.time})`
+          : activityId,
+      }
+    );
     if (editingActivityId === activityId) {
       setEditingActivityId(null);
     }
@@ -536,27 +657,36 @@ export default function ThailandTripDashboard() {
   ) => {
     e.preventDefault();
     if (!editActTitle.trim()) return;
-    updateTripState((prev) => {
-      const existing = prev.customActivitiesByDay[dayNumber] || [];
-      return {
-        ...prev,
-        customActivitiesByDay: {
-          ...prev.customActivitiesByDay,
-          [dayNumber]: existing.map((act) =>
-            act.id === activityId
-              ? {
-                  ...act,
-                  time: editActTime.trim() || "Flexible",
-                  title: editActTitle.trim(),
-                  category: editActCategory,
-                  location: editActLocation.trim() || undefined,
-                  notes: editActNotes.trim() || undefined,
-                }
-              : act
-          ),
-        },
-      };
-    });
+    const nextTime = editActTime.trim() || "Flexible";
+    const nextTitle = editActTitle.trim();
+    updateTripState(
+      (prev) => {
+        const existing = prev.customActivitiesByDay[dayNumber] || [];
+        return {
+          ...prev,
+          customActivitiesByDay: {
+            ...prev.customActivitiesByDay,
+            [dayNumber]: existing.map((act) =>
+              act.id === activityId
+                ? {
+                    ...act,
+                    time: nextTime,
+                    title: nextTitle,
+                    category: editActCategory,
+                    location: editActLocation.trim() || undefined,
+                    notes: editActNotes.trim() || undefined,
+                  }
+                : act
+            ),
+          },
+        };
+      },
+      {
+        section: "itinerary",
+        action: `Updated entry on Day 0${dayNumber}`,
+        detail: `${nextTitle} (${nextTime})`,
+      }
+    );
     setEditingActivityId(null);
   };
 
@@ -630,21 +760,38 @@ export default function ThailandTripDashboard() {
       label: newPackLabel.trim(),
       forWho: newPackForWho,
     };
-    updateTripState((prev) => ({
-      ...prev,
-      customPackingItems: [...prev.customPackingItems, item],
-    }));
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        customPackingItems: [...prev.customPackingItems, item],
+      }),
+      {
+        section: "packing",
+        action: "Added custom packing item",
+        detail: `${item.label} (${item.category})`,
+      }
+    );
     setNewPackLabel("");
   };
 
   const removeCustomPackingItem = (itemId: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      customPackingItems: prev.customPackingItems.filter(
-        (i) => i.id !== itemId
-      ),
-      packedItemIds: prev.packedItemIds.filter((id) => id !== itemId),
-    }));
+    const targetItem = tripState.customPackingItems.find(
+      (i) => i.id === itemId
+    );
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        customPackingItems: prev.customPackingItems.filter(
+          (i) => i.id !== itemId
+        ),
+        packedItemIds: prev.packedItemIds.filter((id) => id !== itemId),
+      }),
+      {
+        section: "packing",
+        action: "Removed custom packing item",
+        detail: targetItem ? targetItem.label : itemId,
+      }
+    );
   };
 
   // Currency handlers
@@ -690,27 +837,62 @@ export default function ThailandTripDashboard() {
       city: newExpCity,
       isBooked: false,
     };
-    updateTripState((prev) => ({
-      ...prev,
-      plannedExpenses: [...prev.plannedExpenses, exp],
-    }));
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        plannedExpenses: [...prev.plannedExpenses, exp],
+      }),
+      {
+        section: "budget",
+        action: "Added planned expense",
+        detail: `${exp.title} — THB ${exp.amountThb.toLocaleString()} (${exp.city})`,
+      }
+    );
     setNewExpTitle("");
     setNewExpAmount("");
   };
 
   const toggleExpenseBooked = (id: string) => {
-    updateTripState((prev) => ({
-      ...prev,
-      plannedExpenses: prev.plannedExpenses.map((e) =>
-        e.id === id ? { ...e, isBooked: !e.isBooked } : e
-      ),
-    }));
+    const targetExp = tripState.plannedExpenses.find((e) => e.id === id);
+    const wasBooked = Boolean(targetExp?.isBooked);
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        plannedExpenses: prev.plannedExpenses.map((e) =>
+          e.id === id ? { ...e, isBooked: !e.isBooked } : e
+        ),
+      }),
+      {
+        section: "budget",
+        action: wasBooked
+          ? "Marked expense as planned"
+          : "Marked expense as settled/reserved",
+        detail: targetExp
+          ? `${targetExp.title} (THB ${targetExp.amountThb.toLocaleString()})`
+          : id,
+      }
+    );
   };
 
   const deleteExpense = (id: string) => {
+    const targetExp = tripState.plannedExpenses.find((e) => e.id === id);
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        plannedExpenses: prev.plannedExpenses.filter((e) => e.id !== id),
+      }),
+      {
+        section: "budget",
+        action: "Removed planned expense",
+        detail: targetExp ? targetExp.title : id,
+      }
+    );
+  };
+
+  const deleteChangeLogEntry = (logId: string) => {
     updateTripState((prev) => ({
       ...prev,
-      plannedExpenses: prev.plannedExpenses.filter((e) => e.id !== id),
+      changeLog: (prev.changeLog || []).filter((l) => l.id !== logId),
     }));
   };
 
@@ -726,7 +908,45 @@ export default function ThailandTripDashboard() {
             <span>&larr;</span>
             <span>Back to Naana&apos;s Space</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* Active Editor Toggle (Shaq / Naana) */}
+            <div
+              style={monoStyle}
+              className="flex items-center border border-[#1F1A16]/20 bg-[#FBF8F3] text-[10px] tracking-[0.14em]"
+              title="Select who is making changes on this device"
+            >
+              <span className="px-2 py-0.5 text-[#8A7E71] border-r border-[#1F1A16]/15">
+                EDITOR:
+              </span>
+              {(["Shaq", "Naana"] as const).map((person) => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => handleSetActiveActor(person)}
+                  className={`px-2 py-0.5 uppercase transition-colors cursor-pointer ${
+                    activeActor === person
+                      ? person === "Shaq"
+                        ? "bg-[#13382E] text-[#F6F1E7] font-semibold"
+                        : "bg-[#A8442A] text-[#FBF8F3] font-semibold"
+                      : "text-[#5C5248] hover:text-[#1F1A16]"
+                  }`}
+                >
+                  {person}
+                </button>
+              ))}
+            </div>
+
+            {/* Change Log Drawer Button */}
+            <button
+              type="button"
+              onClick={() => setIsChangeLogOpen(true)}
+              style={monoStyle}
+              className="px-2.5 py-0.5 border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[10px] tracking-[0.14em] text-[#1F1A16] hover:text-[#F6F1E7] font-semibold transition-colors cursor-pointer"
+              title="View history of itinerary, prep, packing, and budget changes"
+            >
+              CHANGE LOG ({(tripState.changeLog || []).length})
+            </button>
+
             <button
               type="button"
               onClick={fetchFromCloud}
@@ -746,6 +966,219 @@ export default function ThailandTripDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Folio Revision & Activity Change Log Modal Drawer */}
+      {isChangeLogOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Folio Change & Revision Log"
+          className="fixed inset-0 z-50 bg-[#1F1A16]/75 backdrop-blur-sm flex justify-end"
+          onClick={() => setIsChangeLogOpen(false)}
+        >
+          <div
+            className="bg-[#FBF8F3] border-l-2 border-[#1F1A16] w-full max-w-xl h-full flex flex-col justify-between shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-[#1F1A16]/20 bg-[#EFE7D8]/70 space-y-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                  >
+                    AUDIT &amp; REVISION CHRONICLE
+                  </span>
+                  <h3
+                    style={serifStyle}
+                    className="text-3xl font-normal text-[#1F1A16] mt-0.5"
+                  >
+                    Folio Change Log
+                  </h3>
+                  <p className="text-xs text-[#5C5248] mt-1">
+                    Tracks when reservations, notes, prep tasks, and packing
+                    items were added, edited, or marked complete by Shaq &amp;
+                    Naana.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsChangeLogOpen(false)}
+                  style={monoStyle}
+                  className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+                >
+                  Close &#10005;
+                </button>
+              </div>
+
+              {/* Active Editor Selector + Section Filter Pills */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#1F1A16]/15">
+                <div className="flex items-center gap-2">
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-wider text-[#5C5248]"
+                  >
+                    LOGGING AS:
+                  </span>
+                  {(["Shaq", "Naana"] as const).map((person) => (
+                    <button
+                      key={person}
+                      type="button"
+                      onClick={() => handleSetActiveActor(person)}
+                      style={monoStyle}
+                      className={`px-2.5 py-1 text-[11px] uppercase tracking-wider border cursor-pointer ${
+                        activeActor === person
+                          ? person === "Shaq"
+                            ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                            : "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
+                          : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {person}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    { id: "all", label: "All" },
+                    { id: "itinerary", label: "Itinerary" },
+                    { id: "prep", label: "Prep & Apps" },
+                    { id: "packing", label: "Packing" },
+                    { id: "budget", label: "Budget" },
+                    { id: "bookings", label: "Bookings" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        setLogSectionFilter(
+                          f.id as "all" | ChangeLogEntry["section"]
+                        )
+                      }
+                      style={monoStyle}
+                      className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                        logSectionFilter === f.id
+                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                          : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Log Entries List */}
+            <div className="flex-1 overflow-y-auto p-6 divide-y divide-[#1F1A16]/15">
+              {(() => {
+                const logs = (tripState.changeLog || []).filter(
+                  (entry) =>
+                    logSectionFilter === "all" ||
+                    entry.section === logSectionFilter
+                );
+                if (logs.length === 0) {
+                  return (
+                    <div className="py-12 text-center space-y-2">
+                      <p
+                        style={serifStyle}
+                        className="text-2xl italic text-[#5C5248]"
+                      >
+                        No recorded changes yet.
+                      </p>
+                      <p className="text-xs text-[#8A7E71]">
+                        Whenever you or Naana check off an item, inscribe a
+                        suggestion, or edit a reservation, it will be
+                        timestamped here automatically.
+                      </p>
+                    </div>
+                  );
+                }
+
+                return logs.map((entry) => {
+                  const formattedDate = new Date(
+                    entry.timestamp
+                  ).toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  return (
+                    <div
+                      key={entry.id}
+                      className="py-3.5 first:pt-0 last:pb-0 flex items-start justify-between gap-3"
+                    >
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            style={monoStyle}
+                            className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold ${
+                              entry.actor === "Shaq"
+                                ? "bg-[#13382E] text-[#F6F1E7]"
+                                : "bg-[#A8442A] text-[#FBF8F3]"
+                            }`}
+                          >
+                            {entry.actor}
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-[11px] uppercase tracking-wider font-semibold text-[#1F1A16]"
+                          >
+                            {entry.action}
+                          </span>
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] text-[#8A7E71]"
+                          >
+                            &bull; {formattedDate}
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#4A4036] break-words">
+                          {entry.detail}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => deleteChangeLogEntry(entry.id)}
+                        className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-1.5 py-0.5 shrink-0 cursor-pointer"
+                        title="Remove this log entry"
+                      >
+                        &#10005;
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-[#1F1A16]/20 bg-[#EFE7D8]/60 flex items-center justify-between">
+              <span style={monoStyle} className="text-[11px] text-[#5C5248]">
+                TOTAL LOGGED EVENTS: {(tripState.changeLog || []).length}
+              </span>
+              {(tripState.changeLog || []).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    updateTripState((prev) => ({
+                      ...prev,
+                      changeLog: [],
+                    }))
+                  }
+                  style={monoStyle}
+                  className="px-3 py-1.5 border border-[#A8442A]/40 text-[#A8442A] hover:bg-[#A8442A] hover:text-[#FBF8F3] text-[10px] uppercase tracking-wider cursor-pointer transition-colors"
+                >
+                  Clear All History
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating Editorial Copy Stamp Notification */}
       {copiedText && (
@@ -994,6 +1427,20 @@ export default function ThailandTripDashboard() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="pt-2 border-t border-[#1F1A16]/15">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsQuickDeskOpen(false);
+                  setIsChangeLogOpen(true);
+                }}
+                style={monoStyle}
+                className="w-full py-2 px-2.5 bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border border-[#1F1A16]/25 text-[10px] uppercase tracking-wider text-center cursor-pointer transition-colors"
+              >
+                View Folio Change Log ({(tripState.changeLog || []).length})
+              </button>
             </div>
           </div>
         ) : (
@@ -2553,11 +3000,21 @@ export default function ThailandTripDashboard() {
                               type="checkbox"
                               checked={tripState.pavilionsBalancePaid}
                               onChange={() =>
-                                updateTripState((prev) => ({
-                                  ...prev,
-                                  pavilionsBalancePaid:
-                                    !prev.pavilionsBalancePaid,
-                                }))
+                                updateTripState(
+                                  (prev) => ({
+                                    ...prev,
+                                    pavilionsBalancePaid:
+                                      !prev.pavilionsBalancePaid,
+                                  }),
+                                  {
+                                    section: "bookings",
+                                    action: tripState.pavilionsBalancePaid
+                                      ? "Reopened airport transfer balance"
+                                      : "Settled airport transfer balance",
+                                    detail:
+                                      "The Pavilions Phuket • THB 1,190.00 (~£26.75)",
+                                  }
+                                )
                               }
                               className="w-4 h-4 accent-[#13382E]"
                             />
