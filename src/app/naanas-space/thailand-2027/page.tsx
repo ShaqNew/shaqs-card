@@ -150,6 +150,10 @@ const ExternalArrow = () => (
   </svg>
 );
 
+function formatDayNumber(dayNumber: number): string {
+  return String(dayNumber).padStart(2, "0");
+}
+
 function parseActivitySortMinutes(
   timeStr: string,
   fallbackIndex: number
@@ -568,7 +572,7 @@ export default function ThailandTripDashboard() {
         (a) => a.id === id
       );
       if (match) {
-        foundLabel = `Day 0${day.dayNumber} • ${match.title} (${match.time})`;
+        foundLabel = `Day ${formatDayNumber(day.dayNumber)} • ${match.title} (${match.time})`;
         break;
       }
     }
@@ -608,7 +612,7 @@ export default function ThailandTripDashboard() {
       },
       {
         section: "itinerary",
-        action: `Inscribed to Day 0${dayNumber}`,
+        action: `Inscribed to Day ${formatDayNumber(dayNumber)}`,
         detail: `${activityData.title} (${activityData.time})`,
       }
     );
@@ -630,7 +634,7 @@ export default function ThailandTripDashboard() {
       },
       {
         section: "itinerary",
-        action: `Removed from Day 0${dayNumber}`,
+        action: `Removed from Day ${formatDayNumber(dayNumber)}`,
         detail: targetAct
           ? `${targetAct.title} (${targetAct.time})`
           : activityId,
@@ -683,7 +687,7 @@ export default function ThailandTripDashboard() {
       },
       {
         section: "itinerary",
-        action: `Updated entry on Day 0${dayNumber}`,
+        action: `Updated entry on Day ${formatDayNumber(dayNumber)}`,
         detail: `${nextTitle} (${nextTime})`,
       }
     );
@@ -1791,7 +1795,7 @@ export default function ThailandTripDashboard() {
                         : "bg-[#FBF8F3] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
                     }`}
                   >
-                    D0{d.dayNumber} &bull; {d.shortDate}
+                    D{formatDayNumber(d.dayNumber)} &bull; {d.shortDate}
                   </button>
                 );
               })}
@@ -1920,7 +1924,7 @@ export default function ThailandTripDashboard() {
                             style={serifStyle}
                             className="text-2xl sm:text-3xl font-normal text-[#A8442A]"
                           >
-                            Day 0{day.dayNumber}
+                            Day {formatDayNumber(day.dayNumber)}
                           </span>
                           <span
                             style={monoStyle}
@@ -1968,7 +1972,7 @@ export default function ThailandTripDashboard() {
                                 style={serifStyle}
                                 className="text-4xl sm:text-5xl font-normal text-[#A8442A]"
                               >
-                                Day 0{day.dayNumber}
+                                Day {formatDayNumber(day.dayNumber)}
                               </span>
                               <div className="flex items-center gap-2">
                                 <span

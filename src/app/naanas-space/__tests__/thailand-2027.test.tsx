@@ -35,6 +35,9 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(
       screen.getByText(/Departure Day: The Birthday Escape Begins/i)
     ).toBeInTheDocument();
+    expect(screen.getByText("Day 10")).toBeInTheDocument();
+    expect(screen.queryByText("Day 010")).not.toBeInTheDocument();
+    expect(screen.getByText(/D10 • Sun 14 Feb/i)).toBeInTheDocument();
   });
 
   it("switches to Bookings Vault and displays confirmed PNRs and hotel references", () => {
