@@ -1472,15 +1472,5 @@ export const FOOD_SAFETY_GUIDELINES: FoodSafetyGuideline[] = [
       "Thai pharmacists are highly trained, generally speak excellent English, and can easily diagnose minor travel ailments.",
       "Many medications that require a prescription in the UK (like strong stomach aids) can be purchased over the counter."
     ]
-  },
-  {
-    id: "dietary-phrases",
-    badge: "LANGUAGE",
-    title: "Useful Ordering Phrases",
-    guidelines: [
-      "Mai sai... (ไม่ใส่...): 'Do not put ___ in.' (Useful for omitting ingredients you simply don't prefer).",
-      "Mai phet (ไม่เผ็ด): 'Not spicy.' (Essential, as standard Thai heat levels are much higher than in the UK).",
-      "Aroi (อร่อย): 'Delicious!' (A compliment highly appreciated by street vendors)."
-    ]
   }
 ];

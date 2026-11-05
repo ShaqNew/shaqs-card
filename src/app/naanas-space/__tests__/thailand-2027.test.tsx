@@ -111,7 +111,9 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(
       screen.getByText(/Pharmacy Access \(Raan Khaay Yaa\)/i)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Useful Ordering Phrases/i)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Useful Ordering Phrases/i)
+    ).not.toBeInTheDocument();
   });
 
   it("switches to Budget & THB view and converts currency accurately", () => {

@@ -179,11 +179,11 @@ export function StepGuideAndSos() {
             Food Safety &amp; Dining Guidelines
           </h3>
           <p className="text-xs sm:text-sm text-[#5C5248] mt-1">
-            Essential hygiene protocols, hydration rules, pharmacy navigation, and practical ordering phrases for dining safely across Bangkok and Phuket.
+            Essential hygiene protocols, hydration rules, and pharmacy access for dining safely across Bangkok and Phuket.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {FOOD_SAFETY_GUIDELINES.map((item) => (
             <div
               key={item.id}
