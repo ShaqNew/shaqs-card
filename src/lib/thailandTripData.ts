@@ -87,6 +87,13 @@ export interface PlannedExpense {
   isBooked?: boolean;
 }
 
+export interface FoodSafetyGuideline {
+  id: string;
+  badge: string;
+  title: string;
+  guidelines: string[];
+}
+
 export const TRIP_METADATA = {
   title: "Thailand 2027: Naana's Birthday Escape",
   occasion: "Celebrating Naana's Birthday",
@@ -1432,4 +1439,48 @@ export const INTERNATIONAL_HOSPITALS = [
     note: "Chaloem Phrakiat Ror 9 Rd • International standard hospital in Phuket",
     mapUrl: "https://maps.google.com/?q=Bangkok+Hospital+Siriroj+Phuket",
   },
+];
+
+export const FOOD_SAFETY_GUIDELINES: FoodSafetyGuideline[] = [
+  {
+    id: "water-ice",
+    badge: "HYDRATION",
+    title: "Tap Water & Ice Protocol",
+    guidelines: [
+      "Do not drink tap water. Bottled water is cheap and available at every 7-Eleven (using tap water to brush your teeth is fine).",
+      "Ice is overwhelmingly safe. If it is tubular (a cylinder with a hole) or uniformly cubed, it comes from a purified ice factory.",
+      "Avoid shaved or crushed ice from smaller street carts if you are unsure of the source."
+    ]
+  },
+  {
+    id: "street-food",
+    badge: "HYGIENE",
+    title: "Street Food Best Practices",
+    guidelines: [
+      "The Turnover Rule: Always eat at stalls with a long queue of locals. High turnover means ingredients haven't been sitting in the heat.",
+      "Cooked to Order: Opt for dishes cooked fresh in a blazing hot wok rather than pre-cooked curries sitting in trays.",
+      "Cutlery Sterilization: Many street food tables have a small container of boiling water to briefly dip and sterilize your fork and spoon.",
+      "Look for the green 'Clean Food Good Taste' sign (featuring a smiling chef), indicating Ministry of Public Health certification."
+    ]
+  },
+  {
+    id: "pharmacy",
+    badge: "MEDICAL",
+    title: "Pharmacy Access (Raan Khaay Yaa)",
+    guidelines: [
+      "Look for the sign ร้านขายยา or a standard green cross.",
+      "Thai pharmacists are highly trained, generally speak excellent English, and can easily diagnose minor travel ailments.",
+      "Many medications that require a prescription in the UK (like strong stomach aids) can be purchased over the counter."
+    ]
+  },
+  {
+    id: "dietary-phrases",
+    badge: "LANGUAGE",
+    title: "Useful Ordering Phrases",
+    guidelines: [
+      "Mai sai... (ไม่ใส่...): 'Do not put ___ in.' (Useful for omitting ingredients you simply don't prefer).",
+      "Mai phet (ไม่เผ็ด): 'Not spicy.' (Essential, as standard Thai heat levels are much higher than in the UK).",
+      "Aroi (อร่อย): 'Delicious!' (A compliment highly appreciated by street vendors)."
+    ]
+  }
 ];

@@ -28,7 +28,7 @@ For future reference, ongoing roadmap tracking, and architectural decisions, con
 This document serves as the living specification for enhancements, including:
 - **Agreed Architectural Decisions:** PWA offline caching, Open-Meteo live weather API, Leaflet map route previews, Google Calendar/.ics sync, and S3/Vault PDF attachments.
 - **Implementation Roadmap:** Prioritised feature tiers (Tier 1: Food safety guide, outfit suggestions, notes; Tier 2: Calendar & timezone UI; Tier 3: PWA, Weather, and Dossier).
-- **Completed Milestones:** Day counter zero-padding fix (`c42d5eb`) and modular component architecture refactoring (`383a0e6`).
+- **Completed Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), and culinary & food safety advisory (`FOOD_SAFETY_GUIDELINES`, Tier 1 — #1).
 
 ---
 
@@ -42,7 +42,7 @@ The page is structured around **6 modular steps** accessible via the sticky navi
 | **Step II** | `StepBookingsVault.tsx` | Master reference cipher strip, tactile flight coupons (Air Arabia & Thai Vietjet), verified PNRs, baggage allowances, and hotel vouchers. |
 | **Step III** | `StepPrepAndApps.tsx` | Entry clearance checklist (TDAC, passport validity), ATM currency advisories, and essential Thailand digital apps directory. |
 | **Step IV** | `StepPackingStudio.tsx` | Luggage overview, climate & dress-code lookbooks (Daytime/Temple, Rooftop/Dining, Beach), and the categorized Trunk Ledger. |
-| **Step V** | `StepGuideAndSos.tsx` | Regional transit field dispatches (BKK arrival, Phuket buggy service), emergency speed-dials (1155, 1669, Embassy), and accredited hospital directory. |
+| **Step V** | `StepGuideAndSos.tsx` | Regional transit field dispatches (BKK arrival, Phuket buggy service), culinary & food safety advisory, emergency speed-dials (1155, 1669, Embassy), and accredited hospital directory. |
 | **Step VI** | `StepBudgetAndLedger.tsx` | Interactive THB ⇄ GBP currency desk, quick baht presets, financial matrix breakdown, and planned trip expense ledger. |
 
 ### Global Overlays & Utilities

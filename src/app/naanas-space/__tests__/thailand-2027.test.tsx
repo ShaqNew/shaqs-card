@@ -96,13 +96,22 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(screen.getByText("Polaroid Camera")).toBeInTheDocument();
   });
 
-  it("switches to Field Guide & SOS and shows emergency numbers 1155 and 1669", () => {
+  it("switches to Field Guide & SOS and shows emergency numbers 1155 and 1669 and food safety guidelines", () => {
     render(<ThailandTripDashboard />);
     fireEvent.click(screen.getByRole("button", { name: /Field Guide & SOS/i }));
 
     expect(screen.getByText(/Dial 1155/i)).toBeInTheDocument();
     expect(screen.getByText(/Dial 1669/i)).toBeInTheDocument();
     expect(screen.getByText(/BNH Hospital \(Sathorn\)/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Food Safety & Dining Guidelines/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Tap Water & Ice Protocol/i)).toBeInTheDocument();
+    expect(screen.getByText(/Street Food Best Practices/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Pharmacy Access \(Raan Khaay Yaa\)/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Useful Ordering Phrases/i)).toBeInTheDocument();
   });
 
   it("switches to Budget & THB view and converts currency accurately", () => {

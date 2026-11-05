@@ -2,6 +2,7 @@ import React from "react";
 import {
   EMERGENCY_CONTACTS,
   INTERNATIONAL_HOSPITALS,
+  FOOD_SAFETY_GUIDELINES,
 } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle, ExternalArrow } from "../../styles";
 
@@ -159,6 +160,61 @@ export function StepGuideAndSos() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Culinary & Health Advisory • Food Safety Guidelines */}
+      <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6">
+        <div className="border-b border-[#1F1A16]/15 pb-3">
+          <span
+            style={monoStyle}
+            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+          >
+            CULINARY &amp; HEALTH ADVISORY &bull; FOOD &amp; WATER PROTOCOLS
+          </span>
+          <h3
+            style={serifStyle}
+            className="text-3xl font-normal text-[#1F1A16] mt-1"
+          >
+            Food Safety &amp; Dining Guidelines
+          </h3>
+          <p className="text-xs sm:text-sm text-[#5C5248] mt-1">
+            Essential hygiene protocols, hydration rules, pharmacy navigation, and practical ordering phrases for dining safely across Bangkok and Phuket.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {FOOD_SAFETY_GUIDELINES.map((item) => (
+            <div
+              key={item.id}
+              className="p-5 bg-[#EFE7D8]/60 border border-[#1F1A16]/15 flex flex-col justify-between space-y-3"
+            >
+              <div>
+                <span
+                  style={monoStyle}
+                  className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                >
+                  {item.badge}
+                </span>
+                <h4
+                  style={serifStyle}
+                  className="text-2xl font-semibold text-[#1F1A16] mt-1"
+                >
+                  {item.title}
+                </h4>
+                <ul className="mt-3 space-y-2 text-xs sm:text-sm text-[#4A4036]">
+                  {item.guidelines.map((guideline, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5">
+                      <span className="text-[#A8442A] font-bold select-none leading-relaxed">
+                        &bull;
+                      </span>
+                      <span className="leading-relaxed">{guideline}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
