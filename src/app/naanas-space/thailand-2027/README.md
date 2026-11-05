@@ -28,7 +28,7 @@ For future reference, ongoing roadmap tracking, and architectural decisions, con
 This document serves as the living specification for enhancements, including:
 - **Agreed Architectural Decisions:** PWA offline caching, Open-Meteo live weather API, Leaflet map route previews, Google Calendar/.ics sync, and S3/Vault PDF attachments.
 - **Implementation Roadmap:** Prioritised feature tiers (Tier 1: Food safety guide, outfit suggestions, notes; Tier 2: Calendar & timezone UI; Tier 3: PWA, Weather, and Dossier).
-- **Completed Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), and culinary & food safety advisory (`FOOD_SAFETY_GUIDELINES`, Tier 1 — #1).
+- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), and culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development).
 
 ---
 
