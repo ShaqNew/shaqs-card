@@ -6,11 +6,19 @@ import {
   monoStyle,
   CATEGORY_EDITORIAL_STYLES,
   ExternalArrow,
+  CalendarIcon,
 } from "../../styles";
 import {
   formatDayNumber,
   parseActivitySortMinutes,
 } from "../../utils/formatters";
+import {
+  buildGoogleCalendarUrl,
+  buildActivityIcsContent,
+  buildDayIcsContent,
+  buildMasterTripIcsContent,
+  downloadIcsFile,
+} from "../../utils/calendar";
 
 interface StepItineraryProps {
   tripState: PersistedTripState;
@@ -165,6 +173,35 @@ export function StepItinerary({
     }
   };
 
+  const handleExportMasterCalendar = () => {
+    const ics = buildMasterTripIcsContent(
+      TRIP_DAYS,
+      tripState.customActivitiesByDay
+    );
+    downloadIcsFile("thailand-2027-master-itinerary.ics", ics);
+  };
+
+  const handleExportDayCalendar = (
+    day: (typeof TRIP_DAYS)[number],
+    activities: ItineraryActivity[]
+  ) => {
+    const ics = buildDayIcsContent(day, activities);
+    const safeName = `thailand-2027-day-${formatDayNumber(day.dayNumber)}.ics`;
+    downloadIcsFile(safeName, ics);
+  };
+
+  const handleExportSingleActivity = (
+    day: { dateIso: string; dateLabel: string },
+    act: ItineraryActivity
+  ) => {
+    const ics = buildActivityIcsContent(day, act);
+    const safeTitle = act.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    downloadIcsFile(`${safeTitle || "activity"}.ics`, ics);
+  };
+
   return (
     <section className="space-y-10">
       {/* Editorial Filter Header */}
@@ -223,6 +260,16 @@ export function StepItinerary({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleExportMasterCalendar}
+                style={monoStyle}
+                className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#A8442A]/10 text-[#A8442A] border border-[#A8442A]/30 hover:bg-[#A8442A] hover:text-[#F6F1E7] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                title="Download 10-day master trip calendar (.ics) for Apple Calendar, Google Calendar, or Outlook"
+              >
+                <CalendarIcon className="w-3.5 h-3.5" />
+                <span>Export Master Calendar (.ics)</span>
+              </button>
               <button
                 type="button"
                 onClick={jumpToActiveOrFirstDay}
@@ -301,13 +348,25 @@ export function StepItinerary({
                       {day.title}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
                     <span
                       style={monoStyle}
-                      className="text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
+                      className="text-[11px] uppercase tracking-[0.14em] text-[#5C5248] mr-1"
                     >
                       {completedDayCount}/{allDayActivities.length} DONE
                     </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleExportDayCalendar(day, allDayActivities)
+                      }
+                      style={monoStyle}
+                      className="px-2.5 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] hover:text-[#13382E] text-[11px] uppercase tracking-[0.14em] text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
+                      title={`Export Day ${formatDayNumber(day.dayNumber)} schedule to .ics`}
+                    >
+                      <CalendarIcon className="w-3 h-3" />
+                      <span>Day .ics</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => toggleDayCollapsed(day.dayNumber)}
@@ -337,6 +396,18 @@ export function StepItinerary({
                           >
                             {day.dateLabel}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleExportDayCalendar(day, allDayActivities)
+                            }
+                            style={monoStyle}
+                            title={`Export Day ${formatDayNumber(day.dayNumber)} schedule to .ics`}
+                            className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] hover:text-[#13382E] text-[10px] uppercase tracking-wider text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
+                          >
+                            <CalendarIcon className="w-3 h-3" />
+                            <span>Day .ics</span>
+                          </button>
                           <button
                             type="button"
                             onClick={() => toggleDayCollapsed(day.dayNumber)}
@@ -710,7 +781,7 @@ export function StepItinerary({
 
                                 <div
                                   style={monoStyle}
-                                  className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-[#5C5248]"
+                                  className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-[#5C5248]"
                                 >
                                   {act.location && (
                                     <span>LOC: {act.location}</span>
@@ -725,6 +796,29 @@ export function StepItinerary({
                                       VIEW CARTOGRAPHY <ExternalArrow />
                                     </a>
                                   )}
+                                  <span className="text-[#1F1A16]/20 select-none">
+                                    &bull;
+                                  </span>
+                                  <a
+                                    href={buildGoogleCalendarUrl(day, act)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
+                                    title="Add this event to Google Calendar"
+                                  >
+                                    <span>+ Google Cal</span>
+                                    <ExternalArrow />
+                                  </a>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleExportSingleActivity(day, act)
+                                    }
+                                    className="text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+                                    title="Download .ics for Apple Calendar, Outlook, or iCal"
+                                  >
+                                    <span>+ .ics</span>
+                                  </button>
                                 </div>
                               </div>
                             )}

@@ -40,6 +40,51 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(screen.getByText(/D10 • Sun 14 Feb/i)).toBeInTheDocument();
   });
 
+  it("renders calendar integration actions (master export, day export, google cal, and single ics)", () => {
+    const originalCreateObjectUrl = window.URL.createObjectURL;
+    const originalRevokeObjectUrl = window.URL.revokeObjectURL;
+    window.URL.createObjectURL = jest.fn(() => "blob:mock-url");
+    window.URL.revokeObjectURL = jest.fn();
+
+    render(<ThailandTripDashboard />);
+
+    // Master calendar export button in Step I header
+    const masterExportBtn = screen.getByRole("button", {
+      name: /Export Master Calendar \(\.ics\)/i,
+    });
+    expect(masterExportBtn).toBeInTheDocument();
+
+    // Day-level export button
+    const dayExportBtns = screen.getAllByRole("button", {
+      name: /Day \.ics/i,
+    });
+    expect(dayExportBtns.length).toBeGreaterThan(0);
+
+    // Google Calendar 1-tap links on activity cards
+    const googleCalLinks = screen.getAllByRole("link", {
+      name: /\+ Google Cal/i,
+    });
+    expect(googleCalLinks.length).toBeGreaterThan(0);
+    expect(googleCalLinks[0]).toHaveAttribute("target", "_blank");
+    expect(googleCalLinks[0].getAttribute("href")).toContain(
+      "https://calendar.google.com/calendar/render?action=TEMPLATE"
+    );
+
+    // Single activity .ics buttons
+    const singleIcsBtns = screen.getAllByRole("button", {
+      name: /\+ \.ics/i,
+    });
+    expect(singleIcsBtns.length).toBeGreaterThan(0);
+
+    // Clicking master export triggers download
+    fireEvent.click(masterExportBtn);
+    expect(window.URL.createObjectURL).toHaveBeenCalled();
+
+    // Cleanup mocks
+    window.URL.createObjectURL = originalCreateObjectUrl;
+    window.URL.revokeObjectURL = originalRevokeObjectUrl;
+  });
+
   it("switches to Bookings Vault and displays confirmed PNRs and hotel references", () => {
     render(<ThailandTripDashboard />);
     fireEvent.click(screen.getByRole("button", { name: /Bookings Vault/i }));

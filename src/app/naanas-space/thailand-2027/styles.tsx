@@ -74,3 +74,23 @@ export const ExternalArrow = () => (
     <path d="M3 9L9 3M9 3H4.5M9 3V7.5" />
   </svg>
 );
+
+export const CalendarIcon = ({
+  className = "inline-block w-3.5 h-3.5",
+}: {
+  className?: string;
+}) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="2" y="3.5" width="12" height="10.5" rx="1.5" />
+    <path d="M5 2V4.5M11 2V4.5M2 7H14" />
+  </svg>
+);

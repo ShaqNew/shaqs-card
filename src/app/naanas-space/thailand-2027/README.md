@@ -28,7 +28,7 @@ For future reference, ongoing roadmap tracking, and architectural decisions, con
 This document serves as the living specification for enhancements, including:
 - **Agreed Architectural Decisions:** PWA offline caching, Open-Meteo live weather API, Leaflet map route previews, Google Calendar/.ics sync, and S3/Vault PDF attachments.
 - **Implementation Roadmap:** Prioritised feature tiers (Tier 1: Food safety guide, outfit suggestions, notes; Tier 2: Calendar & timezone UI; Tier 3: PWA, Weather, and Dossier).
-- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), and culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development).
+- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development), and universal calendar integration (`utils/calendar.ts`, Option A: 1-tap Google Calendar links + universal RFC 5545 `.ics` export for master trip, single day, and individual movements).
 
 ---
 
@@ -38,7 +38,7 @@ The page is structured around **6 modular steps** accessible via the sticky navi
 
 | Step | Component | Responsibility |
 | :--- | :--- | :--- |
-| **Step I** | `StepItinerary.tsx` | Master day-by-day itinerary (`D00`–`D10`), phase filters, custom activity inscription, inline editing, and curated recommendations. |
+| **Step I** | `StepItinerary.tsx` | Master day-by-day itinerary (`D00`–`D10`), phase filters, custom activity inscription, inline editing, curated recommendations, and universal calendar integration (Google Calendar 1-tap links + Master/Day/Activity `.ics` exports). |
 | **Step II** | `StepBookingsVault.tsx` | Master reference cipher strip, tactile flight coupons (Air Arabia & Thai Vietjet), verified PNRs, baggage allowances, and hotel vouchers. |
 | **Step III** | `StepPrepAndApps.tsx` | Entry clearance checklist (TDAC, passport validity), ATM currency advisories, and essential Thailand digital apps directory. |
 | **Step IV** | `StepPackingStudio.tsx` | Luggage overview, climate & dress-code lookbooks (Daytime/Temple, Rooftop/Dining, Beach), and the categorized Trunk Ledger. |
