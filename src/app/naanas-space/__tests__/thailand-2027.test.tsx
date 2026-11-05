@@ -139,4 +139,29 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByText(/Configured essential app/i)
     ).toBeInTheDocument();
   });
+
+  it("opens the Thai script driver modal and Quick Pocket Desk", () => {
+    render(<ThailandTripDashboard />);
+
+    // Open Quick Pocket Desk
+    fireEvent.click(
+      screen.getByRole("button", { name: /Quick Desk • PNR & Taxi/i })
+    );
+    expect(
+      screen.getByText(/QUICK POCKET DESK \(THB • PNR • TAXI\)/i)
+    ).toBeInTheDocument();
+
+    // Trigger Shangri-La Thai driver modal from Quick Pocket Desk
+    fireEvent.click(
+      screen.getByRole("button", { name: /Shangri-La \(Thai\)/i })
+    );
+    expect(
+      screen.getByRole("dialog", {
+        name: /Show driver card for Shangri-La Bangkok/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/โรงแรมแชงกรี-ลา กรุงเทพฯ/i)
+    ).toBeInTheDocument();
+  });
 });
