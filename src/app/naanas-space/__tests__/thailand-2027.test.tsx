@@ -86,7 +86,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByRole("button", { name: /Rooftop & Fine Dining/i })
     );
     expect(
-      screen.getAllByText(/closed-toe loafers or clean smart sneakers/i).length
+      screen.getAllByText(/closed-toe loafers or clean smart trainers/i).length
     ).toBeGreaterThan(0);
 
     const input = screen.getByPlaceholderText(/Add a custom item to pack/i);

@@ -107,7 +107,7 @@ export function StepPackingStudio({
                 <strong className="text-[#A8442A]">
                   UV Index 10&ndash;11 (Extreme)
                 </strong>{" "}
-                &mdash; SPF 50+ and polarized lenses are mandatory.
+                &mdash; SPF 50+ and polarised lenses are mandatory.
               </p>
             </div>
           </div>
@@ -203,7 +203,7 @@ export function StepPackingStudio({
                   <strong>Shaq (Gentlemen):</strong> Collared linen shirts,
                   tailored lightweight chinos/trousers, and{" "}
                   <strong className="text-[#1F1A16] underline">
-                    closed-toe loafers or clean smart sneakers
+                    closed-toe loafers or clean smart trainers
                   </strong>{" "}
                   (sky-bars strictly refuse flip-flops, athletic shorts, and
                   sleeveless vests).
@@ -226,7 +226,7 @@ export function StepPackingStudio({
               </div>
               <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
                 <li>
-                  Prioritize breathable natural fibres: linen, fine cotton, and
+                  Prioritise breathable natural fibres: linen, fine cotton, and
                   bamboo.
                 </li>
                 <li>
@@ -250,7 +250,7 @@ export function StepPackingStudio({
               </div>
               <ul className="space-y-1.5 text-[#4A4036] list-disc pl-5">
                 <li>
-                  Multiple swimwear rotations, linen beach cover-ups, polarized
+                  Multiple swimwear rotations, linen beach cover-ups, polarised
                   UV sunglasses, and wide-brimmed sunhats.
                 </li>
                 <li>
@@ -267,7 +267,7 @@ export function StepPackingStudio({
         </div>
       </div>
 
-      {/* The Trunk Ledger (Categorized Packing List) */}
+      {/* The Trunk Ledger (Categorised Packing List) */}
       <div
         id="trunk-ledger-section"
         className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"

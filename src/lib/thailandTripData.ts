@@ -514,7 +514,7 @@ export const TRIP_DAYS: TripDay[] = [
     phase: "bangkok",
     locationBadge: "Bangkok • Temples & Skyscrapers",
     title: "Golden Temples by River & Sky-High Romance",
-    vibe: "Ancient royal splendor by day, glittering rooftop glamour by night",
+    vibe: "Ancient royal splendour by day, glittering rooftop glamour by night",
     weatherSummary: "Bangkok: 33°C Sunny • Evening 24°C",
     accommodation: "Shangri-La Bangkok (Night 2 of 3)",
     defaultActivities: [
@@ -577,7 +577,7 @@ export const TRIP_DAYS: TripDay[] = [
         time: "17:45 ICT",
         category: "romance",
         location: "Silom / Sathon",
-        notes: "Smart casual dress code strictly enforced (men: collared linen shirt, trousers & closed-toe loafers/smart sneakers).",
+        notes: "Smart casual dress code strictly enforced (men: collared linen shirt, trousers & closed-toe loafers/smart trainers).",
         bookingGuide:
           "Book 2–4 weeks in advance for a sunset table (~17:30 arrival). Top nearby rooftops: SkyBeach at The Standard Mahanakhon (highest in Bangkok), Vertigo & Moon Bar at Banyan Tree, or Sky Bar at Lebua (5-min walk from Shangri-La).",
         serviceLinks: [
@@ -918,7 +918,7 @@ export const TRIP_DAYS: TripDay[] = [
         id: "d8-relax-day",
         time: "10:30 ICT",
         title: "Slow Morning at Layan Beach or Firefly Pool",
-        subtitle: "Savor the final full day of Naana's Birthday Trip",
+        subtitle: "Savour the final full day of Naana's Birthday Trip",
         category: "romance",
         location: "The Pavilions Phuket / Layan Beach",
       },
@@ -1221,7 +1221,7 @@ export const DEFAULT_PACKING_ITEMS: PackingItem[] = [
   {
     id: "pack-shaq-loafers",
     category: "Evening & Fine Dining",
-    label: "Closed-toe loafers or clean smart sneakers",
+    label: "Closed-toe loafers or clean smart trainers",
     note: "Bangkok rooftops strictly forbid flip-flops, athletic shorts, and sleeveless vests for men",
     forWho: "shaq",
     essential: true,
@@ -1261,7 +1261,7 @@ export const DEFAULT_PACKING_ITEMS: PackingItem[] = [
   {
     id: "pack-sunglasses-hat",
     category: "Resort & Beach (Phuket)",
-    label: "Polarized UV sunglasses & wide-brimmed sunhats",
+    label: "Polarised UV sunglasses & wide-brimmed sunhats",
     note: "Phuket February UV Index is 10–11 (Very High)",
     forWho: "both",
     essential: true,
@@ -1313,7 +1313,7 @@ export const DEFAULT_PACKING_ITEMS: PackingItem[] = [
     id: "pack-tissues-wipes",
     category: "Toiletries & Sun Care",
     label: "Pocket tissues & travel wet wipes",
-    note: "Keep in your daypack—some public restrooms lack toilet paper",
+    note: "Keep in your daypack—some public toilets lack toilet paper",
     forWho: "both",
     essential: true,
   },
@@ -1423,7 +1423,7 @@ export const INTERNATIONAL_HOSPITALS = [
   {
     city: "Phuket",
     name: "Bangkok Hospital Phuket",
-    note: "2/1 Hongyok Utis Rd, Phuket Town • Premier 24/7 international medical center",
+    note: "2/1 Hongyok Utis Rd, Phuket Town • Premier 24/7 international medical centre",
     mapUrl: "https://maps.google.com/?q=Bangkok+Hospital+Phuket",
   },
   {
