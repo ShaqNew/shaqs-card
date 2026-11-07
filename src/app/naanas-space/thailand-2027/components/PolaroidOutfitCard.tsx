@@ -3,6 +3,7 @@ import { TRIP_DAYS, WardrobeOutfit, GarmentLink } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle, ExternalArrow } from "../styles";
 import {
   DRESS_CODE_METADATA,
+  extractAsosProductMeta,
   extractSourceDomain,
   formatOwnerBadge,
   getCollageTileCount,
@@ -319,13 +320,15 @@ export function PolaroidCollageTile({
 }: PolaroidCollageTileProps) {
   const [imgError, setImgError] = useState(false);
   const [localExpanded, setLocalExpanded] = useState(false);
+  const asosMeta = garment ? extractAsosProductMeta(garment.url) : null;
   const [resolvedImgUrl, setResolvedImgUrl] = useState<string | undefined>(
-    garment?.imageUrl
+    garment?.imageUrl || asosMeta?.primaryImageUrl
   );
 
   useEffect(() => {
+    const nextAsosMeta = garment ? extractAsosProductMeta(garment.url) : null;
     setImgError(false);
-    setResolvedImgUrl(garment?.imageUrl);
+    setResolvedImgUrl(garment?.imageUrl || nextAsosMeta?.primaryImageUrl);
 
     if (
       garment &&
@@ -339,6 +342,7 @@ export function PolaroidCollageTile({
         .then((res) => (res.ok ? res.json() : null))
         .then((data: { imageUrl?: string | null } | null) => {
           if (!cancelled && data?.imageUrl) {
+            setImgError(false);
             setResolvedImgUrl(data.imageUrl);
           }
         })
@@ -378,6 +382,18 @@ export function PolaroidCollageTile({
   const effectiveImageUrl = garment.imageUrl || resolvedImgUrl;
   const showImage = Boolean(effectiveImageUrl && !imgError);
 
+  const handleImageError = () => {
+    if (
+      asosMeta &&
+      effectiveImageUrl &&
+      effectiveImageUrl !== asosMeta.fallbackImageUrl
+    ) {
+      setResolvedImgUrl(asosMeta.fallbackImageUrl);
+      return;
+    }
+    setImgError(true);
+  };
+
   const handleTileClick = () => {
     const garmentWithImg: GarmentLink = effectiveImageUrl
       ? { ...garment, imageUrl: effectiveImageUrl }
@@ -405,7 +421,7 @@ export function PolaroidCollageTile({
             alt={garment.label}
             loading="lazy"
             referrerPolicy="no-referrer"
-            onError={() => setImgError(true)}
+            onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-300 group-hover/tile:scale-105"
           />
         ) : (

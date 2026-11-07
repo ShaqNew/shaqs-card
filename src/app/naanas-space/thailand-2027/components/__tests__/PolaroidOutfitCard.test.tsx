@@ -455,6 +455,37 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(packedBtn).toBeDisabled();
       expect(packedBtn).toHaveTextContent("✓ In Packing Ledger");
     });
+
+    it("resolves ASOS product thumbnail even when imageUrl is missing and falls back to shot-2 on error", () => {
+      const asosOutfit: WardrobeOutfit = {
+        ...baseOutfit,
+        garments: [
+          {
+            id: "g-asos-cream",
+            label: "Cream Halter Neck Wrap Maxi Sundress",
+            url: "https://www.asos.com/asos-design/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/prd/210297981#colourWayId-210297982",
+            category: "One-Piece / Dress",
+          },
+        ],
+      };
+
+      render(<PolaroidOutfitCard outfit={asosOutfit} />);
+
+      const img = screen.getByRole("img", {
+        name: "Cream Halter Neck Wrap Maxi Sundress",
+      });
+      expect(img).toHaveAttribute(
+        "src",
+        "https://images.asos-media.com/products/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/210297981-1-cream"
+      );
+
+      // Simulate shot-1 404 -> should fall back to shot-2 (-2)
+      fireEvent.error(img);
+      expect(img).toHaveAttribute(
+        "src",
+        "https://images.asos-media.com/products/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/210297981-2"
+      );
+    });
   });
 });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
+  extractAsosProductMeta,
   extractOpenGraphFromHtml,
   inferRetailerSource,
   isGooglePhotosUrl,
@@ -13,9 +14,13 @@ const BROWSER_USER_AGENT =
 const BOT_USER_AGENT =
   "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)";
 
-async function fetchHtmlWithUserAgent(targetUrl: string, userAgent: string) {
+async function fetchHtmlWithUserAgent(
+  targetUrl: string,
+  userAgent: string,
+  timeoutMs = 4500
+) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 4500);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(targetUrl, {
       method: "GET",
@@ -31,6 +36,35 @@ async function fetchHtmlWithUserAgent(targetUrl: string, userAgent: string) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function resolveAsosCdnImage(
+  primaryImageUrl: string,
+  fallbackImageUrl: string
+): Promise<string> {
+  if (primaryImageUrl === fallbackImageUrl) {
+    return fallbackImageUrl;
+  }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 2500);
+  try {
+    const res = await fetch(primaryImageUrl, {
+      method: "GET",
+      headers: {
+        "User-Agent": BROWSER_USER_AGENT,
+        Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
+      },
+      signal: controller.signal,
+    });
+    if (res.ok) {
+      return primaryImageUrl;
+    }
+  } catch {
+    // Fall back to universal shot-2 URL
+  } finally {
+    clearTimeout(timeout);
+  }
+  return fallbackImageUrl;
 }
 
 async function handleLinkPreview(rawUrl: string | null) {
@@ -64,6 +98,7 @@ async function handleLinkPreview(rawUrl: string | null) {
 
   const { siteName: inferredSite, fallbackTitle } =
     inferRetailerSource(parsedUrl);
+  const asosMeta = extractAsosProductMeta(parsedUrl.toString());
 
   if (isPrivateGooglePhotosUrl(parsedUrl.toString())) {
     return NextResponse.json({
@@ -98,7 +133,8 @@ async function handleLinkPreview(rawUrl: string | null) {
     const primaryUa = preferBotUa ? BOT_USER_AGENT : BROWSER_USER_AGENT;
     const response = await fetchHtmlWithUserAgent(
       parsedUrl.toString(),
-      primaryUa
+      primaryUa,
+      asosMeta ? 2500 : 4500
     );
 
     const contentType = response.headers.get("content-type") || "";
@@ -127,7 +163,8 @@ async function handleLinkPreview(rawUrl: string | null) {
       let extracted = extractOpenGraphFromHtml(html, finalUrl);
 
       // Fallback: if the browser UA received a JS shell without og:image, retry with bot UA
-      if (!extracted.imageUrl && !preferBotUa) {
+      // (skip for ASOS where Akamai tarpits bot User-Agents and we have deterministic CDN URLs)
+      if (!extracted.imageUrl && !preferBotUa && !asosMeta) {
         try {
           const retryRes = await fetchHtmlWithUserAgent(
             parsedUrl.toString(),
@@ -149,10 +186,19 @@ async function handleLinkPreview(rawUrl: string | null) {
         }
       }
 
+      const finalImageUrl =
+        extracted.imageUrl ||
+        (asosMeta
+          ? await resolveAsosCdnImage(
+              asosMeta.primaryImageUrl,
+              asosMeta.fallbackImageUrl
+            )
+          : null);
+
       return NextResponse.json({
         url: parsedUrl.toString(),
         title: extracted.title || fallbackTitle,
-        imageUrl: extracted.imageUrl,
+        imageUrl: finalImageUrl,
         siteName: extracted.siteName || inferredSite,
       });
     }
@@ -160,10 +206,17 @@ async function handleLinkPreview(rawUrl: string | null) {
     // Graceful fallback when retailer blocks automated scraping or offline
   }
 
+  const fallbackImageUrl = asosMeta
+    ? await resolveAsosCdnImage(
+        asosMeta.primaryImageUrl,
+        asosMeta.fallbackImageUrl
+      )
+    : null;
+
   return NextResponse.json({
     url: parsedUrl.toString(),
     title: fallbackTitle,
-    imageUrl: null,
+    imageUrl: fallbackImageUrl,
     siteName: inferredSite,
   });
 }

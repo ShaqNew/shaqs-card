@@ -5,6 +5,7 @@ import {
   resolveDayOutfit,
   resolveActivityOutfit,
   extractSourceDomain,
+  extractAsosProductMeta,
   extractOpenGraphFromHtml,
   inferRetailerSource,
   isGooglePhotosUrl,
@@ -212,6 +213,29 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
       "https://images.asos-media.com/products/linen-shirt.jpg"
     );
     expect(parsed.siteName).toBe("ASOS");
+  });
+
+  it("deterministically resolves ASOS product CDN images and titles from ASOS product URLs", () => {
+    const asosUrl =
+      "https://www.asos.com/asos-design/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/prd/210297981#colourWayId-210297982";
+    const meta = extractAsosProductMeta(asosUrl);
+    expect(meta).not.toBeNull();
+    expect(meta?.productId).toBe("210297981");
+    expect(meta?.slug).toBe(
+      "asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream"
+    );
+    expect(meta?.primaryImageUrl).toBe(
+      "https://images.asos-media.com/products/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/210297981-1-cream"
+    );
+    expect(meta?.fallbackImageUrl).toBe(
+      "https://images.asos-media.com/products/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/210297981-2"
+    );
+
+    const inferred = inferRetailerSource(new URL(asosUrl));
+    expect(inferred.siteName).toBe("ASOS");
+    expect(inferred.fallbackTitle).toBe(
+      "Asos Design Cotton Linen Halter Neck Wrap Maxi Sundress In Cream"
+    );
   });
 
   describe("getCollageTileCount & getCollageGridClass responsive rules", () => {

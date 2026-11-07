@@ -7,6 +7,7 @@ import {
 import { serifStyle, monoStyle } from "../styles";
 import {
   DRESS_CODE_METADATA,
+  extractAsosProductMeta,
   extractSourceDomain,
   isPrivateGooglePhotosUrl,
   getCollageTileCount,
@@ -143,8 +144,9 @@ export function CreateLookModal({
   };
 
   const fetchLinkPreviewMetadata = async (targetUrl: string) => {
-    let scrapedTitle: string | null = null;
-    let scrapedImage: string | undefined = undefined;
+    const asosMeta = extractAsosProductMeta(targetUrl);
+    let scrapedTitle: string | null = asosMeta?.title || null;
+    let scrapedImage: string | undefined = asosMeta?.primaryImageUrl;
     let scrapedSite = extractSourceDomain(targetUrl);
     let scrapeWarning: string | null = null;
 

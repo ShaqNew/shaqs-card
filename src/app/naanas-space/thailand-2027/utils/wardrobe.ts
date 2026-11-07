@@ -421,6 +421,51 @@ export function extractOpenGraphFromHtml(
   };
 }
 
+export interface AsosProductMeta {
+  slug: string;
+  productId: string;
+  title: string;
+  primaryImageUrl: string;
+  fallbackImageUrl: string;
+}
+
+export function extractAsosProductMeta(url: string): AsosProductMeta | null {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (!host.includes("asos.")) return null;
+
+    const match = parsed.pathname.match(/\/([^/]+)\/prd\/(\d+)/i);
+    if (!match) return null;
+
+    const [, slug, productId] = match;
+    const title = decodeURIComponent(slug)
+      .replace(/[-_]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase())
+      .slice(0, 80);
+
+    const colourMatch = slug.match(/-in-([a-z0-9-]+)$/i);
+    const colourSuffix = colourMatch
+      ? colourMatch[1].replace(/-/g, "").toLowerCase()
+      : null;
+
+    const fallbackImageUrl = `https://images.asos-media.com/products/${slug}/${productId}-2`;
+    const primaryImageUrl = colourSuffix
+      ? `https://images.asos-media.com/products/${slug}/${productId}-1-${colourSuffix}`
+      : fallbackImageUrl;
+
+    return {
+      slug,
+      productId,
+      title,
+      primaryImageUrl,
+      fallbackImageUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function inferRetailerSource(parsedUrl: URL): {
   siteName: string;
   fallbackTitle: string;
@@ -432,13 +477,24 @@ export function inferRetailerSource(parsedUrl: URL): {
     };
   }
 
+  const asosMeta = extractAsosProductMeta(parsedUrl.toString());
+  if (asosMeta) {
+    return {
+      siteName: "ASOS",
+      fallbackTitle: asosMeta.title,
+    };
+  }
+
   const pathSegments = parsedUrl.pathname
     .split("/")
     .filter(Boolean)
     .map((s) => decodeURIComponent(s).replace(/[-_]+/g, " "));
 
+  const descriptiveSegments = pathSegments.filter(
+    (seg) => seg.length > 3 && !/^\d+$/.test(seg) && !/^prd$/i.test(seg)
+  );
   const rawSlug =
-    pathSegments.find((seg) => seg.length > 3 && !/^\d+$/.test(seg)) ||
+    descriptiveSegments.sort((a, b) => b.length - a.length)[0] ||
     parsedUrl.searchParams.get("q") ||
     "Curated Garment Piece";
 
