@@ -9,6 +9,8 @@ import {
   inferRetailerSource,
   isGooglePhotosUrl,
   isPrivateGooglePhotosUrl,
+  getCollageTileCount,
+  getCollageGridClass,
 } from "../wardrobe";
 
 describe("Wardrobe & Dress-Code Validation Utilities", () => {
@@ -210,5 +212,29 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
       "https://images.asos-media.com/products/linen-shirt.jpg"
     );
     expect(parsed.siteName).toBe("ASOS");
+  });
+
+  describe("getCollageTileCount & getCollageGridClass responsive rules", () => {
+    it("returns 1 tile for 0 or 1 garment to avoid empty spaces", () => {
+      expect(getCollageTileCount(0)).toBe(1);
+      expect(getCollageTileCount(1)).toBe(1);
+      expect(getCollageGridClass(1)).toBe("grid-cols-1 grid-rows-1");
+    });
+
+    it("returns 2 tiles for 2 garments", () => {
+      expect(getCollageTileCount(2)).toBe(2);
+      expect(getCollageGridClass(2)).toBe("grid-cols-2 grid-rows-1");
+    });
+
+    it("returns 4 tiles for 3 garments to allow 1 open slot", () => {
+      expect(getCollageTileCount(3)).toBe(4);
+      expect(getCollageGridClass(4)).toBe("grid-cols-2 grid-rows-2");
+    });
+
+    it("returns 4 tiles for 4 or more garments", () => {
+      expect(getCollageTileCount(4)).toBe(4);
+      expect(getCollageTileCount(5)).toBe(4);
+      expect(getCollageTileCount(8)).toBe(4);
+    });
   });
 });

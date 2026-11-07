@@ -453,3 +453,36 @@ export function inferRetailerSource(parsedUrl: URL): {
     fallbackTitle: formattedSlug,
   };
 }
+
+/**
+ * Returns the responsive number of Polaroid collage tiles (1, 2, or 4)
+ * based on how many garments are in the outfit, minimizing empty slots.
+ *
+ * - 0 or 1 garment => 1 tile
+ * - 2 garments => 2 tiles
+ * - 3 garments => 4 tiles (3 garments + 1 open slot is acceptable)
+ * - 4+ garments => 4 tiles
+ */
+export function getCollageTileCount(garmentCount: number = 0): 1 | 2 | 4 {
+  if (garmentCount <= 1) {
+    return 1;
+  }
+  if (garmentCount === 2) {
+    return 2;
+  }
+  return 4;
+}
+
+/**
+ * Returns the CSS grid layout class string for 1, 2, or 4 collage tiles in the 4:3 frame.
+ */
+export function getCollageGridClass(tileCount: number): string {
+  if (tileCount <= 1) {
+    return "grid-cols-1 grid-rows-1";
+  }
+  if (tileCount === 2) {
+    return "grid-cols-2 grid-rows-1";
+  }
+  return "grid-cols-2 grid-rows-2";
+}
+

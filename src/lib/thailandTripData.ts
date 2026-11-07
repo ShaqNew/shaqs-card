@@ -1695,4 +1695,102 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
       },
     ],
   },
+  {
+    id: "custom-outfit-1794009631895",
+    title: "Phuket Inspo",
+    owner: "naana",
+    dressCode: "beach",
+    climateTag: "32°C Andaman Coast • UV Index 11 Protection",
+    notes: "Add extra info here about the style you're looking for",
+    isDefault: true,
+    garments: [
+      {
+        id: "garment-1794009462518-5bc7",
+        label: "Chocolate Linen Top",
+        url: "https://www.asos.com/asos-design/asos-design-ipanema-sheer-beach-trouser-with-linen-in-chocolate/prd/209716886#colourWayId-209716903",
+        imageUrl:
+          "https://images.asos-media.com/products/asos-design-ipanema-sheer-beach-trouser-with-linen-in-chocolate/209716886-1-chocolate",
+        category: "Top",
+      },
+      {
+        id: "garment-1794009579861-h2ew",
+        label: "Chocolate Linen Trousers",
+        url: "https://www.asos.com/asos-design/asos-design-ipanema-sheer-beach-shirt-with-linen-in-chocolate/prd/209716961#ctaRef-btl%20content%20-%20btl%20carousel_2&featureref1-btl%20content%20btl%20carousel",
+        imageUrl:
+          "https://images.asos-media.com/products/asos-design-ipanema-sheer-beach-shirt-with-linen-in-chocolate/209716961-1-chocolate",
+        category: "Bottom",
+      },
+    ],
+  },
+  {
+    id: "custom-outfit-1794057911837",
+    title: "Black Free-flowing",
+    owner: "naana",
+    dressCode: "beach",
+    climateTag: "32°C Andaman Coast • UV Index 11 Protection",
+    isDefault: true,
+    garments: [
+      {
+        id: "garment-1794057716202-jtys",
+        label: "Black top and long skirt",
+        url: "https://photos.app.goo.gl/21iZEUx5hd7M5Jht5",
+        imageUrl:
+          "https://lh3.googleusercontent.com/pw/AP1GczOzUmrIV0S_PV7QwMg7bcfHaaZ2CUzjfLpFX-mSU-hK5h9_foK6kmLLgUYEGL0Vo2yCK0fFhWyGV7Ymkiw7Zg8YQoTGJbGibILhEXH4h_a-sRaNDZ6X=w1200",
+        category: "Top",
+      },
+    ],
+  },
+  {
+    id: "custom-outfit-1794058258967",
+    title: "Temple Inspo",
+    owner: "shaq",
+    dressCode: "temple",
+    climateTag: "33°C Sacred Heritage • Covered Shoulders & Knees",
+    isDefault: true,
+    garments: [
+      {
+        id: "garment-1794058203067-c2n1",
+        label: "ASOS DESIGN boxy oversized henley t-shirt in cream linen | ASOS",
+        url: "https://www.asos.com/asos-design/asos-design-boxy-oversized-henley-t-shirt-in-cream-linen/prd/210722988#colourWayId-210722989",
+        imageUrl:
+          "https://images.asos-media.com/products/asos-design-boxy-oversized-henley-t-shirt-in-cream-linen/210722988-1-coconutmilk",
+        category: "Top",
+      },
+      {
+        id: "garment-1794058368850-x3px",
+        label: "ONLY & SONS linen mix cropped trouser in beige | ASOS",
+        url: "https://www.asos.com/only-sons/only-sons-linen-mix-cropped-trouser-in-beige/prd/204402185#colourWayId-204402194",
+        imageUrl:
+          "https://images.asos-media.com/products/only-sons-linen-mix-cropped-trouser-in-beige/204402185-1-silverlining",
+        category: "Bottom",
+      },
+    ],
+  },
+  {
+    id: "custom-outfit-1794058566782",
+    title: "Temple inspo",
+    owner: "naana",
+    dressCode: "temple",
+    climateTag: "33°C Sacred Heritage • Covered Shoulders & Knees",
+    isDefault: true,
+    garments: [
+      {
+        id: "garment-1794058563343-kt0x",
+        label:
+          "Topshop drop shoulder blouson waist crinkle maxi dress in white | ASOS",
+        url: "https://www.asos.com/topshop/topshop-drop-shoulder-blouson-waist-crinkle-maxi-dress-in-white/prd/210114365#colourWayId-210114366",
+        imageUrl:
+          "https://images.asos-media.com/products/topshop-drop-shoulder-blouson-waist-crinkle-maxi-dress-in-white/210114365-1-white",
+        category: "Top",
+      },
+      {
+        id: "garment-1794058618124-0kgs",
+        label: "Vagabond Shoemakers Zaida suede flip flops in sand | ASOS",
+        url: "https://www.asos.com/vagabond-shoemakers/vagabond-shoemakers-zaida-suede-flip-flops-in-sand/prd/210554002#colourWayId-210554003",
+        imageUrl:
+          "https://images.asos-media.com/products/vagabond-shoemakers-zaida-suede-flip-flops-in-sand/210554002-1-sand",
+        category: "Footwear",
+      },
+    ],
+  },
 ];

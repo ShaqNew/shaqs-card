@@ -5,6 +5,8 @@ import {
   DRESS_CODE_METADATA,
   extractSourceDomain,
   formatOwnerBadge,
+  getCollageTileCount,
+  getCollageGridClass,
 } from "../utils/wardrobe";
 import { formatDayNumber } from "../utils/formatters";
 
@@ -192,6 +194,118 @@ export function GarmentLightboxModal({
   );
 }
 
+interface DeleteOutfitConfirmModalProps {
+  outfit: WardrobeOutfit;
+  onConfirm: () => void;
+  onClose: () => void;
+}
+
+export function DeleteOutfitConfirmModal({
+  outfit,
+  onConfirm,
+  onClose,
+}: DeleteOutfitConfirmModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Confirm deletion of ${outfit.title}`}
+      className="fixed inset-0 z-[75] bg-[#1F1A16]/85 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
+    >
+      <div
+        className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-md w-full p-6 shadow-2xl space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-[#1F1A16]/15 pb-3">
+          <div>
+            <span
+              style={monoStyle}
+              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+            >
+              DIGITAL WARDROBE &bull; CONFIRM REMOVAL
+            </span>
+            <h3
+              style={serifStyle}
+              className="text-xl font-semibold text-[#1F1A16] mt-1"
+            >
+              Delete Look?
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            style={monoStyle}
+            aria-label="Close delete confirmation"
+            className="px-2.5 py-1 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+          >
+            &#10005;
+          </button>
+        </div>
+
+        <div className="space-y-2">
+          <p
+            style={serifStyle}
+            className="text-base text-[#1F1A16] font-medium"
+          >
+            “{outfit.title}”
+          </p>
+          <p className="text-xs text-[#5C5248] leading-relaxed">
+            Are you sure you want to remove this look from your Digital Wardrobe?
+            Any itinerary days and activities referencing this look will be unassigned.
+          </p>
+
+          {outfit.isDefault && (
+            <div className="p-2.5 bg-[#EFE7D8]/80 border border-[#1F1A16]/15 text-[11px] text-[#5C5248]">
+              <span
+                style={monoStyle}
+                className="font-semibold text-[#13382E] uppercase tracking-wider block mb-0.5"
+              >
+                Curated Default Look
+              </span>
+              This look is part of the default curated lookbook. It will be hidden from your wardrobe, and can be restored later.
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1F1A16]/15">
+          <button
+            type="button"
+            onClick={onClose}
+            style={monoStyle}
+            className="px-3.5 py-2 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            style={monoStyle}
+            aria-label={`Confirm delete ${outfit.title}`}
+            className="px-4 py-2 text-xs uppercase tracking-[0.14em] font-semibold text-[#FBF8F3] bg-[#A8442A] hover:bg-[#8F351E] cursor-pointer shadow-sm"
+          >
+            Confirm Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 interface PolaroidCollageTileProps {
   garment?: GarmentLink;
   slotIndex: number;
@@ -239,7 +353,11 @@ export function PolaroidCollageTile({
 
   if (!garment) {
     return (
-      <div className="bg-[#EFE7D8]/70 flex flex-col items-center justify-center p-2 text-center select-none">
+      <div
+        data-testid="polaroid-collage-tile"
+        data-slot-index={slotIndex}
+        className="bg-[#EFE7D8]/70 flex flex-col items-center justify-center p-2 text-center select-none w-full h-full"
+      >
         <span
           style={monoStyle}
           className="text-[9px] uppercase tracking-[0.18em] text-[#8A7E71]/70"
@@ -275,6 +393,8 @@ export function PolaroidCollageTile({
     <>
       <button
         type="button"
+        data-testid="polaroid-collage-tile"
+        data-slot-index={slotIndex}
         onClick={handleTileClick}
         aria-label={`Expand thumbnail for ${garment.label}`}
         className="relative w-full h-full bg-[#E9E0CE] overflow-hidden flex flex-col justify-between group/tile text-left cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#13382E]"
@@ -374,8 +494,13 @@ export function PolaroidOutfitCard({
   const [expandedGarment, setExpandedGarment] = useState<GarmentLink | null>(
     null
   );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const dressMeta = DRESS_CODE_METADATA[outfit.dressCode];
-  const slots = [0, 1, 2, 3].map((idx) => outfit.garments[idx]);
+  const tileCount = getCollageTileCount(outfit.garments?.length ?? 0);
+  const slots = Array.from(
+    { length: tileCount },
+    (_, idx) => outfit.garments?.[idx]
+  );
 
   return (
     <article
@@ -386,8 +511,14 @@ export function PolaroidOutfitCard({
       }`}
     >
       <div>
-        {/* Polaroid Upper Image Frame: 2x2 Split-Grid Collage */}
-        <div className="relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid grid-cols-2 grid-rows-2 gap-0.5">
+        {/* Polaroid Upper Image Frame: Responsive Split-Grid Collage (1, 2, or 4 tiles) */}
+        <div
+          data-testid="polaroid-collage-grid"
+          data-tile-count={tileCount}
+          className={`relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid gap-0.5 ${getCollageGridClass(
+            tileCount
+          )}`}
+        >
           {slots.map((g, idx) => (
             <PolaroidCollageTile
               key={g?.id || `empty-${idx}`}
@@ -525,7 +656,7 @@ export function PolaroidOutfitCard({
             {onRemoveCustomOutfit && (
               <button
                 type="button"
-                onClick={() => onRemoveCustomOutfit(outfit.id)}
+                onClick={() => setShowDeleteConfirm(true)}
                 style={monoStyle}
                 className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-[#1F1A16]/15 hover:border-[#A8442A]/40 bg-[#FBF8F3] cursor-pointer shrink-0"
                 aria-label={`Delete look ${outfit.title}`}
@@ -583,7 +714,7 @@ export function PolaroidOutfitCard({
               {onRemoveCustomOutfit && (
                 <button
                   type="button"
-                  onClick={() => onRemoveCustomOutfit(outfit.id)}
+                  onClick={() => setShowDeleteConfirm(true)}
                   style={monoStyle}
                   className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-transparent hover:border-[#A8442A]/30 cursor-pointer"
                   aria-label={`Delete look ${outfit.title}`}
@@ -603,6 +734,17 @@ export function PolaroidOutfitCard({
           allGarments={outfit.garments}
           onSelectGarment={(nextGarment) => setExpandedGarment(nextGarment)}
           onClose={() => setExpandedGarment(null)}
+        />
+      )}
+
+      {showDeleteConfirm && (
+        <DeleteOutfitConfirmModal
+          outfit={outfit}
+          onConfirm={() => {
+            setShowDeleteConfirm(false);
+            onRemoveCustomOutfit?.(outfit.id);
+          }}
+          onClose={() => setShowDeleteConfirm(false)}
         />
       )}
     </article>

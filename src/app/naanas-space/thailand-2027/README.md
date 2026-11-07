@@ -101,7 +101,7 @@ src/
 ```
 
 ### State Management
-Trip state is stored locally in `localStorage` under key `thailand_2027_trip_state_v2` for instant offline rendering, and debounced-synced (600ms) to `/api/naanas-space/thailand-2027` (persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_state_v1`).
+Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and debounced-synced (600ms) to `/api/naanas-space/thailand-2027` (persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`).
 
 ### Testing
 Run the dedicated test suite verifying all 6 steps, interactive checklists, currency conversion, Thai driver modal, and the Change Log:

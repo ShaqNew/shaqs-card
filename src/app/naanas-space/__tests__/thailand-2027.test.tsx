@@ -321,6 +321,21 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
         name: /Delete look Rattanakosin Temple & River Linen/i,
       })
     );
+
+    // Confirmation modal appears
+    expect(
+      screen.getByRole("dialog", {
+        name: /Confirm deletion of Rattanakosin Temple & River Linen/i,
+      })
+    ).toBeInTheDocument();
+
+    // Confirm deletion inside the modal
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Confirm delete Rattanakosin Temple & River Linen/i,
+      })
+    );
+
     expect(
       screen.queryByText(/Rattanakosin Temple & River Linen/i)
     ).not.toBeInTheDocument();

@@ -9,6 +9,8 @@ import {
   DRESS_CODE_METADATA,
   extractSourceDomain,
   isPrivateGooglePhotosUrl,
+  getCollageTileCount,
+  getCollageGridClass,
 } from "../utils/wardrobe";
 import { PolaroidCollageTile } from "./PolaroidOutfitCard";
 
@@ -629,14 +631,25 @@ export function CreateLookModal({
                   POLAROID SPLIT-GRID PREVIEW
                 </span>
                 <div className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-2.5 pb-3 shadow-sm space-y-2.5">
-                  <div className="aspect-[4/3] grid grid-cols-2 grid-rows-2 gap-0.5 bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden">
-                    {[0, 1, 2, 3].map((slotIdx) => (
-                      <PolaroidCollageTile
-                        key={garments[slotIdx]?.id || `preview-slot-${slotIdx}`}
-                        garment={garments[slotIdx]}
-                        slotIndex={slotIdx}
-                      />
-                    ))}
+                  <div
+                    data-testid="polaroid-preview-grid"
+                    data-tile-count={getCollageTileCount(garments.length)}
+                    className={`aspect-[4/3] grid gap-0.5 bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden ${getCollageGridClass(
+                      getCollageTileCount(garments.length)
+                    )}`}
+                  >
+                    {Array.from(
+                      { length: getCollageTileCount(garments.length) },
+                      (_, slotIdx) => (
+                        <PolaroidCollageTile
+                          key={
+                            garments[slotIdx]?.id || `preview-slot-${slotIdx}`
+                          }
+                          garment={garments[slotIdx]}
+                          slotIndex={slotIdx}
+                        />
+                      )
+                    )}
                   </div>
                   <div className="px-1">
                     <div
