@@ -1,5 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { TRIP_DAYS, ItineraryActivity } from "@/lib/thailandTripData";
+import {
+  TRIP_DAYS,
+  DEFAULT_WARDROBE_OUTFITS,
+  ItineraryActivity,
+  WardrobeOutfit,
+} from "@/lib/thailandTripData";
 import { PhaseFilter, PersistedTripState } from "../../types";
 import {
   serifStyle,
@@ -7,6 +12,7 @@ import {
   CATEGORY_EDITORIAL_STYLES,
   ExternalArrow,
   CalendarIcon,
+  HangerIcon,
 } from "../../styles";
 import {
   formatDayNumber,
@@ -19,6 +25,12 @@ import {
   buildMasterTripIcsContent,
   downloadIcsFile,
 } from "../../utils/calendar";
+import {
+  DRESS_CODE_METADATA,
+  resolveDayOutfit,
+  resolveActivityOutfit,
+  validateOutfitForActivity,
+} from "../../utils/wardrobe";
 
 interface StepItineraryProps {
   tripState: PersistedTripState;
@@ -37,6 +49,11 @@ interface StepItineraryProps {
     activityId: string,
     updates: Partial<Omit<ItineraryActivity, "id">>
   ) => void;
+  allOutfits?: WardrobeOutfit[];
+  onOpenWardrobeDrawer?: (
+    dayNumber: number,
+    activity?: ItineraryActivity
+  ) => void;
 }
 
 export function StepItinerary({
@@ -49,6 +66,8 @@ export function StepItinerary({
   onAddCustomActivity,
   onRemoveCustomActivity,
   onUpdateCustomActivity,
+  allOutfits = DEFAULT_WARDROBE_OUTFITS,
+  onOpenWardrobeDrawer,
 }: StepItineraryProps) {
   const [collapsedDayNums, setCollapsedDayNums] = useState<number[]>([]);
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
@@ -313,6 +332,29 @@ export function StepItinerary({
           ).length;
           const isDayCollapsed = collapsedDayNums.includes(day.dayNumber);
 
+          const resolvedDayLook = resolveDayOutfit(
+            day.dayNumber,
+            day.defaultOutfitId,
+            tripState.dayOutfitByDay,
+            allOutfits
+          );
+
+          const dayDressConflicts = allDayActivities
+            .map((act) => {
+              const actOverride = resolveActivityOutfit(
+                act,
+                tripState.activityOutfitById,
+                allOutfits
+              );
+              const effectiveLook = actOverride || resolvedDayLook;
+              const check = validateOutfitForActivity(effectiveLook, act);
+              return check.hasConflict ? { act, check } : null;
+            })
+            .filter(Boolean) as {
+            act: ItineraryActivity;
+            check: ReturnType<typeof validateOutfitForActivity>;
+          }[];
+
           return (
             <article
               id={`day-card-${day.dayNumber}`}
@@ -441,7 +483,7 @@ export function StepItinerary({
                         &ldquo;{day.vibe}&rdquo;
                       </p>
 
-                      <div className="pt-2 space-y-2 border-t border-[#1F1A16]/10 text-xs text-[#4A4036]">
+                      <div className="pt-2 space-y-2.5 border-t border-[#1F1A16]/10 text-xs text-[#4A4036]">
                         <div className="flex items-start gap-2">
                           <span
                             style={monoStyle}
@@ -451,6 +493,96 @@ export function StepItinerary({
                           </span>
                           <span>{day.weatherSummary}</span>
                         </div>
+
+                        {/* Day-Level ATTIRE Slot */}
+                        <div className="flex items-start gap-2">
+                          <span
+                            style={monoStyle}
+                            className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0 pt-0.5"
+                          >
+                            ATTIRE
+                          </span>
+                          <div className="flex-1 min-w-0 space-y-1.5">
+                            {resolvedDayLook ? (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="font-semibold text-[#1F1A16]">
+                                  {resolvedDayLook.title}
+                                </span>
+                                <span
+                                  style={monoStyle}
+                                  className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border font-semibold ${
+                                    DRESS_CODE_METADATA[
+                                      resolvedDayLook.dressCode
+                                    ].badgeClass
+                                  }`}
+                                >
+                                  {
+                                    DRESS_CODE_METADATA[
+                                      resolvedDayLook.dressCode
+                                    ].shortBadge
+                                  }
+                                </span>
+                                {onOpenWardrobeDrawer && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onOpenWardrobeDrawer(day.dayNumber)
+                                    }
+                                    style={monoStyle}
+                                    aria-label={`Change daily attire for Day ${formatDayNumber(
+                                      day.dayNumber
+                                    )}`}
+                                    className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
+                                  >
+                                    <HangerIcon className="w-3 h-3" />
+                                    <span>Change Look</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="italic text-[#8A7E71]">
+                                  No daily look assigned
+                                </span>
+                                {onOpenWardrobeDrawer && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onOpenWardrobeDrawer(day.dayNumber)
+                                    }
+                                    style={monoStyle}
+                                    aria-label={`Assign daily attire for Day ${formatDayNumber(
+                                      day.dayNumber
+                                    )}`}
+                                    className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
+                                  >
+                                    <HangerIcon className="w-3 h-3" />
+                                    <span>+ Assign Look</span>
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {dayDressConflicts.length > 0 && (
+                              <div
+                                role="alert"
+                                className="p-2 bg-[#A8442A]/12 border-l-2 border-[#A8442A] text-[11px] text-[#8F351E]"
+                              >
+                                <strong
+                                  style={monoStyle}
+                                  className="text-[9px] uppercase tracking-wider block text-[#A8442A]"
+                                >
+                                  &#9888;{" "}
+                                  {dayDressConflicts[0].check.headline}
+                                </strong>
+                                <span>
+                                  {dayDressConflicts[0].check.message}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
                         {day.accommodation && (
                           <div className="flex items-start gap-2">
                             <span
@@ -609,6 +741,16 @@ export function StepItinerary({
                         const isDone =
                           tripState.completedActivityIds.includes(act.id);
                         const style = CATEGORY_EDITORIAL_STYLES[act.category];
+                        const actOutfit = resolveActivityOutfit(
+                          act,
+                          tripState.activityOutfitById,
+                          allOutfits
+                        );
+                        const effectiveOutfit = actOutfit || resolvedDayLook;
+                        const outfitValidation = validateOutfitForActivity(
+                          effectiveOutfit,
+                          act
+                        );
                         return (
                           <div
                             key={act.id}
@@ -754,6 +896,15 @@ export function StepItinerary({
                                       &bull; CONFIRMED LOGISTICS
                                     </span>
                                   )}
+                                  {actOutfit && (
+                                    <span
+                                      style={monoStyle}
+                                      className="text-[10px] uppercase tracking-[0.13em] px-2 py-0.5 bg-[#13382E]/10 border border-[#13382E]/30 text-[#13382E] inline-flex items-center gap-1"
+                                    >
+                                      <HangerIcon className="w-3 h-3" />
+                                      <span>LOOK: {actOutfit.title}</span>
+                                    </span>
+                                  )}
                                 </div>
 
                                 <h4
@@ -776,6 +927,23 @@ export function StepItinerary({
                                 {act.notes && (
                                   <div className="text-xs text-[#4A4036] bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] pl-3 py-2 mt-1.5">
                                     {act.notes}
+                                  </div>
+                                )}
+
+                                {outfitValidation.hasConflict && (
+                                  <div
+                                    role="alert"
+                                    className="text-xs text-[#8F351E] bg-[#A8442A]/12 border-l-2 border-[#A8442A] pl-3 py-2 mt-1.5 space-y-0.5"
+                                  >
+                                    <div
+                                      style={monoStyle}
+                                      className="text-[10px] uppercase tracking-wider font-bold text-[#A8442A]"
+                                    >
+                                      &#9888; {outfitValidation.headline}
+                                    </div>
+                                    <p className="text-[#1F1A16]">
+                                      {outfitValidation.message}
+                                    </p>
                                   </div>
                                 )}
 
@@ -823,34 +991,60 @@ export function StepItinerary({
                               </div>
                             )}
 
-                            {!act.isLocked &&
-                              act.id.startsWith("custom-") &&
-                              editingActivityId !== act.id && (
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => startEditingActivity(act)}
-                                    style={monoStyle}
-                                    className="text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
-                                    title="Edit entry"
-                                  >
-                                    EDIT
-                                  </button>
+                            {editingActivityId !== act.id && (
+                              <div className="flex items-center gap-1 shrink-0">
+                                {onOpenWardrobeDrawer && (
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      handleRemoveCustomActivity(
-                                        day.dayNumber,
-                                        act.id
-                                      )
+                                      onOpenWardrobeDrawer(day.dayNumber, act)
                                     }
-                                    className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
-                                    title="Remove custom entry"
+                                    aria-label={`Assign or override outfit for ${act.title}`}
+                                    title={
+                                      actOutfit
+                                        ? `Outfit Override: ${actOutfit.title} (Tap to change)`
+                                        : "Assign activity outfit override"
+                                    }
+                                    className={`p-1.5 border transition-colors cursor-pointer ${
+                                      actOutfit
+                                        ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                                        : "bg-[#EFE7D8]/50 text-[#5C5248] hover:text-[#13382E] border-[#1F1A16]/15 hover:border-[#13382E]"
+                                    }`}
                                   >
-                                    &#10005;
+                                    <HangerIcon className="w-3.5 h-3.5" />
                                   </button>
-                                </div>
-                              )}
+                                )}
+                                {!act.isLocked &&
+                                  act.id.startsWith("custom-") && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          startEditingActivity(act)
+                                        }
+                                        style={monoStyle}
+                                        className="text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                                        title="Edit entry"
+                                      >
+                                        EDIT
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleRemoveCustomActivity(
+                                            day.dayNumber,
+                                            act.id
+                                          )
+                                        }
+                                        className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                                        title="Remove custom entry"
+                                      >
+                                        &#10005;
+                                      </button>
+                                    </>
+                                  )}
+                              </div>
+                            )}
                           </div>
                         );
                       })}

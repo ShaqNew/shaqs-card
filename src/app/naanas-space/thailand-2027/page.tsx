@@ -1,16 +1,25 @@
 "use client";
 
 import React, { useState } from "react";
-import { TRIP_METADATA } from "@/lib/thailandTripData";
+import { TRIP_METADATA, TRIP_DAYS, WardrobeOutfit } from "@/lib/thailandTripData";
 import { ActiveTab, PhaseFilter, ChangeLogEntry } from "./types";
 import { monoStyle } from "./styles";
 import { useThailandTripState } from "./hooks/useThailandTripState";
+import {
+  resolveDayOutfit,
+  resolveActivityOutfit,
+} from "./utils/wardrobe";
 import { TopEditorialBar } from "./components/TopEditorialBar";
 import { ChangeLogDrawer } from "./components/ChangeLogDrawer";
 import { DriverCardModal } from "./components/DriverCardModal";
 import { QuickPocketDesk } from "./components/QuickPocketDesk";
 import { EditorialMasthead } from "./components/EditorialMasthead";
 import { StickyStepNav } from "./components/StickyStepNav";
+import { CreateLookModal } from "./components/CreateLookModal";
+import {
+  WardrobeDrawer,
+  WardrobeDrawerTarget,
+} from "./components/WardrobeDrawer";
 import { StepItinerary } from "./components/steps/StepItinerary";
 import { StepBookingsVault } from "./components/steps/StepBookingsVault";
 import { StepPrepAndApps } from "./components/steps/StepPrepAndApps";
@@ -30,6 +39,12 @@ export default function ThailandTripDashboard() {
     null
   );
   const [isChangeLogOpen, setIsChangeLogOpen] = useState(false);
+  const [isCreateLookModalOpen, setIsCreateLookModalOpen] = useState(false);
+  const [editingOutfit, setEditingOutfit] = useState<WardrobeOutfit | null>(
+    null
+  );
+  const [wardrobeDrawerTarget, setWardrobeDrawerTarget] =
+    useState<WardrobeDrawerTarget | null>(null);
 
   // Shared currency converter state (used in QuickPocketDesk & StepBudgetAndLedger)
   const [thbInput, setThbInput] = useState<string>("1000");
@@ -45,6 +60,7 @@ export default function ThailandTripDashboard() {
     handleSetActiveActor,
     countdown,
     allPackingItems,
+    allOutfits,
     prepProgress,
     appsProgress,
     packingProgress,
@@ -54,6 +70,11 @@ export default function ThailandTripDashboard() {
     togglePackingItem,
     addCustomPackingItem,
     removeCustomPackingItem,
+    addCustomOutfit,
+    updateCustomOutfit,
+    removeCustomOutfit,
+    assignDayOutfit,
+    assignActivityOutfit,
     toggleActivityCompleted,
     addCustomActivity,
     removeCustomActivity,
@@ -143,6 +164,58 @@ export default function ThailandTripDashboard() {
         onCopy={handleCopy}
       />
 
+      <CreateLookModal
+        isOpen={isCreateLookModalOpen}
+        editingOutfit={editingOutfit}
+        onClose={() => {
+          setIsCreateLookModalOpen(false);
+          setEditingOutfit(null);
+        }}
+        onCreateOutfit={(outfitData) => {
+          addCustomOutfit(outfitData);
+        }}
+        onUpdateOutfit={(outfitId, updates) => {
+          updateCustomOutfit(outfitId, updates);
+        }}
+      />
+
+      <WardrobeDrawer
+        target={wardrobeDrawerTarget}
+        onClose={() => setWardrobeDrawerTarget(null)}
+        allOutfits={allOutfits}
+        currentDayOutfit={
+          wardrobeDrawerTarget
+            ? resolveDayOutfit(
+                wardrobeDrawerTarget.dayNumber,
+                TRIP_DAYS.find(
+                  (d) => d.dayNumber === wardrobeDrawerTarget.dayNumber
+                )?.defaultOutfitId,
+                tripState.dayOutfitByDay,
+                allOutfits
+              )
+            : undefined
+        }
+        currentActivityOutfit={
+          wardrobeDrawerTarget?.activity
+            ? resolveActivityOutfit(
+                wardrobeDrawerTarget.activity,
+                tripState.activityOutfitById,
+                allOutfits
+              )
+            : undefined
+        }
+        onAssignDayOutfit={assignDayOutfit}
+        onAssignActivityOutfit={assignActivityOutfit}
+        onEditOutfit={(outfit) => {
+          setEditingOutfit(outfit);
+          setIsCreateLookModalOpen(true);
+        }}
+        onOpenCreateLookModal={() => {
+          setEditingOutfit(null);
+          setIsCreateLookModalOpen(true);
+        }}
+      />
+
       <QuickPocketDesk
         exchangeRate={tripState.exchangeRate}
         thbInput={thbInput}
@@ -186,6 +259,10 @@ export default function ThailandTripDashboard() {
             onAddCustomActivity={addCustomActivity}
             onRemoveCustomActivity={removeCustomActivity}
             onUpdateCustomActivity={updateCustomActivity}
+            allOutfits={allOutfits}
+            onOpenWardrobeDrawer={(dayNumber, activity) =>
+              setWardrobeDrawerTarget({ dayNumber, activity })
+            }
           />
         )}
 
@@ -216,6 +293,18 @@ export default function ThailandTripDashboard() {
             onTogglePackingItem={togglePackingItem}
             onAddCustomPackingItem={addCustomPackingItem}
             onRemoveCustomPackingItem={removeCustomPackingItem}
+            allOutfits={allOutfits}
+            dayOutfitByDay={tripState.dayOutfitByDay}
+            onAssignDayOutfit={assignDayOutfit}
+            onRemoveCustomOutfit={removeCustomOutfit}
+            onEditOutfit={(outfit) => {
+              setEditingOutfit(outfit);
+              setIsCreateLookModalOpen(true);
+            }}
+            onOpenCreateLookModal={() => {
+              setEditingOutfit(null);
+              setIsCreateLookModalOpen(true);
+            }}
           />
         )}
 

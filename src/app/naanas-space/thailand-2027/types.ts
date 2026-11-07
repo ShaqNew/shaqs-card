@@ -4,6 +4,7 @@ import {
   ItineraryActivity,
   PackingItem,
   PlannedExpense,
+  WardrobeOutfit,
 } from "@/lib/thailandTripData";
 
 export type ActiveTab =
@@ -39,6 +40,9 @@ export interface PersistedTripState {
   installedAppIds: string[];
   packedItemIds: string[];
   customPackingItems: PackingItem[];
+  customOutfits?: WardrobeOutfit[];
+  dayOutfitByDay?: Record<number, string>;
+  activityOutfitById?: Record<string, string>;
   completedActivityIds: string[];
   customActivitiesByDay: Record<number, ItineraryActivity[]>;
   dayNotes: Record<number, string>;
@@ -54,6 +58,9 @@ export const DEFAULT_PERSISTED_STATE: PersistedTripState = {
   installedAppIds: [],
   packedItemIds: [],
   customPackingItems: [],
+  customOutfits: [],
+  dayOutfitByDay: {},
+  activityOutfitById: {},
   completedActivityIds: [],
   customActivitiesByDay: {},
   dayNotes: {},

@@ -220,4 +220,120 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByText(/โรงแรมแชงกรี-ลา กรุงเทพฯ/i)
     ).toBeInTheDocument();
   });
+
+  it("renders Digital Wardrobe polaroid cards in Step IV and creates a new look via the Create Look modal", () => {
+    render(<ThailandTripDashboard />);
+    fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: /Digital Wardrobe & Outfit Lookbook/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Rattanakosin Temple & River Linen/i)
+    ).toBeInTheDocument();
+
+    // Open Create Look modal
+    fireEvent.click(screen.getByRole("button", { name: /\+ Create Look/i }));
+    expect(
+      screen.getByRole("heading", { name: /Create Look & Garment Collage/i })
+    ).toBeInTheDocument();
+
+    // Fill in new look title and garment URL
+    fireEvent.change(
+      screen.getByLabelText(/LOOK TITLE/i),
+      { target: { value: "Phuket Sunset Silk Ensemble" } }
+    );
+    fireEvent.change(
+      screen.getByLabelText(/Garment URL/i),
+      { target: { value: "https://www.asos.com/prd/silk-resort-dress" } }
+    );
+    fireEvent.change(
+      screen.getByLabelText(/Garment Label/i),
+      { target: { value: "Gold Bias-Cut Silk Resort Dress" } }
+    );
+
+    // Submit form
+    fireEvent.click(
+      screen.getByRole("button", { name: /Save Look to Wardrobe/i })
+    );
+
+    expect(
+      screen.getByText("Phuket Sunset Silk Ensemble")
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Gold Bias-Cut Silk Resort Dress").length
+    ).toBeGreaterThan(0);
+
+    // Edit the created look
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Edit look Phuket Sunset Silk Ensemble/i,
+      })
+    );
+    expect(
+      screen.getByRole("heading", { name: /Edit Look & Garment Collage/i })
+    ).toBeInTheDocument();
+
+    // Update the look title and edit the existing garment label
+    fireEvent.change(screen.getByLabelText(/LOOK TITLE/i), {
+      target: { value: "Phuket Sunset Silk & Pearl Ensemble" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Edit garment Gold Bias-Cut Silk Resort Dress/i,
+      })
+    );
+    fireEvent.change(screen.getByLabelText(/Garment Label/i), {
+      target: { value: "Champagne Silk Bias-Cut Maxi" },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Save Look Changes/i })
+    );
+
+    expect(
+      screen.getByText("Phuket Sunset Silk & Pearl Ensemble")
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Champagne Silk Bias-Cut Maxi").length
+    ).toBeGreaterThan(0);
+  });
+
+  it("displays ATTIRE slots in Step I, opens the Wardrobe Drawer via hanger icon, and warns on dress-code conflicts", () => {
+    render(<ThailandTripDashboard />);
+
+    // Verify ATTIRE slots render in Step I
+    expect(screen.getAllByText("ATTIRE").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Rattanakosin Temple & River Linen/i).length
+    ).toBeGreaterThan(0);
+
+    // Click the hanger icon on the Day 2 temple river boat activity
+    const hangerBtn = screen.getByRole("button", {
+      name: /Assign or override outfit for Chao Phraya Express Boat from Sathorn Central Pier/i,
+    });
+    fireEvent.click(hangerBtn);
+
+    // Verify the Wardrobe Drawer opens
+    expect(
+      screen.getByRole("dialog", {
+        name: /Assign outfit override for Chao Phraya Express Boat from Sathorn Central Pier/i,
+      })
+    ).toBeInTheDocument();
+
+    // Assign the Beach Club look ("Layan Cove & Bang Tao Beach Club") to the Temple activity to trigger conflict warning
+    const assignBtns = screen.getAllByRole("button", {
+      name: /Assign This Look/i,
+    });
+    // The 3rd unassigned look in the list is "Layan Cove & Bang Tao Beach Club"
+    fireEvent.click(assignBtns[2]);
+
+    // Expect Temple Dress Code Conflict alert to appear
+    expect(
+      screen.getAllByText(/Temple Dress Code Conflict • Beachwear Prohibited/i)
+        .length
+    ).toBeGreaterThan(0);
+  });
 });

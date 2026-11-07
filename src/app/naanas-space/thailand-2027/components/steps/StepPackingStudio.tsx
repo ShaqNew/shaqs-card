@@ -1,7 +1,14 @@
 import React, { useState } from "react";
-import { PackingItem } from "@/lib/thailandTripData";
+import {
+  TRIP_DAYS,
+  PackingItem,
+  WardrobeOutfit,
+  DressCodeProfile,
+} from "@/lib/thailandTripData";
 import { ProgressMetric } from "../../types";
 import { serifStyle, monoStyle } from "../../styles";
+import { resolveDayOutfit } from "../../utils/wardrobe";
+import { PolaroidOutfitCard } from "../PolaroidOutfitCard";
 
 interface StepPackingStudioProps {
   allPackingItems: PackingItem[];
@@ -10,6 +17,12 @@ interface StepPackingStudioProps {
   onTogglePackingItem: (id: string) => void;
   onAddCustomPackingItem: (itemData: Omit<PackingItem, "id">) => void;
   onRemoveCustomPackingItem: (itemId: string) => void;
+  allOutfits?: WardrobeOutfit[];
+  dayOutfitByDay?: Record<number, string>;
+  onAssignDayOutfit?: (dayNumber: number, outfitId: string | null) => void;
+  onRemoveCustomOutfit?: (outfitId: string) => void;
+  onEditOutfit?: (outfit: WardrobeOutfit) => void;
+  onOpenCreateLookModal?: () => void;
 }
 
 export function StepPackingStudio({
@@ -19,6 +32,12 @@ export function StepPackingStudio({
   onTogglePackingItem,
   onAddCustomPackingItem,
   onRemoveCustomPackingItem,
+  allOutfits = [],
+  dayOutfitByDay = {},
+  onAssignDayOutfit,
+  onRemoveCustomOutfit,
+  onEditOutfit,
+  onOpenCreateLookModal,
 }: StepPackingStudioProps) {
   const [packingOwnerFilter, setPackingOwnerFilter] = useState<
     "all" | "both" | "shaq" | "naana"
@@ -27,6 +46,12 @@ export function StepPackingStudio({
   const [dressCodeTab, setDressCodeTab] = useState<
     "temple" | "rooftop" | "daytime" | "beach"
   >("temple");
+  const [wardrobeOwnerFilter, setWardrobeOwnerFilter] = useState<
+    "all" | "both" | "shaq" | "naana"
+  >("all");
+  const [wardrobeCodeFilter, setWardrobeCodeFilter] = useState<
+    "all" | DressCodeProfile
+  >("all");
 
   const [newPackLabel, setNewPackLabel] = useState("");
   const [newPackCategory, setNewPackCategory] = useState<
@@ -264,6 +289,149 @@ export function StepPackingStudio({
               </ul>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Digital Wardrobe & Polaroid Lookbook */}
+      <div
+        id="digital-wardrobe-section"
+        className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+      >
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
+          <div>
+            <span
+              style={monoStyle}
+              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+            >
+              SARTORIAL CURATION &bull; PINTEREST &amp; BOUTIQUE COLLAGES
+            </span>
+            <h3
+              style={serifStyle}
+              className="text-3xl font-normal text-[#1F1A16] mt-1"
+            >
+              Digital Wardrobe &amp; Outfit Lookbook ({allOutfits.length} Looks)
+            </h3>
+            <p className="text-xs sm:text-sm text-[#5C5248] mt-1">
+              Polaroid garment collages built from lightweight retailer URLs and
+              assigned across daily schedules and individual activities.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenCreateLookModal && (
+              <button
+                type="button"
+                onClick={onOpenCreateLookModal}
+                style={monoStyle}
+                className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
+              >
+                + Create Look
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Wardrobe Owner & Dress Code Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: "all", label: "All Looks" },
+              { id: "both", label: "Shared" },
+              { id: "shaq", label: "Shaq" },
+              { id: "naana", label: "Naana" },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() =>
+                  setWardrobeOwnerFilter(
+                    f.id as "all" | "both" | "shaq" | "naana"
+                  )
+                }
+                style={monoStyle}
+                className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                  wardrobeOwnerFilter === f.id
+                    ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                    : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              { id: "all", label: "All Codes" },
+              { id: "temple", label: "Temple" },
+              { id: "rooftop", label: "Rooftop" },
+              { id: "daytime", label: "Daytime" },
+              { id: "beach", label: "Beach" },
+              { id: "transit", label: "Transit" },
+            ].map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() =>
+                  setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
+                }
+                style={monoStyle}
+                className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                  wardrobeCodeFilter === c.id
+                    ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
+                    : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Polaroid Wardrobe Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allOutfits
+            .filter((outfit) => {
+              if (
+                wardrobeOwnerFilter !== "all" &&
+                outfit.owner !== wardrobeOwnerFilter
+              ) {
+                return false;
+              }
+              if (
+                wardrobeCodeFilter !== "all" &&
+                outfit.dressCode !== wardrobeCodeFilter
+              ) {
+                return false;
+              }
+              return true;
+            })
+            .map((outfit) => {
+              const assignedDays = TRIP_DAYS.filter((d) => {
+                const resolved = resolveDayOutfit(
+                  d.dayNumber,
+                  d.defaultOutfitId,
+                  dayOutfitByDay,
+                  allOutfits
+                );
+                return resolved?.id === outfit.id;
+              }).map((d) => d.dayNumber);
+
+              return (
+                <PolaroidOutfitCard
+                  key={outfit.id}
+                  outfit={outfit}
+                  assignedDayNumbers={assignedDays}
+                  onAssignToDay={
+                    onAssignDayOutfit
+                      ? (dNum, oId) => onAssignDayOutfit(dNum, oId)
+                      : undefined
+                  }
+                  onEditOutfit={onEditOutfit}
+                  onRemoveCustomOutfit={onRemoveCustomOutfit}
+                />
+              );
+            })}
         </div>
       </div>
 

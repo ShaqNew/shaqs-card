@@ -1,3 +1,34 @@
+export type DressCodeProfile =
+  | "temple"
+  | "rooftop"
+  | "daytime"
+  | "beach"
+  | "transit";
+
+export interface GarmentLink {
+  id: string;
+  label: string;
+  url: string;
+  imageUrl?: string;
+  category?:
+    | "Top"
+    | "Bottom"
+    | "One-Piece / Dress"
+    | "Footwear"
+    | "Accessory";
+}
+
+export interface WardrobeOutfit {
+  id: string;
+  title: string;
+  owner: "shaq" | "naana" | "both";
+  dressCode: DressCodeProfile;
+  climateTag: string;
+  notes?: string;
+  garments: GarmentLink[];
+  isDefault?: boolean;
+}
+
 export interface ItineraryActivity {
   id: string;
   time: string;
@@ -18,6 +49,7 @@ export interface ItineraryActivity {
   notes?: string;
   isLocked?: boolean;
   completed?: boolean;
+  outfitId?: string;
 }
 
 export interface TripDay {
@@ -31,6 +63,7 @@ export interface TripDay {
   vibe: string;
   weatherSummary: string;
   accommodation?: string;
+  defaultOutfitId?: string;
   defaultActivities: ItineraryActivity[];
   quickSuggestions?: {
     title: string;
@@ -366,6 +399,7 @@ export const TRIP_DAYS: TripDay[] = [
     title: "Departure Day: The Birthday Escape Begins",
     vibe: "Airport champagne, stress-free Ultimate Fare perks & overnight flight east",
     weatherSummary: "London Cool → Tropical Bound",
+    defaultOutfitId: "outfit-transit-lounge",
     defaultActivities: [
       {
         id: "d0-lgw-checkin",
@@ -439,6 +473,7 @@ export const TRIP_DAYS: TripDay[] = [
     vibe: "Warm tropical evening breeze on the Chao Phraya River",
     weatherSummary: "Bangkok: 33°C Day / 24°C Night • Warm & Dry",
     accommodation: "Shangri-La Bangkok (Deluxe King Room)",
+    defaultOutfitId: "outfit-bkk-daytime-linen",
     defaultActivities: [
       {
         id: "d1-shj-layover",
@@ -524,6 +559,7 @@ export const TRIP_DAYS: TripDay[] = [
     vibe: "Ancient royal splendour by day, glittering rooftop glamour by night",
     weatherSummary: "Bangkok: 33°C Sunny • Evening 24°C",
     accommodation: "Shangri-La Bangkok (Night 2 of 3)",
+    defaultOutfitId: "outfit-temple-sanctuary",
     defaultActivities: [
       {
         id: "d2-morning-river",
@@ -533,6 +569,7 @@ export const TRIP_DAYS: TripDay[] = [
         category: "culture",
         location: "Sathorn Pier → Tha Tien / Wat Arun",
         notes: "Remember Temple Dress Code: shoulders & knees covered, slip-on shoes, linen shirt/sarong in daypack!",
+        outfitId: "outfit-temple-sanctuary",
       },
     ],
     quickSuggestions: [
@@ -615,6 +652,7 @@ export const TRIP_DAYS: TripDay[] = [
     vibe: "BTS Skytrain adventures, world-class spa pampering & evening river romance",
     weatherSummary: "Bangkok: 34°C Sunny • Evening 25°C",
     accommodation: "Shangri-La Bangkok (Night 3 of 3)",
+    defaultOutfitId: "outfit-rooftop-glamour",
     defaultActivities: [
       {
         id: "d3-bts-explore",
@@ -759,6 +797,7 @@ export const TRIP_DAYS: TripDay[] = [
     vibe: "Crystal Andaman waters, shaded Casuarina trees & hilltop serenity",
     weatherSummary: "Phuket: 32°C Sunny • UV Index 10–11 (Pack SPF 50+)",
     accommodation: "The Pavilions Phuket (Night 2 of 5)",
+    defaultOutfitId: "outfit-andaman-beach-club",
     defaultActivities: [
       {
         id: "d5-layan-shuttle",
@@ -1473,4 +1512,187 @@ export const FOOD_SAFETY_GUIDELINES: FoodSafetyGuideline[] = [
       "Many medications that require a prescription in the UK (like strong stomach aids) can be purchased over the counter."
     ]
   }
+];
+
+export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
+  {
+    id: "outfit-temple-sanctuary",
+    title: "Rattanakosin Temple & River Linen",
+    owner: "both",
+    dressCode: "temple",
+    climateTag: "33°C Sacred Heritage • Covered Shoulders & Knees",
+    notes:
+      "Strictly compliant for Grand Palace, Wat Pho & Wat Arun: long breathable linen trousers/maxi skirt, covered shoulders, and slip-on loafers/sandals for easy removal at temple halls.",
+    isDefault: true,
+    garments: [
+      {
+        id: "g-temple-1",
+        label: "Long-Sleeve Unlined Ivory Linen Shirt",
+        url: "https://www.asos.com/search/?q=ivory+linen+shirt",
+        category: "Top",
+      },
+      {
+        id: "g-temple-2",
+        label: "Tailored Relaxed Drawstring Linen Trousers",
+        url: "https://www.asos.com/search/?q=linen+trousers",
+        category: "Bottom",
+      },
+      {
+        id: "g-temple-3",
+        label: "Tiered Woven Cotton Maxi Skirt & Shawl",
+        url: "https://www.pinterest.com/search/pins/?q=temple%20outfit%20thailand%20linen",
+        category: "One-Piece / Dress",
+      },
+      {
+        id: "g-temple-4",
+        label: "Woven Leather Slip-On Mule Loafers",
+        url: "https://www.asos.com/search/?q=leather+slip+on+loafers",
+        category: "Footwear",
+      },
+    ],
+  },
+  {
+    id: "outfit-rooftop-glamour",
+    title: "Bangkok Sky-Bar & Birthday Candlelight",
+    owner: "both",
+    dressCode: "rooftop",
+    climateTag: "25°C Balmy Evening • Strict Smart Casual",
+    notes:
+      "Curated for Mahanakhon SkyBeach, Lebua, Vertigo & Firefly birthday dining. Includes Shaq's required collared shirt & closed-toe loafers alongside Naana's silk evening silhouette.",
+    isDefault: true,
+    garments: [
+      {
+        id: "g-roof-1",
+        label: "Naana: Emerald Silk Bias-Cut Midi Dress",
+        url: "https://www.pinterest.com/search/pins/?q=emerald%20silk%20midi%20evening%20dress",
+        category: "One-Piece / Dress",
+      },
+      {
+        id: "g-roof-2",
+        label: "Shaq: Cuban-Collar Fine Linen Evening Shirt",
+        url: "https://www.asos.com/search/?q=cuban+collar+linen+shirt",
+        category: "Top",
+      },
+      {
+        id: "g-roof-3",
+        label: "Shaq: Pleated Lightweight Chinos & Suede Loafers",
+        url: "https://www.asos.com/search/?q=suede+loafers+men",
+        category: "Footwear",
+      },
+      {
+        id: "g-roof-4",
+        label: "Naana: Sculptural Gold Resort Wedges & Clutch",
+        url: "https://www.pinterest.com/search/pins/?q=gold%20evening%20sandals%20resort",
+        category: "Accessory",
+      },
+    ],
+  },
+  {
+    id: "outfit-bkk-daytime-linen",
+    title: "Chao Phraya Promenade & Talad Noi",
+    owner: "both",
+    dressCode: "daytime",
+    climateTag: "34°C Tropical Urban • Breathable Natural Fibres",
+    notes:
+      "Lightweight bamboo and cotton separates for BTS Skytrain hops into Siam, Talad Noi cafés, and ICONSIAM shuttle boats.",
+    isDefault: true,
+    garments: [
+      {
+        id: "g-day-1",
+        label: "Breathable Open-Weave Cotton Resort Set",
+        url: "https://www.pinterest.com/search/pins/?q=linen%20co%20ord%20summer%20tropical",
+        category: "Top",
+      },
+      {
+        id: "g-day-2",
+        label: "Tailored Linen Shorts & Bamboo Tee",
+        url: "https://www.asos.com/search/?q=linen+shorts",
+        category: "Bottom",
+      },
+      {
+        id: "g-day-3",
+        label: "Polarised Tortoiseshell Acetate Sunglasses",
+        url: "https://www.asos.com/search/?q=polarised+tortoiseshell+sunglasses",
+        category: "Accessory",
+      },
+      {
+        id: "g-day-4",
+        label: "Cushioned Leather City Walking Sandals",
+        url: "https://www.asos.com/search/?q=leather+walking+sandals",
+        category: "Footwear",
+      },
+    ],
+  },
+  {
+    id: "outfit-andaman-beach-club",
+    title: "Layan Cove & Bang Tao Beach Club",
+    owner: "both",
+    dressCode: "beach",
+    climateTag: "32°C Andaman Coast • UV Index 11 Protection",
+    notes:
+      "Resort swimwear, sheer linen kaftan/overshirt, wide-brimmed raffia sunhat, and waterproof cove accessories for Layan Beach, Catch Beach Club & Banana Beach.",
+    isDefault: true,
+    garments: [
+      {
+        id: "g-beach-1",
+        label: "Naana: Terracotta Resort Swimwear & Sheer Kaftan",
+        url: "https://www.pinterest.com/search/pins/?q=luxury%20beach%20kaftan%20swimwear",
+        category: "One-Piece / Dress",
+      },
+      {
+        id: "g-beach-2",
+        label: "Shaq: Tailored Swim Shorts & Oversized Linen Shirt",
+        url: "https://www.asos.com/search/?q=tailored+swim+shorts",
+        category: "Bottom",
+      },
+      {
+        id: "g-beach-3",
+        label: "Wide-Brimmed Woven Raffia Sunhat",
+        url: "https://www.asos.com/search/?q=raffia+sun+hat",
+        category: "Accessory",
+      },
+      {
+        id: "g-beach-4",
+        label: "Waterproof Resort Slides & 10L Dry Bag",
+        url: "https://www.asos.com/search/?q=pool+slides",
+        category: "Footwear",
+      },
+    ],
+  },
+  {
+    id: "outfit-transit-lounge",
+    title: "Gatwick Lounge & Long-Haul Cabin Knit",
+    owner: "both",
+    dressCode: "transit",
+    climateTag: "18°C Cabin AC → 33°C Bangkok Touchdown",
+    notes:
+      "Breathable layered loungewear for the LGW → SHJ → BKK & HKT → LGW flights, easy to shed upon stepping into tropical humidity.",
+    isDefault: true,
+    garments: [
+      {
+        id: "g-trans-1",
+        label: "Soft Merino / Cotton Zip Overshirt Layer",
+        url: "https://www.asos.com/search/?q=cotton+knit+overshirt",
+        category: "Top",
+      },
+      {
+        id: "g-trans-2",
+        label: "Relaxed Travel Joggers / Wide-Leg Knit Trousers",
+        url: "https://www.pinterest.com/search/pins/?q=airport%20loungewear%20aesthetic%20neutral",
+        category: "Bottom",
+      },
+      {
+        id: "g-trans-3",
+        label: "Breathable Bamboo Base Layer Tee",
+        url: "https://www.asos.com/search/?q=organic+cotton+t+shirt",
+        category: "Top",
+      },
+      {
+        id: "g-trans-4",
+        label: "Clean Smart Trainers & Compression Flight Socks",
+        url: "https://www.asos.com/search/?q=neutral+smart+trainers",
+        category: "Footwear",
+      },
+    ],
+  },
 ];
