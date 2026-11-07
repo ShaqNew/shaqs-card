@@ -76,6 +76,10 @@ export function StepPackingStudio({
   // Collapsible section states (default expanded for desktop & test visibility)
   const [isClimateDressOpen, setIsClimateDressOpen] = useState(true);
   const [isWardrobeOpen, setIsWardrobeOpen] = useState(true);
+  const [isWardrobeFiltersOpen, setIsWardrobeFiltersOpen] = useState(true);
+  const [collapsedOutfitCards, setCollapsedOutfitCards] = useState<
+    Record<string, boolean>
+  >({});
   const [isTrunkOpen, setIsTrunkOpen] = useState(true);
   const [collapsedCategories, setCollapsedCategories] = useState<
     Record<string, boolean>
@@ -95,6 +99,53 @@ export function StepPackingStudio({
     setIsClimateDressOpen(nextState);
     setIsWardrobeOpen(nextState);
     setIsTrunkOpen(nextState);
+  };
+
+  const filteredOutfits = allOutfits.filter((outfit) => {
+    if (wardrobeOwnerFilter !== "all" && outfit.owner !== wardrobeOwnerFilter) {
+      return false;
+    }
+    if (wardrobeSourceFilter === "owned" && isInspirationOutfit(outfit)) {
+      return false;
+    }
+    if (wardrobeSourceFilter === "inspo" && !isInspirationOutfit(outfit)) {
+      return false;
+    }
+    if (
+      wardrobeCodeFilter !== "all" &&
+      outfit.dressCode !== wardrobeCodeFilter
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const activeFilterCount =
+    (wardrobeOwnerFilter !== "all" ? 1 : 0) +
+    (wardrobeSourceFilter !== "all" ? 1 : 0) +
+    (wardrobeCodeFilter !== "all" ? 1 : 0);
+
+  const allOutfitCardsCollapsed =
+    filteredOutfits.length > 0 &&
+    filteredOutfits.every((o) => collapsedOutfitCards[o.id]);
+
+  const handleToggleAllOutfitCards = () => {
+    if (allOutfitCardsCollapsed) {
+      setCollapsedOutfitCards({});
+    } else {
+      const next: Record<string, boolean> = {};
+      allOutfits.forEach((o) => {
+        next[o.id] = true;
+      });
+      setCollapsedOutfitCards(next);
+    }
+  };
+
+  const toggleOutfitCardCollapse = (outfitId: string) => {
+    setCollapsedOutfitCards((prev) => ({
+      ...prev,
+      [outfitId]: !prev[outfitId],
+    }));
   };
 
   const allCategoriesCollapsed = PACKING_CATEGORIES.every(
@@ -538,171 +589,209 @@ export function StepPackingStudio({
 
         {isWardrobeOpen && (
           <>
-            {/* Wardrobe Owner, Source (Owned vs Inspiration) & Dress Code Filters */}
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {[
-                    { id: "all", label: "All Looks" },
-                    { id: "both", label: "Shared" },
-                    { id: "shaq", label: "Shaq" },
-                    { id: "naana", label: "Naana" },
-                  ].map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() =>
-                        setWardrobeOwnerFilter(
-                          f.id as "all" | "both" | "shaq" | "naana"
-                        )
-                      }
-                      style={monoStyle}
-                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
-                        wardrobeOwnerFilter === f.id
-                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
-                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
-                      }`}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Owned vs Inspiration Filter Pills */}
-                <div className="flex flex-wrap items-center gap-1.5 pl-2 border-l border-[#1F1A16]/15">
-                  {[
-                    { id: "all", label: "All Sources" },
-                    {
-                      id: "owned",
-                      label: `✓ Owned (${
-                        allOutfits.filter((o) => !isInspirationOutfit(o)).length
-                      })`,
-                    },
-                    {
-                      id: "inspo",
-                      label: `✦ Inspiration (${
-                        allOutfits.filter((o) => isInspirationOutfit(o)).length
-                      })`,
-                    },
-                  ].map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() =>
-                        setWardrobeSourceFilter(
-                          s.id as "all" | "owned" | "inspo"
-                        )
-                      }
-                      style={monoStyle}
-                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
-                        wardrobeSourceFilter === s.id
-                          ? s.id === "inspo"
-                            ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
-                            : "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
-                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { id: "all", label: "All Codes" },
-                  { id: "temple", label: "Temple" },
-                  { id: "rooftop", label: "Rooftop" },
-                  { id: "daytime", label: "Daytime" },
-                  { id: "beach", label: "Beach" },
-                  { id: "transit", label: "Transit" },
-                ].map((c) => (
+            {/* Collapsible Filter Section & Card Collapse Toolbar */}
+            <div className="bg-[#F6F1E7]/70 border border-[#1F1A16]/15 p-3 sm:p-4 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
-                    key={c.id}
                     type="button"
-                    onClick={() =>
-                      setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
-                    }
+                    onClick={() => setIsWardrobeFiltersOpen((prev) => !prev)}
+                    aria-expanded={isWardrobeFiltersOpen}
+                    aria-label="Toggle Digital Wardrobe filters"
                     style={monoStyle}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
-                      wardrobeCodeFilter === c.id
-                        ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
-                        : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer transition-colors ${
+                      isWardrobeFiltersOpen
+                        ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                        : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]/25 hover:bg-[#1F1A16] hover:text-[#F6F1E7]"
                     }`}
                   >
-                    {c.label}
+                    Filters
+                    {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}{" "}
+                    {isWardrobeFiltersOpen ? "▲" : "▼"}
                   </button>
-                ))}
+
+                  <span
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-[0.13em] text-[#5C5248]"
+                  >
+                    Showing {filteredOutfits.length} of {allOutfits.length}{" "}
+                    {allOutfits.length === 1 ? "Look" : "Looks"}
+                  </span>
+
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWardrobeOwnerFilter("all");
+                        setWardrobeSourceFilter("all");
+                        setWardrobeCodeFilter("all");
+                      }}
+                      style={monoStyle}
+                      className="px-2 py-1 text-[9px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/35 bg-[#FBF8F3] hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer transition-colors"
+                    >
+                      Reset Filters &#10005;
+                    </button>
+                  )}
+                </div>
+
+                {filteredOutfits.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleToggleAllOutfitCards}
+                    aria-label="Toggle collapse all outfit cards"
+                    style={monoStyle}
+                    className="px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#FBF8F3] cursor-pointer transition-colors"
+                  >
+                    {allOutfitCardsCollapsed
+                      ? "Expand All Cards ▼"
+                      : "Collapse All Cards ▲"}
+                  </button>
+                )}
               </div>
+
+              {isWardrobeFiltersOpen && (
+                <div className="pt-2 border-t border-[#1F1A16]/12 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {[
+                        { id: "all", label: "All Looks" },
+                        { id: "both", label: "Shared" },
+                        { id: "shaq", label: "Shaq" },
+                        { id: "naana", label: "Naana" },
+                      ].map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() =>
+                            setWardrobeOwnerFilter(
+                              f.id as "all" | "both" | "shaq" | "naana"
+                            )
+                          }
+                          style={monoStyle}
+                          className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                            wardrobeOwnerFilter === f.id
+                              ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                              : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                          }`}
+                        >
+                          {f.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Owned vs Inspiration Filter Pills */}
+                    <div className="flex flex-wrap items-center gap-1.5 pl-2 border-l border-[#1F1A16]/15">
+                      {[
+                        { id: "all", label: "All Sources" },
+                        {
+                          id: "owned",
+                          label: `✓ Owned (${
+                            allOutfits.filter((o) => !isInspirationOutfit(o))
+                              .length
+                          })`,
+                        },
+                        {
+                          id: "inspo",
+                          label: `✦ Inspiration (${
+                            allOutfits.filter((o) => isInspirationOutfit(o))
+                              .length
+                          })`,
+                        },
+                      ].map((s) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() =>
+                            setWardrobeSourceFilter(
+                              s.id as "all" | "owned" | "inspo"
+                            )
+                          }
+                          style={monoStyle}
+                          className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                            wardrobeSourceFilter === s.id
+                              ? s.id === "inspo"
+                                ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                                : "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                              : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[
+                      { id: "all", label: "All Codes" },
+                      { id: "temple", label: "Temple" },
+                      { id: "rooftop", label: "Rooftop" },
+                      { id: "daytime", label: "Daytime" },
+                      { id: "beach", label: "Beach" },
+                      { id: "transit", label: "Transit" },
+                    ].map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() =>
+                          setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
+                        }
+                        style={monoStyle}
+                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                          wardrobeCodeFilter === c.id
+                            ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
+                            : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                        }`}
+                      >
+                        {c.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Polaroid Wardrobe Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {allOutfits
-                .filter((outfit) => {
-                  if (
-                    wardrobeOwnerFilter !== "all" &&
-                    outfit.owner !== wardrobeOwnerFilter
-                  ) {
-                    return false;
-                  }
-                  if (
-                    wardrobeSourceFilter === "owned" &&
-                    isInspirationOutfit(outfit)
-                  ) {
-                    return false;
-                  }
-                  if (
-                    wardrobeSourceFilter === "inspo" &&
-                    !isInspirationOutfit(outfit)
-                  ) {
-                    return false;
-                  }
-                  if (
-                    wardrobeCodeFilter !== "all" &&
-                    outfit.dressCode !== wardrobeCodeFilter
-                  ) {
-                    return false;
-                  }
-                  return true;
-                })
-                .map((outfit) => {
-                  const assignedDays = TRIP_DAYS.filter((d) => {
-                    const resolved = resolveDayOutfit(
-                      d.dayNumber,
-                      d.defaultOutfitId,
-                      dayOutfitByDay,
-                      allOutfits
-                    );
-                    return resolved?.id === outfit.id;
-                  }).map((d) => d.dayNumber);
-
-                  const isPackedInTrunk =
-                    outfit.garments.length > 0 &&
-                    outfit.garments.every((g) =>
-                      existingPackingLabels.has(g.label.trim().toLowerCase())
-                    );
-
-                  return (
-                    <PolaroidOutfitCard
-                      key={outfit.id}
-                      outfit={outfit}
-                      assignedDayNumbers={assignedDays}
-                      onAssignToDay={
-                        onAssignDayOutfit
-                          ? (dNum, oId) => onAssignDayOutfit(dNum, oId)
-                          : undefined
-                      }
-                      onPackOutfitGarments={
-                        onPackOutfitGarments ? handlePackOutfit : undefined
-                      }
-                      isPackedInTrunk={isPackedInTrunk}
-                      onEditOutfit={onEditOutfit}
-                      onToggleInspiration={onToggleOutfitInspiration}
-                      onRemoveCustomOutfit={onRemoveCustomOutfit}
-                    />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+              {filteredOutfits.map((outfit) => {
+                const assignedDays = TRIP_DAYS.filter((d) => {
+                  const resolved = resolveDayOutfit(
+                    d.dayNumber,
+                    d.defaultOutfitId,
+                    dayOutfitByDay,
+                    allOutfits
                   );
-                })}
+                  return resolved?.id === outfit.id;
+                }).map((d) => d.dayNumber);
+
+                const isPackedInTrunk =
+                  outfit.garments.length > 0 &&
+                  outfit.garments.every((g) =>
+                    existingPackingLabels.has(g.label.trim().toLowerCase())
+                  );
+
+                return (
+                  <PolaroidOutfitCard
+                    key={outfit.id}
+                    outfit={outfit}
+                    assignedDayNumbers={assignedDays}
+                    onAssignToDay={
+                      onAssignDayOutfit
+                        ? (dNum, oId) => onAssignDayOutfit(dNum, oId)
+                        : undefined
+                    }
+                    onPackOutfitGarments={
+                      onPackOutfitGarments ? handlePackOutfit : undefined
+                    }
+                    isPackedInTrunk={isPackedInTrunk}
+                    onEditOutfit={onEditOutfit}
+                    onToggleInspiration={onToggleOutfitInspiration}
+                    onRemoveCustomOutfit={onRemoveCustomOutfit}
+                    isCardCollapsed={Boolean(collapsedOutfitCards[outfit.id])}
+                    onToggleCardCollapse={toggleOutfitCardCollapse}
+                  />
+                );
+              })}
             </div>
           </>
         )}

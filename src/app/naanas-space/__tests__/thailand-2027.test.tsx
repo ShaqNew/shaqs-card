@@ -435,6 +435,34 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByRole("button", { name: /Expand All Categories/i })
     ).toBeInTheDocument();
 
+    // Collapse and expand the Digital Wardrobe filter bar
+    const toggleFiltersBtn = screen.getByRole("button", {
+      name: /Toggle Digital Wardrobe filters/i,
+    });
+    expect(toggleFiltersBtn).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggleFiltersBtn);
+    expect(toggleFiltersBtn).toHaveAttribute("aria-expanded", "false");
+    expect(
+      screen.queryByRole("button", { name: /All Sources/i })
+    ).not.toBeInTheDocument();
+    fireEvent.click(toggleFiltersBtn);
+    expect(
+      screen.getByRole("button", { name: /All Sources/i })
+    ).toBeInTheDocument();
+
+    // Collapse all outfit cards and re-expand
+    const toggleAllCardsBtn = screen.getByRole("button", {
+      name: /Toggle collapse all outfit cards/i,
+    });
+    expect(toggleAllCardsBtn).toHaveTextContent(/Collapse All Cards/i);
+    fireEvent.click(toggleAllCardsBtn);
+    expect(toggleAllCardsBtn).toHaveTextContent(/Expand All Cards/i);
+    expect(screen.queryAllByTestId("polaroid-collage-grid")).toHaveLength(0);
+    fireEvent.click(toggleAllCardsBtn);
+    expect(
+      screen.getAllByTestId("polaroid-collage-grid").length
+    ).toBeGreaterThan(0);
+
     // Collapse all Studio Sections and re-expand
     const collapseSectionsBtn = screen.getByRole("button", {
       name: /Collapse All Sections/i,

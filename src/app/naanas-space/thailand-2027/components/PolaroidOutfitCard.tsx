@@ -499,6 +499,8 @@ interface PolaroidOutfitCardProps {
   compact?: boolean;
   isSelected?: boolean;
   onSelectOutfit?: (outfitId: string) => void;
+  isCardCollapsed?: boolean;
+  onToggleCardCollapse?: (outfitId: string) => void;
 }
 
 export function PolaroidOutfitCard({
@@ -513,12 +515,27 @@ export function PolaroidOutfitCard({
   compact = false,
   isSelected = false,
   onSelectOutfit,
+  isCardCollapsed,
+  onToggleCardCollapse,
 }: PolaroidOutfitCardProps) {
   const [expandedGarment, setExpandedGarment] = useState<GarmentLink | null>(
     null
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLinksExpanded, setIsLinksExpanded] = useState(true);
+  const [localCardCollapsed, setLocalCardCollapsed] = useState(false);
+
+  const effectiveCollapsed =
+    typeof isCardCollapsed === "boolean" ? isCardCollapsed : localCardCollapsed;
+
+  const handleToggleCollapse = () => {
+    if (onToggleCardCollapse) {
+      onToggleCardCollapse(outfit.id);
+    } else {
+      setLocalCardCollapsed((prev) => !prev);
+    }
+  };
+
   const dressMeta = DRESS_CODE_METADATA[outfit.dressCode];
   const isInspo = isInspirationOutfit(outfit);
   const tileCount = getCollageTileCount(outfit.garments?.length ?? 0);
@@ -529,325 +546,436 @@ export function PolaroidOutfitCard({
 
   return (
     <article
-      className={`bg-[#FBF8F3] border transition-all p-3 pb-4 shadow-[0_6px_18px_rgba(31,26,22,0.06)] flex flex-col justify-between ${
+      className={`bg-[#FBF8F3] border transition-all p-3 ${
+        effectiveCollapsed ? "pb-3" : "pb-4"
+      } shadow-[0_6px_18px_rgba(31,26,22,0.06)] flex flex-col justify-between ${
         isSelected
           ? "border-2 border-[#13382E] ring-2 ring-[#13382E]/20"
           : "border-[#1F1A16]/20 hover:border-[#1F1A16]/45"
       }`}
     >
       <div>
-        {/* Polaroid Upper Image Frame: Responsive Split-Grid Collage (1, 2, or 4 tiles) */}
-        <div
-          data-testid="polaroid-collage-grid"
-          data-tile-count={tileCount}
-          className={`relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid gap-0.5 ${getCollageGridClass(
-            tileCount
-          )}`}
-        >
-          {slots.map((g, idx) => (
-            <PolaroidCollageTile
-              key={g?.id || `empty-${idx}`}
-              garment={g}
-              slotIndex={idx}
-              onExpandGarment={(item) => setExpandedGarment(item)}
-            />
-          ))}
+        {/* Polaroid Upper Image Frame: Responsive Split-Grid Collage (hidden when card is collapsed) */}
+        {!effectiveCollapsed && (
+          <div
+            data-testid="polaroid-collage-grid"
+            data-tile-count={tileCount}
+            className={`relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid gap-0.5 ${getCollageGridClass(
+              tileCount
+            )}`}
+          >
+            {slots.map((g, idx) => (
+              <PolaroidCollageTile
+                key={g?.id || `empty-${idx}`}
+                garment={g}
+                slotIndex={idx}
+                onExpandGarment={(item) => setExpandedGarment(item)}
+              />
+            ))}
 
-          {/* Overlaid Owner & Source Tag Badges (Top-Left) */}
-          <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
-            <span
-              style={monoStyle}
-              className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] font-semibold shadow-sm ${
-                outfit.owner === "shaq"
-                  ? "bg-[#13382E] text-[#F6F1E7]"
-                  : outfit.owner === "naana"
-                  ? "bg-[#A8442A] text-[#FBF8F3]"
-                  : "bg-[#1F1A16] text-[#F6F1E7]"
-              }`}
-            >
-              {formatOwnerBadge(outfit.owner)}
-            </span>
-
-            {onToggleInspiration ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleInspiration(outfit);
-                }}
-                title={
-                  isInspo
-                    ? "Tagged as Website Inspiration — click to mark as Owned Wardrobe"
-                    : "Tagged as Owned Wardrobe — click to mark as Website Inspiration"
-                }
-                aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
-                  isInspo ? "Inspiration" : "Owned"
-                })`}
-                style={monoStyle}
-                className={`pointer-events-auto px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
-                  isInspo
-                    ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
-                    : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
-                }`}
-              >
-                {isInspo ? "✦ Inspiration" : "✓ Owned"}
-              </button>
-            ) : (
+            {/* Overlaid Owner & Source Tag Badges (Top-Left) */}
+            <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
               <span
                 style={monoStyle}
-                className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border ${
-                  isInspo
-                    ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
-                    : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40"
+                className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] font-semibold shadow-sm ${
+                  outfit.owner === "shaq"
+                    ? "bg-[#13382E] text-[#F6F1E7]"
+                    : outfit.owner === "naana"
+                    ? "bg-[#A8442A] text-[#FBF8F3]"
+                    : "bg-[#1F1A16] text-[#F6F1E7]"
                 }`}
               >
-                {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                {formatOwnerBadge(outfit.owner)}
+              </span>
+
+              {onToggleInspiration ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleInspiration(outfit);
+                  }}
+                  title={
+                    isInspo
+                      ? "Tagged as Website Inspiration — click to mark as Owned Wardrobe"
+                      : "Tagged as Owned Wardrobe — click to mark as Website Inspiration"
+                  }
+                  aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
+                    isInspo ? "Inspiration" : "Owned"
+                  })`}
+                  style={monoStyle}
+                  className={`pointer-events-auto px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
+                    isInspo
+                      ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
+                      : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
+                  }`}
+                >
+                  {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                </button>
+              ) : (
+                <span
+                  style={monoStyle}
+                  className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border ${
+                    isInspo
+                      ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                      : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40"
+                  }`}
+                >
+                  {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                </span>
+              )}
+            </div>
+
+            {/* Overlaid Climate Tag Pill (Bottom) */}
+            <div className="absolute bottom-2 inset-x-2 z-10 flex justify-between items-center pointer-events-none">
+              <span
+                style={monoStyle}
+                className="px-2 py-0.5 bg-[#FBF8F3]/95 text-[#1F1A16] border border-[#1F1A16]/20 text-[9px] uppercase tracking-[0.13em] font-semibold shadow-sm truncate max-w-full"
+              >
+                {outfit.climateTag}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Polaroid Lower Caption Area */}
+        <div className={`${effectiveCollapsed ? "pt-0.5" : "pt-3.5"} px-1 space-y-2`}>
+          <div className="flex flex-wrap items-center justify-between gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {effectiveCollapsed && (
+                <>
+                  <span
+                    style={monoStyle}
+                    className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold ${
+                      outfit.owner === "shaq"
+                        ? "bg-[#13382E] text-[#F6F1E7]"
+                        : outfit.owner === "naana"
+                        ? "bg-[#A8442A] text-[#FBF8F3]"
+                        : "bg-[#1F1A16] text-[#F6F1E7]"
+                    }`}
+                  >
+                    {outfit.owner === "both" ? "Shared" : outfit.owner}
+                  </span>
+                  {onToggleInspiration ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleInspiration(outfit);
+                      }}
+                      aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
+                        isInspo ? "Inspiration" : "Owned"
+                      })`}
+                      style={monoStyle}
+                      className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.13em] font-semibold border cursor-pointer ${
+                        isInspo
+                          ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                          : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40"
+                      }`}
+                    >
+                      {isInspo ? "✦ Inspo" : "✓ Owned"}
+                    </button>
+                  ) : (
+                    <span
+                      style={monoStyle}
+                      className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.13em] font-semibold border ${
+                        isInspo
+                          ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                          : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40"
+                      }`}
+                    >
+                      {isInspo ? "✦ Inspo" : "✓ Owned"}
+                    </span>
+                  )}
+                </>
+              )}
+              <span
+                style={monoStyle}
+                className={`text-[9px] uppercase tracking-[0.15em] px-2 py-0.5 border font-semibold ${dressMeta.badgeClass}`}
+              >
+                {dressMeta.shortBadge}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1">
+              {assignedDayNumbers.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {assignedDayNumbers.map((dNum) =>
+                    onAssignToDay ? (
+                      <button
+                        key={dNum}
+                        type="button"
+                        onClick={() => onAssignToDay(dNum, null)}
+                        title={`Click to unassign Day ${formatDayNumber(dNum)}`}
+                        aria-label={`Unassign ${outfit.title} from Day ${formatDayNumber(
+                          dNum
+                        )}`}
+                        style={monoStyle}
+                        className="px-1.5 py-0.5 bg-[#13382E]/10 hover:bg-[#A8442A]/15 text-[#13382E] hover:text-[#A8442A] border border-[#13382E]/30 hover:border-[#A8442A]/40 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <span>D{formatDayNumber(dNum)}</span>
+                        <span aria-hidden="true">&#10005;</span>
+                      </button>
+                    ) : (
+                      <span
+                        key={dNum}
+                        style={monoStyle}
+                        className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[9px] uppercase tracking-wider font-semibold"
+                      >
+                        D{formatDayNumber(dNum)}
+                      </span>
+                    )
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleToggleCollapse}
+                aria-expanded={!effectiveCollapsed}
+                aria-label={`${
+                  effectiveCollapsed ? "Expand" : "Collapse"
+                } outfit card for ${outfit.title}`}
+                style={monoStyle}
+                className="px-2 py-0.5 text-[9px] uppercase tracking-wider border border-[#1F1A16]/20 bg-[#EFE7D8]/60 hover:bg-[#1F1A16] text-[#5C5248] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+              >
+                {effectiveCollapsed ? "Expand ▼" : "Collapse ▲"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-baseline justify-between gap-2">
+            <h4
+              style={serifStyle}
+              className={`${
+                effectiveCollapsed ? "text-lg" : "text-xl"
+              } font-semibold text-[#1F1A16] leading-snug`}
+            >
+              {outfit.title}
+            </h4>
+            {effectiveCollapsed && (
+              <span
+                style={monoStyle}
+                className="text-[9px] uppercase tracking-wider text-[#8A7E71] shrink-0"
+              >
+                {outfit.garments.length}{" "}
+                {outfit.garments.length === 1 ? "piece" : "pieces"}
               </span>
             )}
           </div>
 
-          {/* Overlaid Climate Tag Pill (Bottom) */}
-          <div className="absolute bottom-2 inset-x-2 z-10 flex justify-between items-center pointer-events-none">
-            <span
-              style={monoStyle}
-              className="px-2 py-0.5 bg-[#FBF8F3]/95 text-[#1F1A16] border border-[#1F1A16]/20 text-[9px] uppercase tracking-[0.13em] font-semibold shadow-sm truncate max-w-full"
-            >
-              {outfit.climateTag}
-            </span>
-          </div>
-        </div>
+          {!effectiveCollapsed && (
+            <>
+              {outfit.notes && !compact && (
+                <p className="text-xs text-[#5C5248] leading-relaxed">
+                  {outfit.notes}
+                </p>
+              )}
 
-        {/* Polaroid Lower Caption Area */}
-        <div className="pt-3.5 px-1 space-y-2.5">
-          <div className="flex flex-wrap items-center justify-between gap-1.5">
-            <span
-              style={monoStyle}
-              className={`text-[9px] uppercase tracking-[0.15em] px-2 py-0.5 border font-semibold ${dressMeta.badgeClass}`}
-            >
-              {dressMeta.shortBadge}
-            </span>
-
-            {assignedDayNumbers.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {assignedDayNumbers.map((dNum) =>
-                  onAssignToDay ? (
-                    <button
-                      key={dNum}
-                      type="button"
-                      onClick={() => onAssignToDay(dNum, null)}
-                      title={`Click to unassign Day ${formatDayNumber(dNum)}`}
-                      aria-label={`Unassign ${outfit.title} from Day ${formatDayNumber(
-                        dNum
-                      )}`}
-                      style={monoStyle}
-                      className="px-1.5 py-0.5 bg-[#13382E]/10 hover:bg-[#A8442A]/15 text-[#13382E] hover:text-[#A8442A] border border-[#13382E]/30 hover:border-[#A8442A]/40 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
-                    >
-                      <span>D{formatDayNumber(dNum)}</span>
-                      <span aria-hidden="true">&#10005;</span>
-                    </button>
-                  ) : (
-                    <span
-                      key={dNum}
-                      style={monoStyle}
-                      className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[9px] uppercase tracking-wider font-semibold"
-                    >
-                      D{formatDayNumber(dNum)}
+              {/* Collapsible Garment URLs List */}
+              {outfit.garments.length > 0 && (
+                <div className="pt-2 border-t border-[#1F1A16]/10 space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setIsLinksExpanded((prev) => !prev)}
+                    aria-expanded={isLinksExpanded}
+                    style={monoStyle}
+                    className="w-full flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-[#8A7E71] hover:text-[#1F1A16] cursor-pointer py-0.5 transition-colors"
+                  >
+                    <span>GARMENT LINKS ({outfit.garments.length})</span>
+                    <span className="text-[8px] tracking-wider text-[#5C5248]">
+                      {isLinksExpanded ? "Hide ▲" : "Show ▼"}
                     </span>
-                  )
-                )}
-              </div>
-            )}
-          </div>
-
-          <h4
-            style={serifStyle}
-            className="text-xl font-semibold text-[#1F1A16] leading-snug"
-          >
-            {outfit.title}
-          </h4>
-
-          {outfit.notes && !compact && (
-            <p className="text-xs text-[#5C5248] leading-relaxed">
-              {outfit.notes}
-            </p>
-          )}
-
-          {/* Collapsible Garment URLs List */}
-          {outfit.garments.length > 0 && (
-            <div className="pt-2 border-t border-[#1F1A16]/10 space-y-1.5">
-              <button
-                type="button"
-                onClick={() => setIsLinksExpanded((prev) => !prev)}
-                aria-expanded={isLinksExpanded}
-                style={monoStyle}
-                className="w-full flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-[#8A7E71] hover:text-[#1F1A16] cursor-pointer py-0.5 transition-colors"
-              >
-                <span>GARMENT LINKS ({outfit.garments.length})</span>
-                <span className="text-[8px] tracking-wider text-[#5C5248]">
-                  {isLinksExpanded ? "Hide ▲" : "Show ▼"}
-                </span>
-              </button>
-              {isLinksExpanded && (
-                <div className="flex flex-wrap gap-1.5">
-                  {outfit.garments.map((g) => (
-                    <a
-                      key={g.id}
-                      href={g.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={monoStyle}
-                      className="px-2 py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
-                      title={`${g.label} (${extractSourceDomain(g.url)})`}
-                    >
-                      <span className="truncate max-w-[155px]">{g.label}</span>
-                      <span className="text-[#A8442A] font-semibold">
-                        [{extractSourceDomain(g.url)}]
-                      </span>
-                      <ExternalArrow />
-                    </a>
-                  ))}
+                  </button>
+                  {isLinksExpanded && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {outfit.garments.map((g) => (
+                        <a
+                          key={g.id}
+                          href={g.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={monoStyle}
+                          className="px-2 py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
+                          title={`${g.label} (${extractSourceDomain(g.url)})`}
+                        >
+                          <span className="truncate max-w-[155px]">
+                            {g.label}
+                          </span>
+                          <span className="text-[#A8442A] font-semibold">
+                            [{extractSourceDomain(g.url)}]
+                          </span>
+                          <ExternalArrow />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Polaroid Footer Actions */}
-      <div className="pt-3 mt-3 border-t border-[#1F1A16]/12 px-1 flex flex-wrap items-center justify-between gap-2">
-        {onSelectOutfit ? (
-          <div className="w-full flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => onSelectOutfit(outfit.id)}
-              style={monoStyle}
-              className={`flex-1 py-2 text-[11px] uppercase tracking-[0.15em] font-semibold border cursor-pointer transition-colors ${
-                isSelected
-                  ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
-                  : "bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border-[#1F1A16]/25"
-              }`}
-            >
-              {isSelected ? "✓ Assigned to Slot" : "Assign This Look"}
-            </button>
-            {onEditOutfit && (
+      {/* Polaroid Footer Actions (shown when expanded, or compact assign button when collapsed in drawer) */}
+      {!effectiveCollapsed ? (
+        <div className="pt-3 mt-3 border-t border-[#1F1A16]/12 px-1 flex flex-wrap items-center justify-between gap-2">
+          {onSelectOutfit ? (
+            <div className="w-full flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => onEditOutfit(outfit)}
+                onClick={() => onSelectOutfit(outfit.id)}
                 style={monoStyle}
-                className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#FBF8F3] cursor-pointer shrink-0"
-                aria-label={`Edit look ${outfit.title}`}
+                className={`flex-1 py-2 text-[11px] uppercase tracking-[0.15em] font-semibold border cursor-pointer transition-colors ${
+                  isSelected
+                    ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                    : "bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border-[#1F1A16]/25"
+                }`}
               >
-                Edit
+                {isSelected ? "✓ Assigned to Slot" : "Assign This Look"}
               </button>
-            )}
-            {onRemoveCustomOutfit && (
-              <button
-                type="button"
-                onClick={() => setShowDeleteConfirm(true)}
-                style={monoStyle}
-                className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-[#1F1A16]/15 hover:border-[#A8442A]/40 bg-[#FBF8F3] cursor-pointer shrink-0"
-                aria-label={`Delete look ${outfit.title}`}
-              >
-                Delete &#10005;
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            {onAssignToDay && (
-              <div className="flex items-center gap-1.5 flex-1">
-                <label
-                  htmlFor={`assign-day-${outfit.id}`}
-                  style={monoStyle}
-                  className="text-[10px] uppercase tracking-wider text-[#5C5248] shrink-0"
-                >
-                  ASSIGN TO DAY:
-                </label>
-                <select
-                  id={`assign-day-${outfit.id}`}
-                  value=""
-                  onChange={(e) => {
-                    if (e.target.value !== "") {
-                      const dayNum = Number(e.target.value);
-                      const isAlreadyAssigned =
-                        assignedDayNumbers.includes(dayNum);
-                      onAssignToDay(
-                        dayNum,
-                        isAlreadyAssigned ? null : outfit.id
-                      );
-                    }
-                  }}
-                  style={monoStyle}
-                  className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2 py-1 text-[10px] text-[#1F1A16] flex-1 min-w-0 cursor-pointer"
-                >
-                  <option value="">Select Day (D00–D10)...</option>
-                  {TRIP_DAYS.map((d) => {
-                    const isAssigned = assignedDayNumbers.includes(d.dayNumber);
-                    return (
-                      <option key={d.dayNumber} value={d.dayNumber}>
-                        {isAssigned ? "✓ " : ""}D{formatDayNumber(d.dayNumber)} •{" "}
-                        {d.shortDate} ({d.phase.toUpperCase()})
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
-            )}
-
-            <div className="flex items-center gap-1">
-              {onPackOutfitGarments && outfit.garments.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onPackOutfitGarments(outfit)}
-                  disabled={isPackedInTrunk}
-                  style={monoStyle}
-                  aria-label={
-                    isPackedInTrunk
-                      ? `All garments from ${outfit.title} are in Packing Ledger`
-                      : `Add garments from ${outfit.title} to Packing Ledger`
-                  }
-                  title={
-                    isPackedInTrunk
-                      ? "All garments from this look are already listed in The Packing Ledger"
-                      : "Add this look's garments to The Packing Ledger checklist"
-                  }
-                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border transition-colors ${
-                    isPackedInTrunk
-                      ? "bg-[#13382E]/10 text-[#13382E] border-[#13382E]/30 cursor-default font-semibold"
-                      : "text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border-[#13382E]/35 bg-[#EFE7D8]/60 cursor-pointer font-semibold"
-                  }`}
-                >
-                  {isPackedInTrunk ? "✓ In Packing Ledger" : "+ To Packing Ledger"}
-                </button>
-              )}
-
               {onEditOutfit && (
                 <button
                   type="button"
                   onClick={() => onEditOutfit(outfit)}
                   style={monoStyle}
-                  className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                  className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#FBF8F3] cursor-pointer shrink-0"
                   aria-label={`Edit look ${outfit.title}`}
                 >
                   Edit
                 </button>
               )}
-
               {onRemoveCustomOutfit && (
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   style={monoStyle}
-                  className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-transparent hover:border-[#A8442A]/30 cursor-pointer"
+                  className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-[#1F1A16]/15 hover:border-[#A8442A]/40 bg-[#FBF8F3] cursor-pointer shrink-0"
                   aria-label={`Delete look ${outfit.title}`}
                 >
                   Delete &#10005;
                 </button>
               )}
             </div>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              {onAssignToDay && (
+                <div className="flex items-center gap-1.5 flex-1">
+                  <label
+                    htmlFor={`assign-day-${outfit.id}`}
+                    style={monoStyle}
+                    className="text-[10px] uppercase tracking-wider text-[#5C5248] shrink-0"
+                  >
+                    ASSIGN TO DAY:
+                  </label>
+                  <select
+                    id={`assign-day-${outfit.id}`}
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value !== "") {
+                        const dayNum = Number(e.target.value);
+                        const isAlreadyAssigned =
+                          assignedDayNumbers.includes(dayNum);
+                        onAssignToDay(
+                          dayNum,
+                          isAlreadyAssigned ? null : outfit.id
+                        );
+                      }
+                    }}
+                    style={monoStyle}
+                    className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2 py-1 text-[10px] text-[#1F1A16] flex-1 min-w-0 cursor-pointer"
+                  >
+                    <option value="">Select Day (D00–D10)...</option>
+                    {TRIP_DAYS.map((d) => {
+                      const isAssigned = assignedDayNumbers.includes(
+                        d.dayNumber
+                      );
+                      return (
+                        <option key={d.dayNumber} value={d.dayNumber}>
+                          {isAssigned ? "✓ " : ""}D
+                          {formatDayNumber(d.dayNumber)} • {d.shortDate} (
+                          {d.phase.toUpperCase()})
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+              )}
+
+              <div className="flex items-center gap-1">
+                {onPackOutfitGarments && outfit.garments.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => onPackOutfitGarments(outfit)}
+                    disabled={isPackedInTrunk}
+                    style={monoStyle}
+                    aria-label={
+                      isPackedInTrunk
+                        ? `All garments from ${outfit.title} are in Packing Ledger`
+                        : `Add garments from ${outfit.title} to Packing Ledger`
+                    }
+                    title={
+                      isPackedInTrunk
+                        ? "All garments from this look are already listed in The Packing Ledger"
+                        : "Add this look's garments to The Packing Ledger checklist"
+                    }
+                    className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border transition-colors ${
+                      isPackedInTrunk
+                        ? "bg-[#13382E]/10 text-[#13382E] border-[#13382E]/30 cursor-default font-semibold"
+                        : "text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border-[#13382E]/35 bg-[#EFE7D8]/60 cursor-pointer font-semibold"
+                    }`}
+                  >
+                    {isPackedInTrunk
+                      ? "✓ In Packing Ledger"
+                      : "+ To Packing Ledger"}
+                  </button>
+                )}
+
+                {onEditOutfit && (
+                  <button
+                    type="button"
+                    onClick={() => onEditOutfit(outfit)}
+                    style={monoStyle}
+                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                    aria-label={`Edit look ${outfit.title}`}
+                  >
+                    Edit
+                  </button>
+                )}
+
+                {onRemoveCustomOutfit && (
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    style={monoStyle}
+                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-transparent hover:border-[#A8442A]/30 cursor-pointer"
+                    aria-label={`Delete look ${outfit.title}`}
+                  >
+                    Delete &#10005;
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      ) : (
+        onSelectOutfit && (
+          <div className="pt-2 mt-2 border-t border-[#1F1A16]/10 px-1 flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => onSelectOutfit(outfit.id)}
+              style={monoStyle}
+              className={`px-3 py-1 text-[10px] uppercase tracking-[0.14em] font-semibold border cursor-pointer transition-colors ${
+                isSelected
+                  ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                  : "bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border-[#1F1A16]/25"
+              }`}
+            >
+              {isSelected ? "✓ Assigned" : "Assign Look"}
+            </button>
+          </div>
+        )
+      )}
 
       {expandedGarment && (
         <GarmentLightboxModal

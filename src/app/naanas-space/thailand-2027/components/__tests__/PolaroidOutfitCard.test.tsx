@@ -519,6 +519,41 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       });
       expect(inspoBadge).toHaveTextContent("✦ Inspiration");
     });
+
+    it("collapses and expands the entire outfit card on clicking the Collapse/Expand card button", () => {
+      render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
+
+      // Initially expanded: Polaroid collage grid and garment links are visible
+      expect(screen.getByTestId("polaroid-collage-grid")).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: /Linen Overshirt/i })
+      ).toBeInTheDocument();
+
+      // Click Collapse ▲ button on the card
+      const collapseBtn = screen.getByRole("button", {
+        name: /Collapse outfit card for Test Styling Look/i,
+      });
+      expect(collapseBtn).toHaveAttribute("aria-expanded", "true");
+      fireEvent.click(collapseBtn);
+
+      // Collage grid and garment links are hidden; compact piece count is shown
+      expect(
+        screen.queryByTestId("polaroid-collage-grid")
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /Linen Overshirt/i })
+      ).not.toBeInTheDocument();
+      expect(screen.getByText(/2 pieces/i)).toBeInTheDocument();
+
+      // Click Expand ▼ button to restore full Polaroid card
+      const expandBtn = screen.getByRole("button", {
+        name: /Expand outfit card for Test Styling Look/i,
+      });
+      expect(expandBtn).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(expandBtn);
+
+      expect(screen.getByTestId("polaroid-collage-grid")).toBeInTheDocument();
+    });
   });
 });
 
