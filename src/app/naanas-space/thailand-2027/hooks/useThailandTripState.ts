@@ -5,9 +5,11 @@ import {
   PREP_CHECKLIST,
   ESSENTIAL_APPS,
   DEFAULT_PACKING_ITEMS,
+  DEFAULT_WARDROBE_OUTFITS,
   ItineraryActivity,
   PackingItem,
   PlannedExpense,
+  WardrobeOutfit,
 } from "@/lib/thailandTripData";
 import {
   PersistedTripState,
@@ -230,6 +232,21 @@ export function useThailandTripState() {
     [tripState.customPackingItems]
   );
 
+  const allOutfits = useMemo(() => {
+    const deletedSet = new Set(tripState.deletedOutfitIds || []);
+    const customList = (tripState.customOutfits || []).filter(
+      (o) => !deletedSet.has(o.id)
+    );
+    const customById = new Map(customList.map((o) => [o.id, o]));
+    const mergedDefaults = DEFAULT_WARDROBE_OUTFITS.filter(
+      (def) => !deletedSet.has(def.id)
+    ).map((def) => customById.get(def.id) || def);
+    const purelyCustom = customList.filter(
+      (o) => !DEFAULT_WARDROBE_OUTFITS.some((def) => def.id === o.id)
+    );
+    return [...mergedDefaults, ...purelyCustom];
+  }, [tripState.customOutfits, tripState.deletedOutfitIds]);
+
   const prepProgress = useMemo(() => {
     const total = PREP_CHECKLIST.length;
     const done = tripState.completedPrepIds.length;
@@ -354,6 +371,219 @@ export function useThailandTripState() {
         section: "packing",
         action: "Removed custom packing item",
         detail: targetItem ? targetItem.label : itemId,
+      }
+    );
+  };
+
+  const addOutfitGarmentsToPacking = (outfit: WardrobeOutfit): number => {
+    const dressCodeToCategory: Record<
+      WardrobeOutfit["dressCode"],
+      PackingItem["category"]
+    > = {
+      temple: "Daytime & Temple Wear",
+      daytime: "Daytime & Temple Wear",
+      rooftop: "Evening & Fine Dining",
+      beach: "Resort & Beach (Phuket)",
+      transit: "Carry-On & Documents",
+    };
+    const category =
+      dressCodeToCategory[outfit.dressCode] || "Daytime & Temple Wear";
+    const existingLabels = new Set(
+      allPackingItems.map((p) => p.label.trim().toLowerCase())
+    );
+    const seenInBatch = new Set<string>();
+    const now = Date.now();
+
+    const newItems: PackingItem[] = [];
+    outfit.garments.forEach((g, idx) => {
+      const normalized = g.label.trim().toLowerCase();
+      if (
+        !normalized ||
+        existingLabels.has(normalized) ||
+        seenInBatch.has(normalized)
+      ) {
+        return;
+      }
+      seenInBatch.add(normalized);
+      newItems.push({
+        id: `custom-pack-${now}-${idx}`,
+        label: g.label.trim(),
+        category,
+        forWho: outfit.owner,
+        note: `From Look: ${outfit.title}`,
+      });
+    });
+
+    if (newItems.length === 0) {
+      return 0;
+    }
+
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        customPackingItems: [...prev.customPackingItems, ...newItems],
+      }),
+      {
+        section: "packing",
+        action: "Added look garments to Packing Ledger",
+        detail: `${outfit.title} (${newItems.length} ${
+          newItems.length === 1 ? "piece" : "pieces"
+        })`,
+      }
+    );
+
+    return newItems.length;
+  };
+
+  const addCustomOutfit = (outfitData: Omit<WardrobeOutfit, "id">) => {
+    const newOutfit: WardrobeOutfit = {
+      ...outfitData,
+      id: `custom-outfit-${Date.now()}`,
+    };
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        customOutfits: [...(prev.customOutfits || []), newOutfit],
+      }),
+      {
+        section: "packing",
+        action: "Created Digital Wardrobe look",
+        detail: `${newOutfit.title} (${newOutfit.climateTag})`,
+      }
+    );
+    return newOutfit.id;
+  };
+
+  const updateCustomOutfit = (
+    outfitId: string,
+    updates: Omit<WardrobeOutfit, "id">
+  ) => {
+    const existingDefault = DEFAULT_WARDROBE_OUTFITS.find(
+      (d) => d.id === outfitId
+    );
+    const updatedOutfit: WardrobeOutfit = {
+      ...updates,
+      id: outfitId,
+      isDefault: existingDefault ? true : updates.isDefault,
+    };
+    updateTripState(
+      (prev) => {
+        const list = prev.customOutfits || [];
+        const existsInCustom = list.some((o) => o.id === outfitId);
+        const nextCustom = existsInCustom
+          ? list.map((o) => (o.id === outfitId ? updatedOutfit : o))
+          : [...list, updatedOutfit];
+        return {
+          ...prev,
+          customOutfits: nextCustom,
+        };
+      },
+      {
+        section: "packing",
+        action: "Updated Digital Wardrobe look",
+        detail: `${updatedOutfit.title} (${updatedOutfit.climateTag})`,
+      }
+    );
+  };
+
+  const removeCustomOutfit = (outfitId: string) => {
+    const targetOutfit = allOutfits.find((o) => o.id === outfitId);
+    const isDefaultLook = DEFAULT_WARDROBE_OUTFITS.some(
+      (d) => d.id === outfitId
+    );
+    updateTripState(
+      (prev) => {
+        const nextDayOutfits = { ...(prev.dayOutfitByDay || {}) };
+        for (const [dayKey, val] of Object.entries(nextDayOutfits)) {
+          if (val === outfitId) {
+            delete nextDayOutfits[Number(dayKey)];
+          }
+        }
+        const nextActOutfits = { ...(prev.activityOutfitById || {}) };
+        for (const [actKey, val] of Object.entries(nextActOutfits)) {
+          if (val === outfitId) {
+            delete nextActOutfits[actKey];
+          }
+        }
+        const existingDeleted = prev.deletedOutfitIds || [];
+        const nextDeleted =
+          isDefaultLook && !existingDeleted.includes(outfitId)
+            ? [...existingDeleted, outfitId]
+            : existingDeleted;
+
+        return {
+          ...prev,
+          customOutfits: (prev.customOutfits || []).filter(
+            (o) => o.id !== outfitId
+          ),
+          deletedOutfitIds: nextDeleted,
+          dayOutfitByDay: nextDayOutfits,
+          activityOutfitById: nextActOutfits,
+        };
+      },
+      {
+        section: "packing",
+        action: "Removed Digital Wardrobe look",
+        detail: targetOutfit ? targetOutfit.title : outfitId,
+      }
+    );
+  };
+
+  const assignDayOutfit = (dayNumber: number, outfitId: string | null) => {
+    const chosenOutfit = outfitId
+      ? allOutfits.find((o) => o.id === outfitId)
+      : undefined;
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        dayOutfitByDay: {
+          ...(prev.dayOutfitByDay || {}),
+          [dayNumber]: outfitId || "none",
+        },
+      }),
+      {
+        section: "itinerary",
+        action: outfitId
+          ? `Assigned attire to Day ${formatDayNumber(dayNumber)}`
+          : `Cleared attire on Day ${formatDayNumber(dayNumber)}`,
+        detail: chosenOutfit
+          ? `${chosenOutfit.title} (${chosenOutfit.climateTag})`
+          : `Day ${formatDayNumber(dayNumber)} attire cleared`,
+      }
+    );
+  };
+
+  const assignActivityOutfit = (
+    dayNumber: number,
+    activityId: string,
+    outfitId: string | null
+  ) => {
+    const chosenOutfit = outfitId
+      ? allOutfits.find((o) => o.id === outfitId)
+      : undefined;
+    const dayObj = TRIP_DAYS.find((d) => d.dayNumber === dayNumber);
+    const customActs = tripState.customActivitiesByDay[dayNumber] || [];
+    const targetAct = [...(dayObj?.defaultActivities || []), ...customActs].find(
+      (a) => a.id === activityId
+    );
+    const actTitle = targetAct ? targetAct.title : activityId;
+
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        activityOutfitById: {
+          ...(prev.activityOutfitById || {}),
+          [activityId]: outfitId || "none",
+        },
+      }),
+      {
+        section: "itinerary",
+        action: outfitId
+          ? `Assigned activity attire on Day ${formatDayNumber(dayNumber)}`
+          : `Cleared activity attire on Day ${formatDayNumber(dayNumber)}`,
+        detail: chosenOutfit
+          ? `${actTitle} → ${chosenOutfit.title}`
+          : `${actTitle} (reverted to day attire)`,
       }
     );
   };
@@ -557,6 +787,7 @@ export function useThailandTripState() {
     handleSetActiveActor,
     countdown,
     allPackingItems,
+    allOutfits,
     prepProgress,
     appsProgress,
     packingProgress,
@@ -566,6 +797,12 @@ export function useThailandTripState() {
     togglePackingItem,
     addCustomPackingItem,
     removeCustomPackingItem,
+    addOutfitGarmentsToPacking,
+    addCustomOutfit,
+    updateCustomOutfit,
+    removeCustomOutfit,
+    assignDayOutfit,
+    assignActivityOutfit,
     toggleActivityCompleted,
     addCustomActivity,
     removeCustomActivity,

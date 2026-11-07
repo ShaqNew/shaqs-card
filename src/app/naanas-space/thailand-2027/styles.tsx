@@ -94,3 +94,24 @@ export const CalendarIcon = ({
     <path d="M5 2V4.5M11 2V4.5M2 7H14" />
   </svg>
 );
+
+export const HangerIcon = ({
+  className = "inline-block w-3.5 h-3.5",
+}: {
+  className?: string;
+}) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M8 5.2C8 4.2 8.9 3.6 9.3 3.1C9.8 2.5 9.6 1.5 8.6 1.2C7.6 0.9 6.6 1.5 6.6 2.5" />
+    <path d="M8 5.2L1.5 10.6C0.9 11.1 1.2 12.2 2.1 12.2H13.9C14.8 12.2 15.1 11.1 14.5 10.6L8 5.2Z" />
+    <path d="M4.5 12.2V13.8M11.5 12.2V13.8" />
+  </svg>
+);

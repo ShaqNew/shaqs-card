@@ -103,12 +103,12 @@ All static trip data is defined in `src/lib/thailandTripData.ts`:
 | `src/app/naanas-space/thailand-2027/components/` | Global chrome & overlays (`TopEditorialBar.tsx`, `EditorialMasthead.tsx`, `StickyStepNav.tsx`, `ChangeLogDrawer.tsx`, `DriverCardModal.tsx`, `QuickPocketDesk.tsx`). |
 | `src/app/naanas-space/thailand-2027/components/steps/` | Individual step views (`StepItinerary.tsx`, `StepBookingsVault.tsx`, `StepPrepAndApps.tsx`, `StepPackingStudio.tsx`, `StepGuideAndSos.tsx`, `StepBudgetAndLedger.tsx`). |
 | `src/lib/thailandTripData.ts` | Typed static dataset (`TRIP_METADATA`, `FLIGHT_BOOKINGS`, `HOTEL_BOOKINGS`, `FINANCIAL_MATRIX`, `TRIP_DAYS` `D00`–`D10`, `PREP_CHECKLIST`, `ESSENTIAL_APPS`, `DEFAULT_PACKING_ITEMS`, `DEFAULT_PLANNED_EXPENSES`, `EMERGENCY_CONTACTS`). |
-| `src/app/api/naanas-space/thailand-2027/route.ts` | Next.js App Router `GET` / `PUT` endpoint persisting shared trip state to Vercel KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) under key `naanas_space_thailand_2027_state_v1`. |
+| `src/app/api/naanas-space/thailand-2027/route.ts` | Next.js App Router `GET` / `PUT` endpoint persisting shared trip state to Vercel KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) under key `naanas_space_thailand_2027_v1`. |
 | `src/app/naanas-space/page.tsx` | *Naana's Space* hub page featuring the hero link card to `/naanas-space/thailand-2027`. |
 | `src/app/naanas-space/__tests__/thailand-2027.test.tsx` | Jest + React Testing Library test suite covering all 6 steps, interactive checklists, currency conversion, Quick Pocket Desk, Thai driver modal, and the Folio Change Log. |
 
 ### Cloud & Local Persistence Schema (`PersistedTripState`)
-State is stored locally in `localStorage` (`thailand_2027_trip_state_v2`) and debounced-synced (600ms) to `/api/thailand-2027`:
+State is stored locally in `localStorage` (`naanas_space_thailand_2027_v1`) and debounced-synced (600ms) to `/api/naanas-space/thailand-2027`:
 - `completedActivityIds: string[]` — Checked-off itinerary activities.
 - `customActivitiesByDay: Record<number, ItineraryActivity[]>` — User-added or suggestion-inscribed activities per day.
 - `completedPrepIds: string[]` — Checked-off pre-trip checklist items (`8` total).

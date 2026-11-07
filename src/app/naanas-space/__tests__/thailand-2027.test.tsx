@@ -220,4 +220,223 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByText(/โรงแรมแชงกรี-ลา กรุงเทพฯ/i)
     ).toBeInTheDocument();
   });
+
+  it("renders Digital Wardrobe polaroid cards in Step IV and creates a new look via the Create Look modal", async () => {
+    render(<ThailandTripDashboard />);
+    fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
+
+    expect(
+      screen.getByRole("heading", {
+        name: /Digital Wardrobe & Outfit Lookbook/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Rattanakosin Temple & River Linen/i)
+    ).toBeInTheDocument();
+
+    // Open Create Look modal
+    fireEvent.click(screen.getByRole("button", { name: /\+ Create Look/i }));
+    expect(
+      screen.getByRole("heading", { name: /Create Look & Garment Collage/i })
+    ).toBeInTheDocument();
+
+    // Fill in new look title and garment URL
+    fireEvent.change(
+      screen.getByLabelText(/LOOK TITLE/i),
+      { target: { value: "Phuket Sunset Silk Ensemble" } }
+    );
+    fireEvent.change(
+      screen.getByLabelText(/Garment URL/i),
+      { target: { value: "https://www.asos.com/prd/silk-resort-dress" } }
+    );
+    fireEvent.change(
+      screen.getByLabelText(/Garment Label/i),
+      { target: { value: "Gold Bias-Cut Silk Resort Dress" } }
+    );
+
+    // Submit form
+    fireEvent.click(
+      screen.getByRole("button", { name: /Save Look to Wardrobe/i })
+    );
+
+    const editCreatedBtn = await screen.findByRole("button", {
+      name: /Edit look Phuket Sunset Silk Ensemble/i,
+    });
+    expect(editCreatedBtn).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Gold Bias-Cut Silk Resort Dress").length
+    ).toBeGreaterThan(0);
+
+    // Edit the created look
+    fireEvent.click(editCreatedBtn);
+    expect(
+      screen.getByRole("heading", { name: /Edit Look & Garment Collage/i })
+    ).toBeInTheDocument();
+
+    // Update the look title and edit the existing garment label
+    fireEvent.change(screen.getByLabelText(/LOOK TITLE/i), {
+      target: { value: "Phuket Sunset Silk & Pearl Ensemble" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Edit garment Gold Bias-Cut Silk Resort Dress/i,
+      })
+    );
+    fireEvent.change(screen.getByLabelText(/Garment Label/i), {
+      target: { value: "Champagne Silk Bias-Cut Maxi" },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Save Look Changes/i })
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: /Edit look Phuket Sunset Silk & Pearl Ensemble/i,
+      })
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText("Champagne Silk Bias-Cut Maxi").length
+    ).toBeGreaterThan(0);
+
+    // Click the thumbnail tile to expand the image lightbox
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Expand thumbnail for Champagne Silk Bias-Cut Maxi/i,
+      })
+    );
+    expect(
+      screen.getByRole("dialog", {
+        name: /Expanded preview: Champagne Silk Bias-Cut Maxi/i,
+      })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Close expanded image/i })
+    );
+
+    // Delete a pre-made default look ("Rattanakosin Temple & River Linen")
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Delete look Rattanakosin Temple & River Linen/i,
+      })
+    );
+
+    // Confirmation modal appears
+    expect(
+      screen.getByRole("dialog", {
+        name: /Confirm deletion of Rattanakosin Temple & River Linen/i,
+      })
+    ).toBeInTheDocument();
+
+    // Confirm deletion inside the modal
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Confirm delete Rattanakosin Temple & River Linen/i,
+      })
+    );
+
+    expect(
+      screen.queryByText(/Rattanakosin Temple & River Linen/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it("displays ATTIRE slots in Step I, opens the Wardrobe Drawer via hanger icon, and warns on dress-code conflicts", () => {
+    render(<ThailandTripDashboard />);
+
+    // Verify ATTIRE slots render in Step I
+    expect(screen.getAllByText("ATTIRE").length).toBeGreaterThan(0);
+    expect(
+      screen.getAllByText(/Rattanakosin Temple & River Linen/i).length
+    ).toBeGreaterThan(0);
+
+    // Click the hanger icon on the Day 2 temple river boat activity
+    const hangerBtn = screen.getByRole("button", {
+      name: /Assign or override outfit for Chao Phraya Express Boat from Sathorn Central Pier/i,
+    });
+    fireEvent.click(hangerBtn);
+
+    // Verify the Wardrobe Drawer opens
+    expect(
+      screen.getByRole("dialog", {
+        name: /Assign outfit override for Chao Phraya Express Boat from Sathorn Central Pier/i,
+      })
+    ).toBeInTheDocument();
+
+    // Assign the Beach Club look ("Layan Cove & Bang Tao Beach Club") to the Temple activity to trigger conflict warning
+    const assignBtns = screen.getAllByRole("button", {
+      name: /Assign This Look/i,
+    });
+    // The 3rd unassigned look in the list is "Layan Cove & Bang Tao Beach Club"
+    fireEvent.click(assignBtns[2]);
+
+    // Expect Temple Dress Code Conflict alert to appear
+    expect(
+      screen.getAllByText(/Temple Dress Code Conflict • Beachwear Prohibited/i)
+        .length
+    ).toBeGreaterThan(0);
+  });
+
+  it("supports collapsible sections, collapsible Packing Ledger categories, interactive day unassignment, and + To Packing Ledger garment syncing in Step IV", () => {
+    render(<ThailandTripDashboard />);
+
+    // Navigate to Step IV (Packing Studio)
+    const packingButtons = screen.getAllByRole("button", {
+      name: /Packing Studio/i,
+    });
+    fireEvent.click(packingButtons[0]);
+
+    // Unassign Day 02 from "Rattanakosin Temple & River Linen" via its interactive badge
+    const unassignDay02Btn = screen.getByRole("button", {
+      name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+    });
+    fireEvent.click(unassignDay02Btn);
+    expect(
+      screen.queryByRole("button", {
+        name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+      })
+    ).not.toBeInTheDocument();
+
+    // Send "Rattanakosin Temple & River Linen" garments to The Packing Ledger
+    const packToLedgerBtn = screen.getByRole("button", {
+      name: /Add garments from Rattanakosin Temple & River Linen to Packing Ledger/i,
+    });
+    fireEvent.click(packToLedgerBtn);
+
+    // Button transitions to "✓ In Packing Ledger" and garments appear in The Packing Ledger
+    expect(
+      screen.getByRole("button", {
+        name: /All garments from Rattanakosin Temple & River Linen are in Packing Ledger/i,
+      })
+    ).toBeDisabled();
+    expect(
+      screen.getAllByText(/From Look: Rattanakosin Temple & River Linen/i)
+        .length
+    ).toBeGreaterThan(0);
+
+    // Collapse all categories in The Packing Ledger
+    const collapseCatsBtn = screen.getByRole("button", {
+      name: /Collapse All Categories/i,
+    });
+    fireEvent.click(collapseCatsBtn);
+    expect(
+      screen.getByRole("button", { name: /Expand All Categories/i })
+    ).toBeInTheDocument();
+
+    // Collapse all Studio Sections and re-expand
+    const collapseSectionsBtn = screen.getByRole("button", {
+      name: /Collapse All Sections/i,
+    });
+    fireEvent.click(collapseSectionsBtn);
+    expect(
+      screen.queryByRole("heading", { name: /Dry Season Sunshine/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Expand All Sections/i })
+    );
+    expect(
+      screen.getByRole("heading", { name: /Dry Season Sunshine/i })
+    ).toBeInTheDocument();
+  });
 });
