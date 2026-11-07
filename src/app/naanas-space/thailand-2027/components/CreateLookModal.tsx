@@ -55,13 +55,43 @@ export function CreateLookModal({
   // Sync form fields when opening in Create vs Edit mode
   useEffect(() => {
     if (!isOpen) return;
+    let cancelled = false;
     if (editingOutfit) {
       setTitle(editingOutfit.title);
       setOwner(editingOutfit.owner);
       setDressCode(editingOutfit.dressCode);
       setClimateTag(editingOutfit.climateTag);
       setNotes(editingOutfit.notes || "");
-      setGarments(editingOutfit.garments || []);
+      const initialGarments = editingOutfit.garments || [];
+      setGarments(initialGarments);
+
+      // Auto-backfill missing thumbnails for direct links (e.g. Google Photos share links)
+      if (typeof fetch !== "undefined") {
+        initialGarments.forEach((g) => {
+          if (
+            !g.imageUrl &&
+            /^https?:\/\//i.test(g.url) &&
+            !/\/search\b/i.test(g.url)
+          ) {
+            fetch(`/api/link-preview?url=${encodeURIComponent(g.url)}`)
+              .then((res) => (res.ok ? res.json() : null))
+              .then((data: { imageUrl?: string | null } | null) => {
+                if (!cancelled && data?.imageUrl) {
+                  setGarments((prev) =>
+                    prev.map((item) =>
+                      item.id === g.id && !item.imageUrl
+                        ? { ...item, imageUrl: data.imageUrl! }
+                        : item
+                    )
+                  );
+                }
+              })
+              .catch(() => {
+                // Ignore offline errors
+              });
+          }
+        });
+      }
     } else {
       setTitle("");
       setOwner("both");
@@ -76,6 +106,9 @@ export function CreateLookModal({
     setManualImageInput("");
     setEditingGarmentId(null);
     setScrapeStatus(null);
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, editingOutfit]);
 
   useEffect(() => {
@@ -107,26 +140,16 @@ export function CreateLookModal({
     }
   };
 
-  const scrapeAndAddGarmentUrl = async (
-    rawUrl: string,
-    customLabel?: string
-  ) => {
-    const trimmedUrl = rawUrl.trim();
-    if (!trimmedUrl) return;
-
-    setIsScraping(true);
-    setScrapeStatus("Fetching OpenGraph thumbnail via /api/link-preview...");
-
-    let resolvedTitle = customLabel?.trim() || "";
-    let resolvedImage: string | undefined =
-      manualImageInput.trim() || undefined;
-    let resolvedSite = extractSourceDomain(trimmedUrl);
+  const fetchLinkPreviewMetadata = async (targetUrl: string) => {
+    let scrapedTitle: string | null = null;
+    let scrapedImage: string | undefined = undefined;
+    let scrapedSite = extractSourceDomain(targetUrl);
     let scrapeWarning: string | null = null;
 
     try {
       if (typeof fetch !== "undefined") {
         const res = await fetch(
-          `/api/link-preview?url=${encodeURIComponent(trimmedUrl)}`
+          `/api/link-preview?url=${encodeURIComponent(targetUrl)}`
         );
         if (res.ok) {
           const data = (await res.json()) as {
@@ -135,14 +158,14 @@ export function CreateLookModal({
             siteName?: string | null;
             warning?: string | null;
           };
-          if (!resolvedTitle && data.title) {
-            resolvedTitle = data.title;
+          if (data.title) {
+            scrapedTitle = data.title;
           }
-          if (!resolvedImage && data.imageUrl) {
-            resolvedImage = data.imageUrl;
+          if (data.imageUrl) {
+            scrapedImage = data.imageUrl;
           }
           if (data.siteName) {
-            resolvedSite = data.siteName;
+            scrapedSite = data.siteName;
           }
           if (data.warning) {
             scrapeWarning = data.warning;
@@ -153,8 +176,26 @@ export function CreateLookModal({
       // Fallback to local URL inference if offline
     }
 
+    return { scrapedTitle, scrapedImage, scrapedSite, scrapeWarning };
+  };
+
+  const scrapeAndAddGarmentUrl = async (
+    rawUrl: string,
+    customLabel?: string
+  ) => {
+    const trimmedUrl = rawUrl.trim();
+    if (!trimmedUrl) return;
+
+    setIsScraping(true);
+    setScrapeStatus("Fetching OpenGraph thumbnail via /api/link-preview...");
+
+    const { scrapedTitle, scrapedImage, scrapedSite, scrapeWarning } =
+      await fetchLinkPreviewMetadata(trimmedUrl);
+
+    const resolvedTitle = customLabel?.trim() || scrapedTitle || "";
+    const resolvedImage = manualImageInput.trim() || scrapedImage;
     const finalLabel =
-      resolvedTitle || `${resolvedSite} ${categoryInput} Piece`;
+      resolvedTitle || `${scrapedSite} ${categoryInput} Piece`;
 
     if (editingGarmentId) {
       setGarments((prev) =>
@@ -164,7 +205,9 @@ export function CreateLookModal({
                 ...g,
                 label: finalLabel,
                 url: trimmedUrl,
-                imageUrl: resolvedImage || g.imageUrl,
+                imageUrl:
+                  resolvedImage ||
+                  (g.url === trimmedUrl ? g.imageUrl : undefined),
                 category: categoryInput,
               }
             : g
@@ -186,7 +229,7 @@ export function CreateLookModal({
           ? scrapeWarning
           : resolvedImage
           ? `Added “${finalLabel}” with OpenGraph thumbnail.`
-          : `Added “${finalLabel}” (${resolvedSite} editorial tile).`
+          : `Added “${finalLabel}” (${scrapedSite} editorial tile).`
       );
     }
 
@@ -201,7 +244,7 @@ export function CreateLookModal({
     setUrlInput(garment.url);
     setLabelInput(garment.label);
     setCategoryInput(garment.category || "Top");
-    setManualImageInput(garment.imageUrl || "");
+    setManualImageInput("");
     setScrapeStatus(`Editing “${garment.label}” — update fields and click Save Piece.`);
   };
 
@@ -219,7 +262,11 @@ export function CreateLookModal({
 
   const handleUrlPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const pasted = e.clipboardData.getData("text");
-    if (pasted && /^https?:\/\//i.test(pasted.trim()) && !urlInput) {
+    if (
+      pasted &&
+      /^https?:\/\//i.test(pasted.trim()) &&
+      (!urlInput || editingGarmentId)
+    ) {
       e.preventDefault();
       const clean = pasted.trim();
       setUrlInput(clean);
@@ -237,23 +284,34 @@ export function CreateLookModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     let finalGarments = [...garments];
-    if (urlInput.trim() && /^https?:\/\//i.test(urlInput.trim())) {
+    const pendingUrl = urlInput.trim();
+    if (pendingUrl && /^https?:\/\//i.test(pendingUrl)) {
+      setIsScraping(true);
+      const { scrapedTitle, scrapedImage, scrapedSite } =
+        await fetchLinkPreviewMetadata(pendingUrl);
+      setIsScraping(false);
+
       const pendingLabel =
         labelInput.trim() ||
-        `${extractSourceDomain(urlInput.trim())} ${categoryInput}`;
+        scrapedTitle ||
+        `${scrapedSite} ${categoryInput}`;
+      const resolvedImg = manualImageInput.trim() || scrapedImage;
+
       if (editingGarmentId) {
         finalGarments = finalGarments.map((g) =>
           g.id === editingGarmentId
             ? {
                 ...g,
                 label: pendingLabel,
-                url: urlInput.trim(),
-                imageUrl: manualImageInput.trim() || g.imageUrl,
+                url: pendingUrl,
+                imageUrl:
+                  resolvedImg ||
+                  (g.url === pendingUrl ? g.imageUrl : undefined),
                 category: categoryInput,
               }
             : g
@@ -262,8 +320,8 @@ export function CreateLookModal({
         finalGarments.push({
           id: `garment-${Date.now()}`,
           label: pendingLabel,
-          url: urlInput.trim(),
-          imageUrl: manualImageInput.trim() || undefined,
+          url: pendingUrl,
+          imageUrl: resolvedImg,
           category: categoryInput,
         });
       }

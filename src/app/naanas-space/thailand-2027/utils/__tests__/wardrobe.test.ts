@@ -174,19 +174,20 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
     const gPhotosHtml = `
       <html>
         <head>
-          <meta property="og:title" content="New item by Shaq - Google Photos" />
-          <meta itemprop="image" content="https://lh3.googleusercontent.com/pw/AP1GczNxyz=w1080-h1350-no" />
+          <meta property="og:title" content="New photo · Saturday, Oct 24 📸" />
+          <meta property="og:image" content="https://lh3.googleusercontent.com/pw/AP1GczOm9V3453Xo3eMjlAmCt8ywuqatTR6yhFXkgu1PACbEJ3bEmeuwlQIu5u76345ZEHGG2To4U6jSGUJ6b2OPepZ5E8HawG55TeCK1j_F-Kzgb0pK_ORt=w600-h315-p-k" />
+          <meta property="og:site_name" content="Google Photos" />
         </head>
       </html>
     `;
     const parsedGPhotos = extractOpenGraphFromHtml(
       gPhotosHtml,
-      "https://photos.google.com/share/AF1QipM123"
+      "https://photos.google.com/share/AF1QipPlJ6akxONt7G"
     );
     expect(parsedGPhotos.siteName).toBe("Google Photos");
     expect(parsedGPhotos.title).toBe("Camera Roll Lookbook Photo");
     expect(parsedGPhotos.imageUrl).toBe(
-      "https://lh3.googleusercontent.com/pw/AP1GczNxyz=w1080-h1350-no"
+      "https://lh3.googleusercontent.com/pw/AP1GczOm9V3453Xo3eMjlAmCt8ywuqatTR6yhFXkgu1PACbEJ3bEmeuwlQIu5u76345ZEHGG2To4U6jSGUJ6b2OPepZ5E8HawG55TeCK1j_F-Kzgb0pK_ORt=w1200"
     );
   });
 

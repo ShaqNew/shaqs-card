@@ -114,6 +114,7 @@ export function GarmentLightboxModal({
             <img
               src={garment.imageUrl}
               alt={garment.label}
+              referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
               className="max-h-[64vh] w-auto max-w-full object-contain mx-auto shadow-sm"
             />
@@ -204,6 +205,37 @@ export function PolaroidCollageTile({
 }: PolaroidCollageTileProps) {
   const [imgError, setImgError] = useState(false);
   const [localExpanded, setLocalExpanded] = useState(false);
+  const [resolvedImgUrl, setResolvedImgUrl] = useState<string | undefined>(
+    garment?.imageUrl
+  );
+
+  useEffect(() => {
+    setImgError(false);
+    setResolvedImgUrl(garment?.imageUrl);
+
+    if (
+      garment &&
+      !garment.imageUrl &&
+      /^https?:\/\//i.test(garment.url) &&
+      !/\/search\b/i.test(garment.url) &&
+      typeof fetch !== "undefined"
+    ) {
+      let cancelled = false;
+      fetch(`/api/link-preview?url=${encodeURIComponent(garment.url)}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { imageUrl?: string | null } | null) => {
+          if (!cancelled && data?.imageUrl) {
+            setResolvedImgUrl(data.imageUrl);
+          }
+        })
+        .catch(() => {
+          // Ignore network errors in fallback preview
+        });
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [garment?.id, garment?.imageUrl, garment?.url]);
 
   if (!garment) {
     return (
@@ -225,11 +257,15 @@ export function PolaroidCollageTile({
   }
 
   const domain = extractSourceDomain(garment.url);
-  const showImage = Boolean(garment.imageUrl && !imgError);
+  const effectiveImageUrl = garment.imageUrl || resolvedImgUrl;
+  const showImage = Boolean(effectiveImageUrl && !imgError);
 
   const handleTileClick = () => {
+    const garmentWithImg: GarmentLink = effectiveImageUrl
+      ? { ...garment, imageUrl: effectiveImageUrl }
+      : garment;
     if (onExpandGarment) {
-      onExpandGarment(garment);
+      onExpandGarment(garmentWithImg);
     } else {
       setLocalExpanded(true);
     }
@@ -245,9 +281,10 @@ export function PolaroidCollageTile({
       >
         {showImage ? (
           <img
-            src={garment.imageUrl}
+            src={effectiveImageUrl}
             alt={garment.label}
             loading="lazy"
+            referrerPolicy="no-referrer"
             onError={() => setImgError(true)}
             className="w-full h-full object-cover transition-transform duration-300 group-hover/tile:scale-105"
           />
@@ -301,7 +338,11 @@ export function PolaroidCollageTile({
 
       {localExpanded && (
         <GarmentLightboxModal
-          garment={garment}
+          garment={
+            effectiveImageUrl
+              ? { ...garment, imageUrl: effectiveImageUrl }
+              : garment
+          }
           onClose={() => setLocalExpanded(false)}
         />
       )}

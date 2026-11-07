@@ -221,7 +221,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders Digital Wardrobe polaroid cards in Step IV and creates a new look via the Create Look modal", () => {
+  it("renders Digital Wardrobe polaroid cards in Step IV and creates a new look via the Create Look modal", async () => {
     render(<ThailandTripDashboard />);
     fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
 
@@ -259,19 +259,16 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByRole("button", { name: /Save Look to Wardrobe/i })
     );
 
-    expect(
-      screen.getByText("Phuket Sunset Silk Ensemble")
-    ).toBeInTheDocument();
+    const editCreatedBtn = await screen.findByRole("button", {
+      name: /Edit look Phuket Sunset Silk Ensemble/i,
+    });
+    expect(editCreatedBtn).toBeInTheDocument();
     expect(
       screen.getAllByText("Gold Bias-Cut Silk Resort Dress").length
     ).toBeGreaterThan(0);
 
     // Edit the created look
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: /Edit look Phuket Sunset Silk Ensemble/i,
-      })
-    );
+    fireEvent.click(editCreatedBtn);
     expect(
       screen.getByRole("heading", { name: /Edit Look & Garment Collage/i })
     ).toBeInTheDocument();
@@ -294,7 +291,9 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     );
 
     expect(
-      screen.getByText("Phuket Sunset Silk & Pearl Ensemble")
+      await screen.findByRole("button", {
+        name: /Edit look Phuket Sunset Silk & Pearl Ensemble/i,
+      })
     ).toBeInTheDocument();
     expect(
       screen.getAllByText("Champagne Silk Bias-Cut Maxi").length

@@ -371,6 +371,16 @@ export function extractOpenGraphFromHtml(
     } catch {
       resolvedImageUrl = rawImage;
     }
+    // Upgrade Google Photos cropped 600x315 preview (=w600-h315-p-k) to full high-res uncropped image
+    if (
+      resolvedImageUrl &&
+      resolvedImageUrl.includes("lh3.googleusercontent.com/")
+    ) {
+      resolvedImageUrl = resolvedImageUrl.replace(
+        /=w\d+-h\d+(?:-[a-z0-9]+)*$/i,
+        "=w1200"
+      );
+    }
   }
 
   let title =
@@ -392,8 +402,8 @@ export function extractOpenGraphFromHtml(
       !stripped ||
       /^Google Photos$/i.test(stripped) ||
       /^Sign in\s*-\s*Google Accounts/i.test(stripped) ||
-      /^New item by\s+/i.test(stripped) ||
-      /^New photo by\s+/i.test(stripped)
+      /^New (?:item|photo|video)\b/i.test(stripped) ||
+      /^Shared album/i.test(stripped)
     ) {
       title = "Camera Roll Lookbook Photo";
     } else {
