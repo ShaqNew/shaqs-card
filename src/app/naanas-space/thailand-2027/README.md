@@ -41,7 +41,7 @@ The page is structured around **6 modular steps** accessible via the sticky navi
 | **Step I** | `StepItinerary.tsx` | Master day-by-day itinerary (`D00`–`D10`), phase filters, custom activity inscription, inline editing, curated recommendations, universal calendar integration, daily `ATTIRE` slots, activity-level hanger overrides, and dress-code conflict warnings. |
 | **Step II** | `StepBookingsVault.tsx` | Master reference cipher strip, tactile flight coupons (Air Arabia & Thai Vietjet), verified PNRs, baggage allowances, and hotel vouchers. |
 | **Step III** | `StepPrepAndApps.tsx` | Entry clearance checklist (TDAC, passport validity), ATM currency advisories, and essential Thailand digital apps directory. |
-| **Step IV** | `StepPackingStudio.tsx` | Luggage overview, climate & dress-code lookbooks (Daytime/Temple, Rooftop/Dining, Beach), Digital Wardrobe polaroid garment collages with `CreateLookModal`, and the categorized Trunk Ledger. |
+| **Step IV** | `StepPackingStudio.tsx` | Luggage overview, climate & dress-code lookbooks (Daytime/Temple, Rooftop/Dining, Beach), Digital Wardrobe polaroid garment collages with `CreateLookModal`, and the categorized Packing Ledger. |
 | **Step V** | `StepGuideAndSos.tsx` | Regional transit field dispatches (BKK arrival, Phuket buggy service), culinary & food safety advisory, emergency speed-dials (1155, 1669, Embassy), and accredited hospital directory. |
 | **Step VI** | `StepBudgetAndLedger.tsx` | Interactive THB ⇄ GBP currency desk, quick baht presets, financial matrix breakdown, and planned trip expense ledger. |
 

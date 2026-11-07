@@ -746,13 +746,13 @@ export function PolaroidOutfitCard({
                   style={monoStyle}
                   aria-label={
                     isPackedInTrunk
-                      ? `All garments from ${outfit.title} are in Trunk Ledger`
-                      : `Add garments from ${outfit.title} to Trunk Ledger`
+                      ? `All garments from ${outfit.title} are in Packing Ledger`
+                      : `Add garments from ${outfit.title} to Packing Ledger`
                   }
                   title={
                     isPackedInTrunk
-                      ? "All garments from this look are already listed in The Trunk Ledger"
-                      : "Add this look's garments to The Trunk Ledger packing checklist"
+                      ? "All garments from this look are already listed in The Packing Ledger"
+                      : "Add this look's garments to The Packing Ledger checklist"
                   }
                   className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border transition-colors ${
                     isPackedInTrunk
@@ -760,7 +760,7 @@ export function PolaroidOutfitCard({
                       : "text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border-[#13382E]/35 bg-[#EFE7D8]/60 cursor-pointer font-semibold"
                   }`}
                 >
-                  {isPackedInTrunk ? "✓ In Trunk" : "+ To Trunk"}
+                  {isPackedInTrunk ? "✓ In Packing Ledger" : "+ To Packing Ledger"}
                 </button>
               )}
 

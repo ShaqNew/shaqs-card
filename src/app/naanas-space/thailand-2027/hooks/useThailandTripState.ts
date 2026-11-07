@@ -425,7 +425,7 @@ export function useThailandTripState() {
       }),
       {
         section: "packing",
-        action: "Added look garments to Trunk Ledger",
+        action: "Added look garments to Packing Ledger",
         detail: `${outfit.title} (${newItems.length} ${
           newItems.length === 1 ? "piece" : "pieces"
         })`,

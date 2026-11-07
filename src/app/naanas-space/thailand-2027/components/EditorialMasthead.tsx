@@ -216,7 +216,7 @@ export function EditorialMasthead({
                   }, 50);
                 }}
                 className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
-                title="Jump to The Trunk Ledger (Step IV)"
+                title="Jump to The Packing Ledger (Step IV)"
               >
                 PACKING {packingProgress.done}/{packingProgress.total}
               </button>

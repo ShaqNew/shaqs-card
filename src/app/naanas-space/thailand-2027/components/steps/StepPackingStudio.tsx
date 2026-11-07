@@ -124,8 +124,8 @@ export function StepPackingStudio({
       count > 0
         ? `Added ${count} ${count === 1 ? "piece" : "pieces"} from "${
             outfit.title
-          }" to The Trunk Ledger`
-        : `All pieces from "${outfit.title}" are already in The Trunk Ledger`
+          }" to The Packing Ledger`
+        : `All pieces from "${outfit.title}" are already in The Packing Ledger`
     );
     setTimeout(() => setTrunkToast(null), 3200);
   };
@@ -189,7 +189,7 @@ export function StepPackingStudio({
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
             }`}
           >
-            Trunk Ledger ({packingProgress.done}/{packingProgress.total}){" "}
+            Packing Ledger ({packingProgress.done}/{packingProgress.total}){" "}
             {isTrunkOpen ? "▲" : "▼"}
           </button>
         </div>
@@ -646,7 +646,7 @@ export function StepPackingStudio({
         )}
       </div>
 
-      {/* Section 3: The Trunk Ledger (Categorised Packing List) */}
+      {/* Section 3: The Packing Ledger (Categorised Packing List) */}
       <div
         id="trunk-ledger-section"
         className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
@@ -664,7 +664,7 @@ export function StepPackingStudio({
               style={serifStyle}
               className="text-3xl font-normal text-[#1F1A16] mt-1"
             >
-              The Trunk Ledger ({packingProgress.done}/{packingProgress.total}{" "}
+              The Packing Ledger ({packingProgress.done}/{packingProgress.total}{" "}
               Packed)
             </h3>
           </div>
@@ -724,7 +724,7 @@ export function StepPackingStudio({
               type="button"
               onClick={() => setIsTrunkOpen((prev) => !prev)}
               aria-expanded={isTrunkOpen}
-              aria-label="Toggle Trunk Ledger section"
+              aria-label="Toggle Packing Ledger section"
               style={monoStyle}
               className="px-3 py-2 text-[10px] uppercase tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
             >

@@ -353,7 +353,7 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
     });
   });
 
-  describe("Interactive day badges, collapsible garment links, and Trunk Ledger bridge", () => {
+  describe("Interactive day badges, collapsible garment links, and Packing Ledger bridge", () => {
     const outfitWithGarments: WardrobeOutfit = {
       ...baseOutfit,
       garments: [
@@ -422,7 +422,7 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       ).toBeInTheDocument();
     });
 
-    it("invokes onPackOutfitGarments when + To Trunk is clicked and disables when already in trunk", () => {
+    it("invokes onPackOutfitGarments when + To Packing Ledger is clicked and disables when already in ledger", () => {
       const handlePack = jest.fn();
       const { rerender } = render(
         <PolaroidOutfitCard
@@ -432,13 +432,13 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         />
       );
 
-      const toTrunkBtn = screen.getByRole("button", {
-        name: /Add garments from Test Styling Look to Trunk Ledger/i,
+      const toLedgerBtn = screen.getByRole("button", {
+        name: /Add garments from Test Styling Look to Packing Ledger/i,
       });
-      expect(toTrunkBtn).not.toBeDisabled();
-      expect(toTrunkBtn).toHaveTextContent("+ To Trunk");
+      expect(toLedgerBtn).not.toBeDisabled();
+      expect(toLedgerBtn).toHaveTextContent("+ To Packing Ledger");
 
-      fireEvent.click(toTrunkBtn);
+      fireEvent.click(toLedgerBtn);
       expect(handlePack).toHaveBeenCalledWith(outfitWithGarments);
 
       rerender(
@@ -450,10 +450,10 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       );
 
       const packedBtn = screen.getByRole("button", {
-        name: /All garments from Test Styling Look are in Trunk Ledger/i,
+        name: /All garments from Test Styling Look are in Packing Ledger/i,
       });
       expect(packedBtn).toBeDisabled();
-      expect(packedBtn).toHaveTextContent("✓ In Trunk");
+      expect(packedBtn).toHaveTextContent("✓ In Packing Ledger");
     });
   });
 });

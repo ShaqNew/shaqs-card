@@ -377,7 +377,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("supports collapsible sections, collapsible Trunk Ledger categories, interactive day unassignment, and + To Trunk garment syncing in Step IV", () => {
+  it("supports collapsible sections, collapsible Packing Ledger categories, interactive day unassignment, and + To Packing Ledger garment syncing in Step IV", () => {
     render(<ThailandTripDashboard />);
 
     // Navigate to Step IV (Packing Studio)
@@ -397,16 +397,16 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       })
     ).not.toBeInTheDocument();
 
-    // Send "Rattanakosin Temple & River Linen" garments to The Trunk Ledger
-    const packToTrunkBtn = screen.getByRole("button", {
-      name: /Add garments from Rattanakosin Temple & River Linen to Trunk Ledger/i,
+    // Send "Rattanakosin Temple & River Linen" garments to The Packing Ledger
+    const packToLedgerBtn = screen.getByRole("button", {
+      name: /Add garments from Rattanakosin Temple & River Linen to Packing Ledger/i,
     });
-    fireEvent.click(packToTrunkBtn);
+    fireEvent.click(packToLedgerBtn);
 
-    // Button transitions to "✓ In Trunk" and garments appear in The Trunk Ledger
+    // Button transitions to "✓ In Packing Ledger" and garments appear in The Packing Ledger
     expect(
       screen.getByRole("button", {
-        name: /All garments from Rattanakosin Temple & River Linen are in Trunk Ledger/i,
+        name: /All garments from Rattanakosin Temple & River Linen are in Packing Ledger/i,
       })
     ).toBeDisabled();
     expect(
@@ -414,7 +414,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
         .length
     ).toBeGreaterThan(0);
 
-    // Collapse all categories in The Trunk Ledger
+    // Collapse all categories in The Packing Ledger
     const collapseCatsBtn = screen.getByRole("button", {
       name: /Collapse All Categories/i,
     });
