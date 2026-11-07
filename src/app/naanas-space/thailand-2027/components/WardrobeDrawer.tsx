@@ -32,6 +32,7 @@ interface WardrobeDrawerProps {
     outfitId: string | null
   ) => void;
   onEditOutfit?: (outfit: WardrobeOutfit) => void;
+  onRemoveCustomOutfit?: (outfitId: string) => void;
   onOpenCreateLookModal: () => void;
 }
 
@@ -44,6 +45,7 @@ export function WardrobeDrawer({
   onAssignDayOutfit,
   onAssignActivityOutfit,
   onEditOutfit,
+  onRemoveCustomOutfit,
   onOpenCreateLookModal,
 }: WardrobeDrawerProps) {
   const [filterCode, setFilterCode] = useState<"all" | DressCodeProfile>("all");
@@ -255,6 +257,7 @@ export function WardrobeDrawer({
                     isSelected={activeOutfit?.id === outfit.id}
                     onSelectOutfit={handleSelectOutfit}
                     onEditOutfit={onEditOutfit}
+                    onRemoveCustomOutfit={onRemoveCustomOutfit}
                   />
                 </div>
               );

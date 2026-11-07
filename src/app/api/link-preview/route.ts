@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   extractOpenGraphFromHtml,
   inferRetailerSource,
+  isPrivateGooglePhotosUrl,
   isPrivateOrLocalHostname,
 } from "@/app/naanas-space/thailand-2027/utils/wardrobe";
 
@@ -36,6 +37,17 @@ async function handleLinkPreview(rawUrl: string | null) {
 
   const { siteName: inferredSite, fallbackTitle } =
     inferRetailerSource(parsedUrl);
+
+  if (isPrivateGooglePhotosUrl(parsedUrl.toString())) {
+    return NextResponse.json({
+      url: parsedUrl.toString(),
+      title: fallbackTitle,
+      imageUrl: null,
+      siteName: "Google Photos",
+      warning:
+        "Private Google Photos link detected. Open the photo in Google Photos and tap Share → Create link (photos.app.goo.gl) so the thumbnail can load.",
+    });
+  }
 
   // Direct image URLs can be used immediately as the visual thumbnail
   if (/\.(jpe?g|png|webp|avif|gif)(\?.*)?$/i.test(parsedUrl.pathname)) {
@@ -76,8 +88,19 @@ async function handleLinkPreview(rawUrl: string | null) {
     }
 
     if (response.ok) {
+      const finalUrl = response.url || parsedUrl.toString();
+      if (finalUrl.includes("accounts.google.com")) {
+        return NextResponse.json({
+          url: parsedUrl.toString(),
+          title: fallbackTitle,
+          imageUrl: null,
+          siteName: inferredSite,
+          warning:
+            "This Google link requires sign-in. In Google Photos, tap Share → Create link (photos.app.goo.gl) to generate a shareable preview.",
+        });
+      }
       const html = await response.text();
-      const extracted = extractOpenGraphFromHtml(html, parsedUrl.toString());
+      const extracted = extractOpenGraphFromHtml(html, finalUrl);
       return NextResponse.json({
         url: parsedUrl.toString(),
         title: extracted.title || fallbackTitle,

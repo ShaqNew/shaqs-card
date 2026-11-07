@@ -6,6 +6,9 @@ import {
   resolveActivityOutfit,
   extractSourceDomain,
   extractOpenGraphFromHtml,
+  inferRetailerSource,
+  isGooglePhotosUrl,
+  isPrivateGooglePhotosUrl,
 } from "../wardrobe";
 
 describe("Wardrobe & Dress-Code Validation Utilities", () => {
@@ -138,6 +141,53 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
     expect(
       extractSourceDomain("https://www.asos.com/prd/98765")
     ).toBe("ASOS");
+    expect(
+      extractSourceDomain("https://photos.app.goo.gl/AbCdEfGh12345")
+    ).toBe("Google Photos");
+    expect(
+      extractSourceDomain("https://lh3.googleusercontent.com/pw/AP1GczNxyz")
+    ).toBe("Google Photos");
+  });
+
+  it("handles Google Photos share links vs private photo links cleanly", () => {
+    expect(
+      isGooglePhotosUrl("https://photos.app.goo.gl/AbCdEfGh12345")
+    ).toBe(true);
+    expect(
+      isPrivateGooglePhotosUrl("https://photos.app.goo.gl/AbCdEfGh12345")
+    ).toBe(false);
+    expect(
+      isPrivateGooglePhotosUrl(
+        "https://photos.google.com/share/AF1QipM123/photo/AF1QipN456?key=xyz"
+      )
+    ).toBe(false);
+    expect(
+      isPrivateGooglePhotosUrl("https://photos.google.com/photo/AF1QipN456")
+    ).toBe(true);
+
+    const inferred = inferRetailerSource(
+      new URL("https://photos.app.goo.gl/AbCdEfGh12345")
+    );
+    expect(inferred.siteName).toBe("Google Photos");
+    expect(inferred.fallbackTitle).toBe("Camera Roll Lookbook Photo");
+
+    const gPhotosHtml = `
+      <html>
+        <head>
+          <meta property="og:title" content="New item by Shaq - Google Photos" />
+          <meta itemprop="image" content="https://lh3.googleusercontent.com/pw/AP1GczNxyz=w1080-h1350-no" />
+        </head>
+      </html>
+    `;
+    const parsedGPhotos = extractOpenGraphFromHtml(
+      gPhotosHtml,
+      "https://photos.google.com/share/AF1QipM123"
+    );
+    expect(parsedGPhotos.siteName).toBe("Google Photos");
+    expect(parsedGPhotos.title).toBe("Camera Roll Lookbook Photo");
+    expect(parsedGPhotos.imageUrl).toBe(
+      "https://lh3.googleusercontent.com/pw/AP1GczNxyz=w1080-h1350-no"
+    );
   });
 
   it("extracts og:image, og:title, and og:site_name from HTML in /api/link-preview helper", () => {

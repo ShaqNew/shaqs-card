@@ -41,6 +41,7 @@ export interface PersistedTripState {
   packedItemIds: string[];
   customPackingItems: PackingItem[];
   customOutfits?: WardrobeOutfit[];
+  deletedOutfitIds?: string[];
   dayOutfitByDay?: Record<number, string>;
   activityOutfitById?: Record<string, string>;
   completedActivityIds: string[];
@@ -59,6 +60,7 @@ export const DEFAULT_PERSISTED_STATE: PersistedTripState = {
   packedItemIds: [],
   customPackingItems: [],
   customOutfits: [],
+  deletedOutfitIds: [],
   dayOutfitByDay: {},
   activityOutfitById: {},
   completedActivityIds: [],

@@ -206,6 +206,7 @@ export default function ThailandTripDashboard() {
         }
         onAssignDayOutfit={assignDayOutfit}
         onAssignActivityOutfit={assignActivityOutfit}
+        onRemoveCustomOutfit={removeCustomOutfit}
         onEditOutfit={(outfit) => {
           setEditingOutfit(outfit);
           setIsCreateLookModalOpen(true);

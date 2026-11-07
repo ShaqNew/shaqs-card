@@ -233,16 +233,19 @@ export function useThailandTripState() {
   );
 
   const allOutfits = useMemo(() => {
-    const customList = tripState.customOutfits || [];
-    const customById = new Map(customList.map((o) => [o.id, o]));
-    const mergedDefaults = DEFAULT_WARDROBE_OUTFITS.map(
-      (def) => customById.get(def.id) || def
+    const deletedSet = new Set(tripState.deletedOutfitIds || []);
+    const customList = (tripState.customOutfits || []).filter(
+      (o) => !deletedSet.has(o.id)
     );
+    const customById = new Map(customList.map((o) => [o.id, o]));
+    const mergedDefaults = DEFAULT_WARDROBE_OUTFITS.filter(
+      (def) => !deletedSet.has(def.id)
+    ).map((def) => customById.get(def.id) || def);
     const purelyCustom = customList.filter(
       (o) => !DEFAULT_WARDROBE_OUTFITS.some((def) => def.id === o.id)
     );
     return [...mergedDefaults, ...purelyCustom];
-  }, [tripState.customOutfits]);
+  }, [tripState.customOutfits, tripState.deletedOutfitIds]);
 
   const prepProgress = useMemo(() => {
     const total = PREP_CHECKLIST.length;
@@ -424,8 +427,9 @@ export function useThailandTripState() {
   };
 
   const removeCustomOutfit = (outfitId: string) => {
-    const targetOutfit = (tripState.customOutfits || []).find(
-      (o) => o.id === outfitId
+    const targetOutfit = allOutfits.find((o) => o.id === outfitId);
+    const isDefaultLook = DEFAULT_WARDROBE_OUTFITS.some(
+      (d) => d.id === outfitId
     );
     updateTripState(
       (prev) => {
@@ -441,11 +445,18 @@ export function useThailandTripState() {
             delete nextActOutfits[actKey];
           }
         }
+        const existingDeleted = prev.deletedOutfitIds || [];
+        const nextDeleted =
+          isDefaultLook && !existingDeleted.includes(outfitId)
+            ? [...existingDeleted, outfitId]
+            : existingDeleted;
+
         return {
           ...prev,
           customOutfits: (prev.customOutfits || []).filter(
             (o) => o.id !== outfitId
           ),
+          deletedOutfitIds: nextDeleted,
           dayOutfitByDay: nextDayOutfits,
           activityOutfitById: nextActOutfits,
         };

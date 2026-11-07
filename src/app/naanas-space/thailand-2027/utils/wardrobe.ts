@@ -62,8 +62,40 @@ export function formatOwnerBadge(owner: WardrobeOutfit["owner"]): string {
   return "Shared Look";
 }
 
+export function isGooglePhotosUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    return (
+      host === "photos.app.goo.gl" ||
+      host === "photos.google.com" ||
+      host.endsWith(".googleusercontent.com")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function isPrivateGooglePhotosUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
+    if (host !== "photos.google.com") return false;
+    // Shared links contain /share/; direct /photo/ or /u/0/photo/ links require Google login
+    return (
+      !parsed.pathname.includes("/share/") &&
+      (parsed.pathname.includes("/photo/") ||
+        parsed.pathname.includes("/album/") ||
+        parsed.pathname.startsWith("/u/"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function extractSourceDomain(url: string): string {
   try {
+    if (isGooglePhotosUrl(url)) return "Google Photos";
     const parsed = new URL(url);
     const host = parsed.hostname.replace(/^www\./i, "").toLowerCase();
     if (host.includes("pinterest.") || host.includes("pin.it"))
@@ -311,14 +343,14 @@ export function extractOpenGraphFromHtml(
 } {
   const getMetaContent = (attrPattern: string): string | null => {
     const regex1 = new RegExp(
-      `<meta[^>]+(?:property|name)=["']${attrPattern}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+      `<meta[^>]+(?:property|name|itemprop)=["']${attrPattern}["'][^>]+content=["']([^"']+)["'][^>]*>`,
       "i"
     );
     const match1 = html.match(regex1);
     if (match1?.[1]) return decodeHtmlEntities(match1[1]);
 
     const regex2 = new RegExp(
-      `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${attrPattern}["'][^>]*>`,
+      `<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name|itemprop)=["']${attrPattern}["'][^>]*>`,
       "i"
     );
     const match2 = html.match(regex2);
@@ -329,7 +361,8 @@ export function extractOpenGraphFromHtml(
 
   const rawImage =
     getMetaContent("og:image(?::secure_url)?") ||
-    getMetaContent("twitter:image(?::src)?");
+    getMetaContent("twitter:image(?::src)?") ||
+    getMetaContent("image");
 
   let resolvedImageUrl: string | null = null;
   if (rawImage) {
@@ -341,7 +374,10 @@ export function extractOpenGraphFromHtml(
   }
 
   let title =
-    getMetaContent("og:title") || getMetaContent("twitter:title") || null;
+    getMetaContent("og:title") ||
+    getMetaContent("twitter:title") ||
+    getMetaContent("name") ||
+    null;
   if (!title) {
     const titleTagMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     if (titleTagMatch?.[1]) {
@@ -349,7 +385,24 @@ export function extractOpenGraphFromHtml(
     }
   }
 
-  const siteName = getMetaContent("og:site_name") || null;
+  const isGPhotos = isGooglePhotosUrl(baseUrl);
+  if (isGPhotos && title) {
+    const stripped = title.replace(/\s*[-–—]\s*Google Photos$/i, "").trim();
+    if (
+      !stripped ||
+      /^Google Photos$/i.test(stripped) ||
+      /^Sign in\s*-\s*Google Accounts/i.test(stripped) ||
+      /^New item by\s+/i.test(stripped) ||
+      /^New photo by\s+/i.test(stripped)
+    ) {
+      title = "Camera Roll Lookbook Photo";
+    } else {
+      title = stripped;
+    }
+  }
+
+  const siteName =
+    (isGPhotos ? "Google Photos" : getMetaContent("og:site_name")) || null;
 
   return {
     title,
@@ -362,7 +415,13 @@ export function inferRetailerSource(parsedUrl: URL): {
   siteName: string;
   fallbackTitle: string;
 } {
-  const host = parsedUrl.hostname.replace(/^www\./i, "").toLowerCase();
+  if (isGooglePhotosUrl(parsedUrl.toString())) {
+    return {
+      siteName: "Google Photos",
+      fallbackTitle: "Camera Roll Lookbook Photo",
+    };
+  }
+
   const pathSegments = parsedUrl.pathname
     .split("/")
     .filter(Boolean)

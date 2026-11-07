@@ -299,6 +299,32 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(
       screen.getAllByText("Champagne Silk Bias-Cut Maxi").length
     ).toBeGreaterThan(0);
+
+    // Click the thumbnail tile to expand the image lightbox
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Expand thumbnail for Champagne Silk Bias-Cut Maxi/i,
+      })
+    );
+    expect(
+      screen.getByRole("dialog", {
+        name: /Expanded preview: Champagne Silk Bias-Cut Maxi/i,
+      })
+    ).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Close expanded image/i })
+    );
+
+    // Delete a pre-made default look ("Rattanakosin Temple & River Linen")
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: /Delete look Rattanakosin Temple & River Linen/i,
+      })
+    );
+    expect(
+      screen.queryByText(/Rattanakosin Temple & River Linen/i)
+    ).not.toBeInTheDocument();
   });
 
   it("displays ATTIRE slots in Step I, opens the Wardrobe Drawer via hanger icon, and warns on dress-code conflicts", () => {

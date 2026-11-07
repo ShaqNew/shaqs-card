@@ -8,6 +8,7 @@ import { serifStyle, monoStyle } from "../styles";
 import {
   DRESS_CODE_METADATA,
   extractSourceDomain,
+  isPrivateGooglePhotosUrl,
 } from "../utils/wardrobe";
 import { PolaroidCollageTile } from "./PolaroidOutfitCard";
 
@@ -120,6 +121,7 @@ export function CreateLookModal({
     let resolvedImage: string | undefined =
       manualImageInput.trim() || undefined;
     let resolvedSite = extractSourceDomain(trimmedUrl);
+    let scrapeWarning: string | null = null;
 
     try {
       if (typeof fetch !== "undefined") {
@@ -131,6 +133,7 @@ export function CreateLookModal({
             title?: string | null;
             imageUrl?: string | null;
             siteName?: string | null;
+            warning?: string | null;
           };
           if (!resolvedTitle && data.title) {
             resolvedTitle = data.title;
@@ -140,6 +143,9 @@ export function CreateLookModal({
           }
           if (data.siteName) {
             resolvedSite = data.siteName;
+          }
+          if (data.warning) {
+            scrapeWarning = data.warning;
           }
         }
       }
@@ -165,7 +171,7 @@ export function CreateLookModal({
         )
       );
       setEditingGarmentId(null);
-      setScrapeStatus(`Updated “${finalLabel}”.`);
+      setScrapeStatus(scrapeWarning || `Updated “${finalLabel}”.`);
     } else {
       const newGarment: GarmentLink = {
         id: `garment-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
@@ -176,7 +182,9 @@ export function CreateLookModal({
       };
       setGarments((prev) => [...prev, newGarment]);
       setScrapeStatus(
-        resolvedImage
+        scrapeWarning
+          ? scrapeWarning
+          : resolvedImage
           ? `Added “${finalLabel}” with OpenGraph thumbnail.`
           : `Added “${finalLabel}” (${resolvedSite} editorial tile).`
       );
@@ -466,7 +474,7 @@ export function CreateLookModal({
                   >
                     {editingGarmentId
                       ? "EDITING SELECTED GARMENT LINK"
-                      : "DYNAMIC GARMENT URL DROP ZONE (PINTEREST / ASOS / BOUTIQUE)"}
+                      : "DYNAMIC GARMENT URL DROP ZONE (PINTEREST / ASOS / GOOGLE PHOTOS)"}
                   </span>
                   <span
                     style={monoStyle}
@@ -483,7 +491,7 @@ export function CreateLookModal({
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     onPaste={handleUrlPaste}
-                    placeholder="Paste or drop garment link (https://www.asos.com/... or Pinterest URL)..."
+                    placeholder="Paste garment or Google Photos share link (photos.app.goo.gl / ASOS / Pinterest)..."
                     className="sm:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
                   />
                   <select
@@ -529,6 +537,18 @@ export function CreateLookModal({
                       : "+ Add Garment Link"}
                   </button>
                 </div>
+
+                {isPrivateGooglePhotosUrl(urlInput.trim()) && (
+                  <p
+                    role="alert"
+                    style={monoStyle}
+                    className="text-[10px] text-[#A8442A] font-semibold pt-0.5"
+                  >
+                    &#9888; Private Google Photos URL detected. In Google Photos,
+                    tap Share &rarr; Create link (photos.app.goo.gl) so the
+                    thumbnail can load.
+                  </p>
+                )}
 
                 {scrapeStatus && (
                   <p
