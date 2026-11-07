@@ -9,6 +9,8 @@ import {
   DRESS_CODE_METADATA,
   extractAsosProductMeta,
   extractSourceDomain,
+  isGooglePhotosUrl,
+  isInspirationOutfit,
   isPrivateGooglePhotosUrl,
   getCollageTileCount,
   getCollageGridClass,
@@ -43,6 +45,8 @@ export function CreateLookModal({
   );
   const [notes, setNotes] = useState("");
   const [garments, setGarments] = useState<GarmentLink[]>([]);
+  const [isInspiration, setIsInspiration] = useState(false);
+  const [hasUserToggledInspo, setHasUserToggledInspo] = useState(false);
 
   // Dynamic URL drop zone state
   const [urlInput, setUrlInput] = useState("");
@@ -67,6 +71,8 @@ export function CreateLookModal({
       setNotes(editingOutfit.notes || "");
       const initialGarments = editingOutfit.garments || [];
       setGarments(initialGarments);
+      setIsInspiration(isInspirationOutfit(editingOutfit));
+      setHasUserToggledInspo(true);
 
       // Auto-backfill missing thumbnails for direct links (e.g. Google Photos share links)
       if (typeof fetch !== "undefined") {
@@ -102,6 +108,8 @@ export function CreateLookModal({
       setClimateTag(DRESS_CODE_METADATA.temple.defaultClimateTag);
       setNotes("");
       setGarments([]);
+      setIsInspiration(false);
+      setHasUserToggledInspo(false);
     }
     setUrlInput("");
     setLabelInput("");
@@ -227,7 +235,17 @@ export function CreateLookModal({
         imageUrl: resolvedImage,
         category: categoryInput,
       };
-      setGarments((prev) => [...prev, newGarment]);
+      setGarments((prev) => {
+        const next = [...prev, newGarment];
+        if (
+          !hasUserToggledInspo &&
+          next.length > 0 &&
+          next.every((g) => !isGooglePhotosUrl(g.url))
+        ) {
+          setIsInspiration(true);
+        }
+        return next;
+      });
       setScrapeStatus(
         scrapeWarning
           ? scrapeWarning
@@ -340,6 +358,7 @@ export function CreateLookModal({
       notes: notes.trim() || undefined,
       garments: finalGarments,
       isDefault: editingOutfit?.isDefault,
+      isInspiration,
     };
 
     if (editingOutfit && onUpdateOutfit) {
@@ -414,10 +433,61 @@ export function CreateLookModal({
                   required
                   autoFocus
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    const nextTitle = e.target.value;
+                    setTitle(nextTitle);
+                    if (
+                      !hasUserToggledInspo &&
+                      /\b(inspo|inspiration)\b/i.test(nextTitle)
+                    ) {
+                      setIsInspiration(true);
+                    }
+                  }}
                   placeholder="e.g. Wat Arun Sunrise Linen or Catch Beach Club Sunset"
                   className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
                 />
+              </div>
+
+              {/* Look Source Tag: Owned Wardrobe vs Website Inspiration */}
+              <div>
+                <span
+                  style={monoStyle}
+                  className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                >
+                  WARDROBE TAG (OWNED VS. INSPIRATION)
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsInspiration(false);
+                      setHasUserToggledInspo(true);
+                    }}
+                    style={monoStyle}
+                    className={`py-2 px-3 text-[10px] uppercase tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
+                      !isInspiration
+                        ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                        : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
+                    }`}
+                  >
+                    &#10003; Owned Wardrobe
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsInspiration(true);
+                      setHasUserToggledInspo(true);
+                    }}
+                    style={monoStyle}
+                    className={`py-2 px-3 text-[10px] uppercase tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
+                      isInspiration
+                        ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                        : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#9E7B3B]"
+                    }`}
+                  >
+                    &#10022; Inspiration (Website)
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -6,6 +6,7 @@ import { ActiveTab, PhaseFilter, ChangeLogEntry } from "./types";
 import { monoStyle } from "./styles";
 import { useThailandTripState } from "./hooks/useThailandTripState";
 import {
+  isInspirationOutfit,
   resolveDayOutfit,
   resolveActivityOutfit,
 } from "./utils/wardrobe";
@@ -212,6 +213,12 @@ export default function ThailandTripDashboard() {
           setEditingOutfit(outfit);
           setIsCreateLookModalOpen(true);
         }}
+        onToggleOutfitInspiration={(outfit) => {
+          updateCustomOutfit(outfit.id, {
+            ...outfit,
+            isInspiration: !isInspirationOutfit(outfit),
+          });
+        }}
         onOpenCreateLookModal={() => {
           setEditingOutfit(null);
           setIsCreateLookModalOpen(true);
@@ -303,6 +310,12 @@ export default function ThailandTripDashboard() {
             onEditOutfit={(outfit) => {
               setEditingOutfit(outfit);
               setIsCreateLookModalOpen(true);
+            }}
+            onToggleOutfitInspiration={(outfit) => {
+              updateCustomOutfit(outfit.id, {
+                ...outfit,
+                isInspiration: !isInspirationOutfit(outfit),
+              });
             }}
             onOpenCreateLookModal={() => {
               setEditingOutfit(null);

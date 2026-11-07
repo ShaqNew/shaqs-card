@@ -7,7 +7,10 @@ import {
 } from "@/lib/thailandTripData";
 import { ProgressMetric } from "../../types";
 import { serifStyle, monoStyle } from "../../styles";
-import { resolveDayOutfit } from "../../utils/wardrobe";
+import {
+   isInspirationOutfit,
+  resolveDayOutfit,
+} from "../../utils/wardrobe";
 import { PolaroidOutfitCard } from "../PolaroidOutfitCard";
 
 const PACKING_CATEGORIES: PackingItem["category"][] = [
@@ -33,6 +36,7 @@ interface StepPackingStudioProps {
   onAssignDayOutfit?: (dayNumber: number, outfitId: string | null) => void;
   onRemoveCustomOutfit?: (outfitId: string) => void;
   onEditOutfit?: (outfit: WardrobeOutfit) => void;
+  onToggleOutfitInspiration?: (outfit: WardrobeOutfit) => void;
   onOpenCreateLookModal?: () => void;
 }
 
@@ -49,6 +53,7 @@ export function StepPackingStudio({
   onAssignDayOutfit,
   onRemoveCustomOutfit,
   onEditOutfit,
+  onToggleOutfitInspiration,
   onOpenCreateLookModal,
 }: StepPackingStudioProps) {
   const [packingOwnerFilter, setPackingOwnerFilter] = useState<
@@ -63,6 +68,9 @@ export function StepPackingStudio({
   >("all");
   const [wardrobeCodeFilter, setWardrobeCodeFilter] = useState<
     "all" | DressCodeProfile
+  >("all");
+  const [wardrobeSourceFilter, setWardrobeSourceFilter] = useState<
+    "all" | "owned" | "inspo"
   >("all");
 
   // Collapsible section states (default expanded for desktop & test visibility)
@@ -530,33 +538,74 @@ export function StepPackingStudio({
 
         {isWardrobeOpen && (
           <>
-            {/* Wardrobe Owner & Dress Code Filters */}
+            {/* Wardrobe Owner, Source (Owned vs Inspiration) & Dress Code Filters */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {[
-                  { id: "all", label: "All Looks" },
-                  { id: "both", label: "Shared" },
-                  { id: "shaq", label: "Shaq" },
-                  { id: "naana", label: "Naana" },
-                ].map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() =>
-                      setWardrobeOwnerFilter(
-                        f.id as "all" | "both" | "shaq" | "naana"
-                      )
-                    }
-                    style={monoStyle}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
-                      wardrobeOwnerFilter === f.id
-                        ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
-                        : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
-                    }`}
-                  >
-                    {f.label}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[
+                    { id: "all", label: "All Looks" },
+                    { id: "both", label: "Shared" },
+                    { id: "shaq", label: "Shaq" },
+                    { id: "naana", label: "Naana" },
+                  ].map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      onClick={() =>
+                        setWardrobeOwnerFilter(
+                          f.id as "all" | "both" | "shaq" | "naana"
+                        )
+                      }
+                      style={monoStyle}
+                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        wardrobeOwnerFilter === f.id
+                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Owned vs Inspiration Filter Pills */}
+                <div className="flex flex-wrap items-center gap-1.5 pl-2 border-l border-[#1F1A16]/15">
+                  {[
+                    { id: "all", label: "All Sources" },
+                    {
+                      id: "owned",
+                      label: `✓ Owned (${
+                        allOutfits.filter((o) => !isInspirationOutfit(o)).length
+                      })`,
+                    },
+                    {
+                      id: "inspo",
+                      label: `✦ Inspiration (${
+                        allOutfits.filter((o) => isInspirationOutfit(o)).length
+                      })`,
+                    },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() =>
+                        setWardrobeSourceFilter(
+                          s.id as "all" | "owned" | "inspo"
+                        )
+                      }
+                      style={monoStyle}
+                      className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        wardrobeSourceFilter === s.id
+                          ? s.id === "inspo"
+                            ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                            : "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                          : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5">
@@ -594,6 +643,18 @@ export function StepPackingStudio({
                   if (
                     wardrobeOwnerFilter !== "all" &&
                     outfit.owner !== wardrobeOwnerFilter
+                  ) {
+                    return false;
+                  }
+                  if (
+                    wardrobeSourceFilter === "owned" &&
+                    isInspirationOutfit(outfit)
+                  ) {
+                    return false;
+                  }
+                  if (
+                    wardrobeSourceFilter === "inspo" &&
+                    !isInspirationOutfit(outfit)
                   ) {
                     return false;
                   }
@@ -637,6 +698,7 @@ export function StepPackingStudio({
                       }
                       isPackedInTrunk={isPackedInTrunk}
                       onEditOutfit={onEditOutfit}
+                      onToggleInspiration={onToggleOutfitInspiration}
                       onRemoveCustomOutfit={onRemoveCustomOutfit}
                     />
                   );

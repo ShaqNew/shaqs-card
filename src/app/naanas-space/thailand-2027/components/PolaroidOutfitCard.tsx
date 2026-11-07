@@ -6,6 +6,7 @@ import {
   extractAsosProductMeta,
   extractSourceDomain,
   formatOwnerBadge,
+  isInspirationOutfit,
   getCollageTileCount,
   getCollageGridClass,
 } from "../utils/wardrobe";
@@ -491,6 +492,7 @@ interface PolaroidOutfitCardProps {
   assignedDayNumbers?: number[];
   onAssignToDay?: (dayNumber: number, outfitId: string | null) => void;
   onEditOutfit?: (outfit: WardrobeOutfit) => void;
+  onToggleInspiration?: (outfit: WardrobeOutfit) => void;
   onRemoveCustomOutfit?: (outfitId: string) => void;
   onPackOutfitGarments?: (outfit: WardrobeOutfit) => void;
   isPackedInTrunk?: boolean;
@@ -504,6 +506,7 @@ export function PolaroidOutfitCard({
   assignedDayNumbers = [],
   onAssignToDay,
   onEditOutfit,
+  onToggleInspiration,
   onRemoveCustomOutfit,
   onPackOutfitGarments,
   isPackedInTrunk = false,
@@ -517,6 +520,7 @@ export function PolaroidOutfitCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLinksExpanded, setIsLinksExpanded] = useState(true);
   const dressMeta = DRESS_CODE_METADATA[outfit.dressCode];
+  const isInspo = isInspirationOutfit(outfit);
   const tileCount = getCollageTileCount(outfit.garments?.length ?? 0);
   const slots = Array.from(
     { length: tileCount },
@@ -549,8 +553,8 @@ export function PolaroidOutfitCard({
             />
           ))}
 
-          {/* Overlaid Owner Badge (Top-Left) */}
-          <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 pointer-events-none">
+          {/* Overlaid Owner & Source Tag Badges (Top-Left) */}
+          <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
             <span
               style={monoStyle}
               className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] font-semibold shadow-sm ${
@@ -563,6 +567,43 @@ export function PolaroidOutfitCard({
             >
               {formatOwnerBadge(outfit.owner)}
             </span>
+
+            {onToggleInspiration ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleInspiration(outfit);
+                }}
+                title={
+                  isInspo
+                    ? "Tagged as Website Inspiration — click to mark as Owned Wardrobe"
+                    : "Tagged as Owned Wardrobe — click to mark as Website Inspiration"
+                }
+                aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
+                  isInspo ? "Inspiration" : "Owned"
+                })`}
+                style={monoStyle}
+                className={`pointer-events-auto px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
+                  isInspo
+                    ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
+                    : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
+                }`}
+              >
+                {isInspo ? "✦ Inspiration" : "✓ Owned"}
+              </button>
+            ) : (
+              <span
+                style={monoStyle}
+                className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border ${
+                  isInspo
+                    ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                    : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40"
+                }`}
+              >
+                {isInspo ? "✦ Inspiration" : "✓ Owned"}
+              </span>
+            )}
           </div>
 
           {/* Overlaid Climate Tag Pill (Bottom) */}

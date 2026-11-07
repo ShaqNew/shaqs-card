@@ -27,6 +27,7 @@ export interface WardrobeOutfit {
   notes?: string;
   garments: GarmentLink[];
   isDefault?: boolean;
+  isInspiration?: boolean;
 }
 
 export interface ItineraryActivity {
@@ -1524,6 +1525,7 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
     notes:
       "Breathable layered loungewear for the LGW → SHJ → BKK & HKT → LGW flights, easy to shed upon stepping into tropical humidity.",
     isDefault: true,
+    isInspiration: true,
     garments: [
       {
         id: "g-trans-1",
@@ -1559,6 +1561,7 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
     climateTag: "32°C Andaman Coast • UV Index 11 Protection",
     notes: "Add extra info here about the style you're looking for",
     isDefault: true,
+    isInspiration: true,
     garments: [
       {
         id: "garment-1794009462518-5bc7",
@@ -1585,6 +1588,7 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
     dressCode: "beach",
     climateTag: "32°C Andaman Coast • UV Index 11 Protection",
     isDefault: true,
+    isInspiration: false,
     garments: [
       {
         id: "garment-1794057716202-jtys",
@@ -1603,6 +1607,7 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
     dressCode: "temple",
     climateTag: "33°C Sacred Heritage • Covered Shoulders & Knees",
     isDefault: true,
+    isInspiration: true,
     garments: [
       {
         id: "garment-1794058203067-c2n1",
@@ -1629,6 +1634,7 @@ export const DEFAULT_WARDROBE_OUTFITS: WardrobeOutfit[] = [
     dressCode: "temple",
     climateTag: "33°C Sacred Heritage • Covered Shoulders & Knees",
     isDefault: true,
+    isInspiration: true,
     garments: [
       {
         id: "garment-1794058563343-kt0x",

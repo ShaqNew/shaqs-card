@@ -10,6 +10,7 @@ import { formatDayNumber } from "../utils/formatters";
 import {
   DRESS_CODE_METADATA,
   detectActivityDressCodeRequirement,
+  isInspirationOutfit,
   validateOutfitForActivity,
 } from "../utils/wardrobe";
 import { PolaroidOutfitCard } from "./PolaroidOutfitCard";
@@ -32,6 +33,7 @@ interface WardrobeDrawerProps {
     outfitId: string | null
   ) => void;
   onEditOutfit?: (outfit: WardrobeOutfit) => void;
+  onToggleOutfitInspiration?: (outfit: WardrobeOutfit) => void;
   onRemoveCustomOutfit?: (outfitId: string) => void;
   onOpenCreateLookModal: () => void;
 }
@@ -45,10 +47,14 @@ export function WardrobeDrawer({
   onAssignDayOutfit,
   onAssignActivityOutfit,
   onEditOutfit,
+  onToggleOutfitInspiration,
   onRemoveCustomOutfit,
   onOpenCreateLookModal,
 }: WardrobeDrawerProps) {
   const [filterCode, setFilterCode] = useState<"all" | DressCodeProfile>("all");
+  const [filterSource, setFilterSource] = useState<"all" | "owned" | "inspo">(
+    "all"
+  );
 
   if (!target) return null;
 
@@ -69,9 +75,12 @@ export function WardrobeDrawer({
       )
     : null;
 
-  const filteredOutfits = allOutfits.filter(
-    (o) => filterCode === "all" || o.dressCode === filterCode
-  );
+  const filteredOutfits = allOutfits.filter((o) => {
+    if (filterCode !== "all" && o.dressCode !== filterCode) return false;
+    if (filterSource === "owned" && isInspirationOutfit(o)) return false;
+    if (filterSource === "inspo" && !isInspirationOutfit(o)) return false;
+    return true;
+  });
 
   const handleSelectOutfit = (outfitId: string) => {
     if (isActivityMode && target.activity) {
@@ -183,31 +192,59 @@ export function WardrobeDrawer({
 
           {/* Filter Pills & Clear / Create Actions */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#1F1A16]/15">
-            <div className="flex flex-wrap gap-1">
-              {[
-                { id: "all", label: "All Looks" },
-                { id: "temple", label: "Temple" },
-                { id: "rooftop", label: "Rooftop" },
-                { id: "daytime", label: "Daytime" },
-                { id: "beach", label: "Beach" },
-                { id: "transit", label: "Transit" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() =>
-                    setFilterCode(tab.id as "all" | DressCodeProfile)
-                  }
-                  style={monoStyle}
-                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
-                    filterCode === tab.id
-                      ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
-                      : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="flex flex-wrap gap-1">
+                {[
+                  { id: "all", label: "All Looks" },
+                  { id: "temple", label: "Temple" },
+                  { id: "rooftop", label: "Rooftop" },
+                  { id: "daytime", label: "Daytime" },
+                  { id: "beach", label: "Beach" },
+                  { id: "transit", label: "Transit" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() =>
+                      setFilterCode(tab.id as "all" | DressCodeProfile)
+                    }
+                    style={monoStyle}
+                    className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                      filterCode === tab.id
+                        ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                        : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-1 pl-1.5 border-l border-[#1F1A16]/15">
+                {[
+                  { id: "all", label: "All Sources" },
+                  { id: "owned", label: "✓ Owned" },
+                  { id: "inspo", label: "✦ Inspiration" },
+                ].map((src) => (
+                  <button
+                    key={src.id}
+                    type="button"
+                    onClick={() =>
+                      setFilterSource(src.id as "all" | "owned" | "inspo")
+                    }
+                    style={monoStyle}
+                    className={`px-2 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                      filterSource === src.id
+                        ? src.id === "inspo"
+                          ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                          : "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                        : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+                    }`}
+                  >
+                    {src.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -257,6 +294,7 @@ export function WardrobeDrawer({
                     isSelected={activeOutfit?.id === outfit.id}
                     onSelectOutfit={handleSelectOutfit}
                     onEditOutfit={onEditOutfit}
+                    onToggleInspiration={onToggleOutfitInspiration}
                     onRemoveCustomOutfit={onRemoveCustomOutfit}
                   />
                 </div>

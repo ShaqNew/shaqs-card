@@ -486,6 +486,39 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         "https://images.asos-media.com/products/asos-design-cotton-linen-halter-neck-wrap-maxi-sundress-in-cream/210297981-2"
       );
     });
+
+    it("displays Owned or Inspiration badge and invokes onToggleInspiration on click", () => {
+      const handleToggle = jest.fn();
+      const { rerender } = render(
+        <PolaroidOutfitCard
+          outfit={{ ...baseOutfit, isInspiration: false }}
+          onToggleInspiration={handleToggle}
+        />
+      );
+
+      const ownedBadge = screen.getByRole("button", {
+        name: /Toggle inspiration status for Test Styling Look \(currently Owned\)/i,
+      });
+      expect(ownedBadge).toHaveTextContent("✓ Owned");
+
+      fireEvent.click(ownedBadge);
+      expect(handleToggle).toHaveBeenCalledWith({
+        ...baseOutfit,
+        isInspiration: false,
+      });
+
+      rerender(
+        <PolaroidOutfitCard
+          outfit={{ ...baseOutfit, isInspiration: true }}
+          onToggleInspiration={handleToggle}
+        />
+      );
+
+      const inspoBadge = screen.getByRole("button", {
+        name: /Toggle inspiration status for Test Styling Look \(currently Inspiration\)/i,
+      });
+      expect(inspoBadge).toHaveTextContent("✦ Inspiration");
+    });
   });
 });
 

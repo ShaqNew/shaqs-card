@@ -62,6 +62,23 @@ export function formatOwnerBadge(owner: WardrobeOutfit["owner"]): string {
   return "Shared Look";
 }
 
+export function isInspirationOutfit(outfit: WardrobeOutfit): boolean {
+  if (typeof outfit.isInspiration === "boolean") {
+    return outfit.isInspiration;
+  }
+  if (/\b(inspo|inspiration)\b/i.test(outfit.title)) {
+    return true;
+  }
+  if (
+    outfit.garments &&
+    outfit.garments.length > 0 &&
+    outfit.garments.every((g) => !isGooglePhotosUrl(g.url))
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function isGooglePhotosUrl(url: string): boolean {
   try {
     const parsed = new URL(url);

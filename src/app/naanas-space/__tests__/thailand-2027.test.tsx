@@ -231,7 +231,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Rattanakosin Temple & River Linen/i)
+      screen.getByText(/Gatwick Lounge & Long-Haul Cabin Knit/i)
     ).toBeInTheDocument();
 
     // Open Create Look modal
@@ -315,29 +315,29 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       screen.getByRole("button", { name: /Close expanded image/i })
     );
 
-    // Delete a pre-made default look ("Rattanakosin Temple & River Linen")
+    // Delete a pre-made default look ("Gatwick Lounge & Long-Haul Cabin Knit")
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Delete look Rattanakosin Temple & River Linen/i,
+        name: /Delete look Gatwick Lounge & Long-Haul Cabin Knit/i,
       })
     );
 
     // Confirmation modal appears
     expect(
       screen.getByRole("dialog", {
-        name: /Confirm deletion of Rattanakosin Temple & River Linen/i,
+        name: /Confirm deletion of Gatwick Lounge & Long-Haul Cabin Knit/i,
       })
     ).toBeInTheDocument();
 
     // Confirm deletion inside the modal
     fireEvent.click(
       screen.getByRole("button", {
-        name: /Confirm delete Rattanakosin Temple & River Linen/i,
+        name: /Confirm delete Gatwick Lounge & Long-Haul Cabin Knit/i,
       })
     );
 
     expect(
-      screen.queryByText(/Rattanakosin Temple & River Linen/i)
+      screen.queryByText(/Gatwick Lounge & Long-Haul Cabin Knit/i)
     ).not.toBeInTheDocument();
   });
 
@@ -347,7 +347,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     // Verify ATTIRE slots render in Step I
     expect(screen.getAllByText("ATTIRE").length).toBeGreaterThan(0);
     expect(
-      screen.getAllByText(/Rattanakosin Temple & River Linen/i).length
+      screen.getAllByText(/Gatwick Lounge & Long-Haul Cabin Knit/i).length
     ).toBeGreaterThan(0);
 
     // Click the hanger icon on the Day 2 temple river boat activity
@@ -363,12 +363,11 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
       })
     ).toBeInTheDocument();
 
-    // Assign the Beach Club look ("Layan Cove & Bang Tao Beach Club") to the Temple activity to trigger conflict warning
+    // Assign the Beach look ("Phuket Inspo", index 1) to the Temple activity to trigger conflict warning
     const assignBtns = screen.getAllByRole("button", {
       name: /Assign This Look/i,
     });
-    // The 3rd unassigned look in the list is "Layan Cove & Bang Tao Beach Club"
-    fireEvent.click(assignBtns[2]);
+    fireEvent.click(assignBtns[1]);
 
     // Expect Temple Dress Code Conflict alert to appear
     expect(
@@ -377,7 +376,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("supports collapsible sections, collapsible Packing Ledger categories, interactive day unassignment, and + To Packing Ledger garment syncing in Step IV", () => {
+  it("supports collapsible sections, collapsible Packing Ledger categories, Owned vs Inspiration filtering, interactive day unassignment, and + To Packing Ledger garment syncing in Step IV", () => {
     render(<ThailandTripDashboard />);
 
     // Navigate to Step IV (Packing Studio)
@@ -386,31 +385,44 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     });
     fireEvent.click(packingButtons[0]);
 
-    // Unassign Day 02 from "Rattanakosin Temple & River Linen" via its interactive badge
-    const unassignDay02Btn = screen.getByRole("button", {
-      name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+    // Filter by "✓ Owned" and verify "Black Free-flowing" is shown while "Phuket Inspo" is hidden
+    fireEvent.click(screen.getByRole("button", { name: /✓ Owned/i }));
+    expect(screen.getByText("Black Free-flowing")).toBeInTheDocument();
+    expect(screen.queryByText("Phuket Inspo")).not.toBeInTheDocument();
+
+    // Filter by "✦ Inspiration" and verify "Phuket Inspo" is shown while "Black Free-flowing" is hidden
+    fireEvent.click(screen.getByRole("button", { name: /✦ Inspiration/i }));
+    expect(screen.getByText("Phuket Inspo")).toBeInTheDocument();
+    expect(screen.queryByText("Black Free-flowing")).not.toBeInTheDocument();
+
+    // Reset to "All Sources"
+    fireEvent.click(screen.getByRole("button", { name: /All Sources/i }));
+
+    // Unassign Day 00 from "Gatwick Lounge & Long-Haul Cabin Knit" via its interactive badge
+    const unassignDay00Btn = screen.getByRole("button", {
+      name: /Unassign Gatwick Lounge & Long-Haul Cabin Knit from Day 00/i,
     });
-    fireEvent.click(unassignDay02Btn);
+    fireEvent.click(unassignDay00Btn);
     expect(
       screen.queryByRole("button", {
-        name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+        name: /Unassign Gatwick Lounge & Long-Haul Cabin Knit from Day 00/i,
       })
     ).not.toBeInTheDocument();
 
-    // Send "Rattanakosin Temple & River Linen" garments to The Packing Ledger
+    // Send "Gatwick Lounge & Long-Haul Cabin Knit" garments to The Packing Ledger
     const packToLedgerBtn = screen.getByRole("button", {
-      name: /Add garments from Rattanakosin Temple & River Linen to Packing Ledger/i,
+      name: /Add garments from Gatwick Lounge & Long-Haul Cabin Knit to Packing Ledger/i,
     });
     fireEvent.click(packToLedgerBtn);
 
     // Button transitions to "✓ In Packing Ledger" and garments appear in The Packing Ledger
     expect(
       screen.getByRole("button", {
-        name: /All garments from Rattanakosin Temple & River Linen are in Packing Ledger/i,
+        name: /All garments from Gatwick Lounge & Long-Haul Cabin Knit are in Packing Ledger/i,
       })
     ).toBeDisabled();
     expect(
-      screen.getAllByText(/From Look: Rattanakosin Temple & River Linen/i)
+      screen.getAllByText(/From Look: Gatwick Lounge & Long-Haul Cabin Knit/i)
         .length
     ).toBeGreaterThan(0);
 

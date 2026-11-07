@@ -9,6 +9,7 @@ import {
   extractOpenGraphFromHtml,
   inferRetailerSource,
   isGooglePhotosUrl,
+  isInspirationOutfit,
   isPrivateGooglePhotosUrl,
   getCollageTileCount,
   getCollageGridClass,
@@ -21,9 +22,14 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
   const beachOutfit = DEFAULT_WARDROBE_OUTFITS.find(
     (o) => o.dressCode === "beach"
   )!;
-  const rooftopOutfit = DEFAULT_WARDROBE_OUTFITS.find(
-    (o) => o.dressCode === "rooftop"
-  )!;
+  const rooftopOutfit = {
+    id: "test-rooftop-look",
+    title: "Sky-Bar Silk & Tailoring",
+    owner: "both" as const,
+    dressCode: "rooftop" as const,
+    climateTag: "25°C Balmy Evening • Strict Smart Casual",
+    garments: [],
+  };
 
   it("detects strict temple, rooftop, and beach dress code requirements", () => {
     expect(
@@ -236,6 +242,21 @@ describe("Wardrobe & Dress-Code Validation Utilities", () => {
     expect(inferred.fallbackTitle).toBe(
       "Asos Design Cotton Linen Halter Neck Wrap Maxi Sundress In Cream"
     );
+  });
+
+  it("identifies inspiration outfits vs owned outfits via isInspirationOutfit", () => {
+    const phuketInspo = DEFAULT_WARDROBE_OUTFITS.find(
+      (o) => o.title === "Phuket Inspo"
+    )!;
+    const blackOwned = DEFAULT_WARDROBE_OUTFITS.find(
+      (o) => o.title === "Black Free-flowing"
+    )!;
+
+    expect(isInspirationOutfit(phuketInspo)).toBe(true);
+    expect(isInspirationOutfit(blackOwned)).toBe(false);
+    expect(
+      isInspirationOutfit({ ...phuketInspo, isInspiration: false })
+    ).toBe(false);
   });
 
   describe("getCollageTileCount & getCollageGridClass responsive rules", () => {
