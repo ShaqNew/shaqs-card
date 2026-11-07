@@ -376,4 +376,67 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
         .length
     ).toBeGreaterThan(0);
   });
+
+  it("supports collapsible sections, collapsible Trunk Ledger categories, interactive day unassignment, and + To Trunk garment syncing in Step IV", () => {
+    render(<ThailandTripDashboard />);
+
+    // Navigate to Step IV (Packing Studio)
+    const packingButtons = screen.getAllByRole("button", {
+      name: /Packing Studio/i,
+    });
+    fireEvent.click(packingButtons[0]);
+
+    // Unassign Day 02 from "Rattanakosin Temple & River Linen" via its interactive badge
+    const unassignDay02Btn = screen.getByRole("button", {
+      name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+    });
+    fireEvent.click(unassignDay02Btn);
+    expect(
+      screen.queryByRole("button", {
+        name: /Unassign Rattanakosin Temple & River Linen from Day 02/i,
+      })
+    ).not.toBeInTheDocument();
+
+    // Send "Rattanakosin Temple & River Linen" garments to The Trunk Ledger
+    const packToTrunkBtn = screen.getByRole("button", {
+      name: /Add garments from Rattanakosin Temple & River Linen to Trunk Ledger/i,
+    });
+    fireEvent.click(packToTrunkBtn);
+
+    // Button transitions to "✓ In Trunk" and garments appear in The Trunk Ledger
+    expect(
+      screen.getByRole("button", {
+        name: /All garments from Rattanakosin Temple & River Linen are in Trunk Ledger/i,
+      })
+    ).toBeDisabled();
+    expect(
+      screen.getAllByText(/From Look: Rattanakosin Temple & River Linen/i)
+        .length
+    ).toBeGreaterThan(0);
+
+    // Collapse all categories in The Trunk Ledger
+    const collapseCatsBtn = screen.getByRole("button", {
+      name: /Collapse All Categories/i,
+    });
+    fireEvent.click(collapseCatsBtn);
+    expect(
+      screen.getByRole("button", { name: /Expand All Categories/i })
+    ).toBeInTheDocument();
+
+    // Collapse all Studio Sections and re-expand
+    const collapseSectionsBtn = screen.getByRole("button", {
+      name: /Collapse All Sections/i,
+    });
+    fireEvent.click(collapseSectionsBtn);
+    expect(
+      screen.queryByRole("heading", { name: /Dry Season Sunshine/i })
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Expand All Sections/i })
+    );
+    expect(
+      screen.getByRole("heading", { name: /Dry Season Sunshine/i })
+    ).toBeInTheDocument();
+  });
 });

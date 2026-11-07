@@ -352,5 +352,109 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(handleRemove).not.toHaveBeenCalled();
     });
   });
+
+  describe("Interactive day badges, collapsible garment links, and Trunk Ledger bridge", () => {
+    const outfitWithGarments: WardrobeOutfit = {
+      ...baseOutfit,
+      garments: [
+        {
+          id: "g-1",
+          label: "Linen Overshirt",
+          url: "https://www.asos.com/prd/1",
+          category: "Top",
+        },
+        {
+          id: "g-2",
+          label: "Tailored Trousers",
+          url: "https://www.zara.com/uk/en/trousers",
+          category: "Trousers",
+        },
+      ],
+    };
+
+    it("unassigns a day when clicking its interactive day badge and toggles via dropdown", () => {
+      const handleAssign = jest.fn();
+      render(
+        <PolaroidOutfitCard
+          outfit={outfitWithGarments}
+          assignedDayNumbers={[2, 5]}
+          onAssignToDay={handleAssign}
+        />
+      );
+
+      const unassignDay2Btn = screen.getByRole("button", {
+        name: /Unassign Test Styling Look from Day 02/i,
+      });
+      fireEvent.click(unassignDay2Btn);
+      expect(handleAssign).toHaveBeenCalledWith(2, null);
+
+      const select = screen.getByLabelText(/ASSIGN TO DAY:/i);
+      // Selecting an already-assigned day (Day 5) should unassign it
+      fireEvent.change(select, { target: { value: "5" } });
+      expect(handleAssign).toHaveBeenCalledWith(5, null);
+
+      // Selecting an unassigned day (Day 3) should assign it
+      fireEvent.change(select, { target: { value: "3" } });
+      expect(handleAssign).toHaveBeenCalledWith(3, outfitWithGarments.id);
+    });
+
+    it("collapses and expands the GARMENT LINKS list on click", () => {
+      render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
+
+      const toggleBtn = screen.getByRole("button", {
+        name: /GARMENT LINKS \(2\)/i,
+      });
+      expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("link", { name: /Linen Overshirt/i })
+      ).toBeInTheDocument();
+
+      fireEvent.click(toggleBtn);
+      expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("link", { name: /Linen Overshirt/i })
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(toggleBtn);
+      expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+      expect(
+        screen.getByRole("link", { name: /Linen Overshirt/i })
+      ).toBeInTheDocument();
+    });
+
+    it("invokes onPackOutfitGarments when + To Trunk is clicked and disables when already in trunk", () => {
+      const handlePack = jest.fn();
+      const { rerender } = render(
+        <PolaroidOutfitCard
+          outfit={outfitWithGarments}
+          onPackOutfitGarments={handlePack}
+          isPackedInTrunk={false}
+        />
+      );
+
+      const toTrunkBtn = screen.getByRole("button", {
+        name: /Add garments from Test Styling Look to Trunk Ledger/i,
+      });
+      expect(toTrunkBtn).not.toBeDisabled();
+      expect(toTrunkBtn).toHaveTextContent("+ To Trunk");
+
+      fireEvent.click(toTrunkBtn);
+      expect(handlePack).toHaveBeenCalledWith(outfitWithGarments);
+
+      rerender(
+        <PolaroidOutfitCard
+          outfit={outfitWithGarments}
+          onPackOutfitGarments={handlePack}
+          isPackedInTrunk={true}
+        />
+      );
+
+      const packedBtn = screen.getByRole("button", {
+        name: /All garments from Test Styling Look are in Trunk Ledger/i,
+      });
+      expect(packedBtn).toBeDisabled();
+      expect(packedBtn).toHaveTextContent("✓ In Trunk");
+    });
+  });
 });
 

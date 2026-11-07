@@ -70,6 +70,7 @@ export default function ThailandTripDashboard() {
     togglePackingItem,
     addCustomPackingItem,
     removeCustomPackingItem,
+    addOutfitGarmentsToPacking,
     addCustomOutfit,
     updateCustomOutfit,
     removeCustomOutfit,
@@ -294,6 +295,7 @@ export default function ThailandTripDashboard() {
             onTogglePackingItem={togglePackingItem}
             onAddCustomPackingItem={addCustomPackingItem}
             onRemoveCustomPackingItem={removeCustomPackingItem}
+            onPackOutfitGarments={addOutfitGarmentsToPacking}
             allOutfits={allOutfits}
             dayOutfitByDay={tripState.dayOutfitByDay}
             onAssignDayOutfit={assignDayOutfit}

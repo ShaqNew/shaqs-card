@@ -375,6 +375,66 @@ export function useThailandTripState() {
     );
   };
 
+  const addOutfitGarmentsToPacking = (outfit: WardrobeOutfit): number => {
+    const dressCodeToCategory: Record<
+      WardrobeOutfit["dressCode"],
+      PackingItem["category"]
+    > = {
+      temple: "Daytime & Temple Wear",
+      daytime: "Daytime & Temple Wear",
+      rooftop: "Evening & Fine Dining",
+      beach: "Resort & Beach (Phuket)",
+      transit: "Carry-On & Documents",
+    };
+    const category =
+      dressCodeToCategory[outfit.dressCode] || "Daytime & Temple Wear";
+    const existingLabels = new Set(
+      allPackingItems.map((p) => p.label.trim().toLowerCase())
+    );
+    const seenInBatch = new Set<string>();
+    const now = Date.now();
+
+    const newItems: PackingItem[] = [];
+    outfit.garments.forEach((g, idx) => {
+      const normalized = g.label.trim().toLowerCase();
+      if (
+        !normalized ||
+        existingLabels.has(normalized) ||
+        seenInBatch.has(normalized)
+      ) {
+        return;
+      }
+      seenInBatch.add(normalized);
+      newItems.push({
+        id: `custom-pack-${now}-${idx}`,
+        label: g.label.trim(),
+        category,
+        forWho: outfit.owner,
+        note: `From Look: ${outfit.title}`,
+      });
+    });
+
+    if (newItems.length === 0) {
+      return 0;
+    }
+
+    updateTripState(
+      (prev) => ({
+        ...prev,
+        customPackingItems: [...prev.customPackingItems, ...newItems],
+      }),
+      {
+        section: "packing",
+        action: "Added look garments to Trunk Ledger",
+        detail: `${outfit.title} (${newItems.length} ${
+          newItems.length === 1 ? "piece" : "pieces"
+        })`,
+      }
+    );
+
+    return newItems.length;
+  };
+
   const addCustomOutfit = (outfitData: Omit<WardrobeOutfit, "id">) => {
     const newOutfit: WardrobeOutfit = {
       ...outfitData,
@@ -737,6 +797,7 @@ export function useThailandTripState() {
     togglePackingItem,
     addCustomPackingItem,
     removeCustomPackingItem,
+    addOutfitGarmentsToPacking,
     addCustomOutfit,
     updateCustomOutfit,
     removeCustomOutfit,

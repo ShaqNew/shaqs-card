@@ -473,9 +473,11 @@ export function PolaroidCollageTile({
 interface PolaroidOutfitCardProps {
   outfit: WardrobeOutfit;
   assignedDayNumbers?: number[];
-  onAssignToDay?: (dayNumber: number, outfitId: string) => void;
+  onAssignToDay?: (dayNumber: number, outfitId: string | null) => void;
   onEditOutfit?: (outfit: WardrobeOutfit) => void;
   onRemoveCustomOutfit?: (outfitId: string) => void;
+  onPackOutfitGarments?: (outfit: WardrobeOutfit) => void;
+  isPackedInTrunk?: boolean;
   compact?: boolean;
   isSelected?: boolean;
   onSelectOutfit?: (outfitId: string) => void;
@@ -487,6 +489,8 @@ export function PolaroidOutfitCard({
   onAssignToDay,
   onEditOutfit,
   onRemoveCustomOutfit,
+  onPackOutfitGarments,
+  isPackedInTrunk = false,
   compact = false,
   isSelected = false,
   onSelectOutfit,
@@ -495,6 +499,7 @@ export function PolaroidOutfitCard({
     null
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isLinksExpanded, setIsLinksExpanded] = useState(true);
   const dressMeta = DRESS_CODE_METADATA[outfit.dressCode];
   const tileCount = getCollageTileCount(outfit.garments?.length ?? 0);
   const slots = Array.from(
@@ -567,15 +572,32 @@ export function PolaroidOutfitCard({
 
             {assignedDayNumbers.length > 0 && (
               <div className="flex flex-wrap gap-1">
-                {assignedDayNumbers.map((dNum) => (
-                  <span
-                    key={dNum}
-                    style={monoStyle}
-                    className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[9px] uppercase tracking-wider font-semibold"
-                  >
-                    D{formatDayNumber(dNum)}
-                  </span>
-                ))}
+                {assignedDayNumbers.map((dNum) =>
+                  onAssignToDay ? (
+                    <button
+                      key={dNum}
+                      type="button"
+                      onClick={() => onAssignToDay(dNum, null)}
+                      title={`Click to unassign Day ${formatDayNumber(dNum)}`}
+                      aria-label={`Unassign ${outfit.title} from Day ${formatDayNumber(
+                        dNum
+                      )}`}
+                      style={monoStyle}
+                      className="px-1.5 py-0.5 bg-[#13382E]/10 hover:bg-[#A8442A]/15 text-[#13382E] hover:text-[#A8442A] border border-[#13382E]/30 hover:border-[#A8442A]/40 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                    >
+                      <span>D{formatDayNumber(dNum)}</span>
+                      <span aria-hidden="true">&#10005;</span>
+                    </button>
+                  ) : (
+                    <span
+                      key={dNum}
+                      style={monoStyle}
+                      className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[9px] uppercase tracking-wider font-semibold"
+                    >
+                      D{formatDayNumber(dNum)}
+                    </span>
+                  )
+                )}
               </div>
             )}
           </div>
@@ -593,34 +615,42 @@ export function PolaroidOutfitCard({
             </p>
           )}
 
-          {/* Garment URLs List */}
+          {/* Collapsible Garment URLs List */}
           {outfit.garments.length > 0 && (
             <div className="pt-2 border-t border-[#1F1A16]/10 space-y-1.5">
-              <div
+              <button
+                type="button"
+                onClick={() => setIsLinksExpanded((prev) => !prev)}
+                aria-expanded={isLinksExpanded}
                 style={monoStyle}
-                className="text-[9px] uppercase tracking-[0.16em] text-[#8A7E71]"
+                className="w-full flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-[#8A7E71] hover:text-[#1F1A16] cursor-pointer py-0.5 transition-colors"
               >
-                GARMENT LINKS ({outfit.garments.length})
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {outfit.garments.map((g) => (
-                  <a
-                    key={g.id}
-                    href={g.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={monoStyle}
-                    className="px-2 py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
-                    title={`${g.label} (${extractSourceDomain(g.url)})`}
-                  >
-                    <span className="truncate max-w-[155px]">{g.label}</span>
-                    <span className="text-[#A8442A] font-semibold">
-                      [{extractSourceDomain(g.url)}]
-                    </span>
-                    <ExternalArrow />
-                  </a>
-                ))}
-              </div>
+                <span>GARMENT LINKS ({outfit.garments.length})</span>
+                <span className="text-[8px] tracking-wider text-[#5C5248]">
+                  {isLinksExpanded ? "Hide ▲" : "Show ▼"}
+                </span>
+              </button>
+              {isLinksExpanded && (
+                <div className="flex flex-wrap gap-1.5">
+                  {outfit.garments.map((g) => (
+                    <a
+                      key={g.id}
+                      href={g.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={monoStyle}
+                      className="px-2 py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
+                      title={`${g.label} (${extractSourceDomain(g.url)})`}
+                    >
+                      <span className="truncate max-w-[155px]">{g.label}</span>
+                      <span className="text-[#A8442A] font-semibold">
+                        [{extractSourceDomain(g.url)}]
+                      </span>
+                      <ExternalArrow />
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -681,24 +711,59 @@ export function PolaroidOutfitCard({
                   value=""
                   onChange={(e) => {
                     if (e.target.value !== "") {
-                      onAssignToDay(Number(e.target.value), outfit.id);
+                      const dayNum = Number(e.target.value);
+                      const isAlreadyAssigned =
+                        assignedDayNumbers.includes(dayNum);
+                      onAssignToDay(
+                        dayNum,
+                        isAlreadyAssigned ? null : outfit.id
+                      );
                     }
                   }}
                   style={monoStyle}
                   className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2 py-1 text-[10px] text-[#1F1A16] flex-1 min-w-0 cursor-pointer"
                 >
                   <option value="">Select Day (D00–D10)...</option>
-                  {TRIP_DAYS.map((d) => (
-                    <option key={d.dayNumber} value={d.dayNumber}>
-                      D{formatDayNumber(d.dayNumber)} • {d.shortDate} (
-                      {d.phase.toUpperCase()})
-                    </option>
-                  ))}
+                  {TRIP_DAYS.map((d) => {
+                    const isAssigned = assignedDayNumbers.includes(d.dayNumber);
+                    return (
+                      <option key={d.dayNumber} value={d.dayNumber}>
+                        {isAssigned ? "✓ " : ""}D{formatDayNumber(d.dayNumber)} •{" "}
+                        {d.shortDate} ({d.phase.toUpperCase()})
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             )}
 
             <div className="flex items-center gap-1">
+              {onPackOutfitGarments && outfit.garments.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onPackOutfitGarments(outfit)}
+                  disabled={isPackedInTrunk}
+                  style={monoStyle}
+                  aria-label={
+                    isPackedInTrunk
+                      ? `All garments from ${outfit.title} are in Trunk Ledger`
+                      : `Add garments from ${outfit.title} to Trunk Ledger`
+                  }
+                  title={
+                    isPackedInTrunk
+                      ? "All garments from this look are already listed in The Trunk Ledger"
+                      : "Add this look's garments to The Trunk Ledger packing checklist"
+                  }
+                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border transition-colors ${
+                    isPackedInTrunk
+                      ? "bg-[#13382E]/10 text-[#13382E] border-[#13382E]/30 cursor-default font-semibold"
+                      : "text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border-[#13382E]/35 bg-[#EFE7D8]/60 cursor-pointer font-semibold"
+                  }`}
+                >
+                  {isPackedInTrunk ? "✓ In Trunk" : "+ To Trunk"}
+                </button>
+              )}
+
               {onEditOutfit && (
                 <button
                   type="button"
