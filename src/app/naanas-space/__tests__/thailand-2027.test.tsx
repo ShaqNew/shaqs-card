@@ -29,7 +29,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /Interactive Day-by-Day Itinerary & Romantic Planner/i
+        /Interactive Day-by-Day Itinerary & Planner/i
       )
     ).toBeInTheDocument();
     expect(
@@ -225,7 +225,7 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
 
     // Open Quick Pocket Desk
     fireEvent.click(
-      screen.getByRole("button", { name: /Quick Desk • PNR & Taxi/i })
+      screen.getByRole("button", { name: /Quick Tools/i })
     );
     expect(
       screen.getByText(/QUICK POCKET DESK \(THB • PNR • TAXI\)/i)

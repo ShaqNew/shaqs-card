@@ -80,7 +80,10 @@ export function EditorialMasthead({
         </div>
 
         {/* Right Column: Sculptural Countdown & Readiness Dossier Box */}
-        <div className="lg:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 relative">
+        <div
+          id="masthead-chronometer"
+          className="lg:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 relative scroll-mt-6"
+        >
           {/* Double-line inner frame accent */}
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1F1A16]/15">
             <span

@@ -286,4 +286,49 @@ describe("StickyStepNav Component", () => {
     fireEvent.click(day2Btn);
     expect(defaultProps.onSelectDayNum).toHaveBeenCalledWith(null);
   });
+
+  it("reveals the Scroll to Chronometer button once scrolled past the threshold and scrolls to #masthead-chronometer on click", () => {
+    // Create a mock #masthead-chronometer target in the document
+    const chronometerTarget = document.createElement("div");
+    chronometerTarget.id = "masthead-chronometer";
+    const scrollIntoViewMock = jest.fn();
+    chronometerTarget.scrollIntoView = scrollIntoViewMock;
+    document.body.appendChild(chronometerTarget);
+
+    render(<StickyStepNav {...defaultProps} />);
+
+    const chronometerBtn = screen.getByRole("button", {
+      name: /Scroll to Chronometer/i,
+    });
+    expect(chronometerBtn.parentElement).toHaveClass("invisible", "opacity-0");
+
+    // Scroll past -72px threshold
+    const sentinel = screen.getByTestId("sticky-nav-sentinel");
+    Object.defineProperty(window, "scrollY", { value: 420, writable: true });
+    jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
+      top: -90,
+      bottom: -89,
+      left: 0,
+      right: 1000,
+      width: 1000,
+      height: 1,
+      x: 0,
+      y: -90,
+      toJSON: () => {},
+    });
+
+    act(() => {
+      window.dispatchEvent(new Event("scroll"));
+    });
+
+    expect(chronometerBtn.parentElement).toHaveClass("visible", "opacity-100");
+
+    fireEvent.click(chronometerBtn);
+    expect(scrollIntoViewMock).toHaveBeenCalledWith({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    document.body.removeChild(chronometerTarget);
+  });
 });

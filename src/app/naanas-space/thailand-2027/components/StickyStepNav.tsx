@@ -66,6 +66,15 @@ export function StickyStepNav({
     return () => window.removeEventListener("scroll", checkSticky);
   }, [controlledIsScrolled]);
 
+  const handleScrollToChronometer = () => {
+    const chronometerEl = document.getElementById("masthead-chronometer");
+    if (chronometerEl && typeof chronometerEl.scrollIntoView === "function") {
+      chronometerEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    } else if (typeof window !== "undefined" && typeof window.scrollTo === "function") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <>
       {/* Invisible sentinel placed immediately above the sticky nav to measure scroll depth past the sticky threshold */}
@@ -260,6 +269,29 @@ export function StickyStepNav({
             })}
           </div>
         )}
+      </div>
+
+      {/* Floating Scroll-to-Chronometer Button — Reveals once scrolled past the -72px sticky threshold */}
+      <div
+        className={`fixed bottom-5 right-5 z-40 transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+          isScrolled
+            ? "visible opacity-100 translate-y-0 pointer-events-auto"
+            : "invisible opacity-0 translate-y-5 pointer-events-none"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={handleScrollToChronometer}
+          tabIndex={isScrolled ? 0 : -1}
+          aria-label="Scroll to Chronometer"
+          title="Return to the Countdown Chronometer & Readiness Dossier"
+          style={monoStyle}
+          className="px-4 py-3 bg-[#1F1A16] hover:bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl text-[11px] uppercase tracking-[0.16em] font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+        >
+          <span className="text-[#D8B979]" aria-hidden="true">
+            &uarr;
+          </span>
+        </button>
       </div>
     </>
   );

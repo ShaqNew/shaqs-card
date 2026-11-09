@@ -172,7 +172,7 @@ export function QuickPocketDesk({
           title="Open Quick Currency Converter, PNR Ciphers & Thai Taxi Cards"
         >
           <span className="text-[#D8B979]">&#3647;</span>
-          <span>Quick Desk &bull; PNR &amp; Taxi</span>
+          <span>Quick Tools</span>
         </button>
       )}
     </div>

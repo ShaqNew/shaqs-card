@@ -237,7 +237,7 @@ export function StepItinerary({
               style={serifStyle}
               className="text-3xl sm:text-4xl font-normal text-[#1F1A16] mt-1"
             >
-              Interactive Day-by-Day Itinerary &amp; Romantic Planner
+              Interactive Day-by-Day Itinerary &amp; Planner
             </h2>
             <p className="text-sm text-[#5C5248] mt-1">
               Strike off completed movements, adopt curated concierge notes from
