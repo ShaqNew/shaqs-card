@@ -50,21 +50,21 @@ describe("StickyStepNav Component", () => {
     });
   });
 
-  it("keeps sub labels visible when scrolling while navbar is still below top", () => {
+  it("keeps sub labels visible when navbar first touches top (sentinel top = 0) before scrolling past the -72px buffer", () => {
     render(<StickyStepNav {...defaultProps} />);
 
     const sentinel = screen.getByTestId("sticky-nav-sentinel");
-    // Mock user has scrolled 100px, but sentinel top is still > 0 (150px down from viewport top)
-    Object.defineProperty(window, "scrollY", { value: 100, writable: true });
+    // Navbar just reached top: 0 (sentinel top = -20px, not yet past -72px buffer)
+    Object.defineProperty(window, "scrollY", { value: 320, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 150,
-      bottom: 151,
+      top: -20,
+      bottom: -19,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 150,
+      y: -20,
       toJSON: () => {},
     });
 
@@ -82,21 +82,21 @@ describe("StickyStepNav Component", () => {
     });
   });
 
-  it("collapses sub labels only once the navbar sticks to the top (sentinel top <= 0)", () => {
+  it("collapses sub labels smoothly once scrolled past the -72px sticky buffer (sentinel top <= -72)", () => {
     render(<StickyStepNav {...defaultProps} />);
 
     const sentinel = screen.getByTestId("sticky-nav-sentinel");
-    // Navbar reaches top: 0 and sticks (sentinel top <= 0 at scrollY > 0)
-    Object.defineProperty(window, "scrollY", { value: 350, writable: true });
+    // User has scrolled 80px past the sticky point (sentinel top = -80 <= -72)
+    Object.defineProperty(window, "scrollY", { value: 400, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 0,
-      bottom: 1,
+      top: -80,
+      bottom: -79,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 0,
+      y: -80,
       toJSON: () => {},
     });
 
@@ -106,6 +106,8 @@ describe("StickyStepNav Component", () => {
 
     const navContainer = document.getElementById("step-content-anchor");
     expect(navContainer).toHaveAttribute("data-scrolled", "true");
+    // Ensure no artificial marginBottom gap is added below the sticky bar
+    expect(navContainer?.style.marginBottom).toBe("");
 
     const subLabels = screen.getAllByTestId("step-nav-sublabel");
     subLabels.forEach((el) => {
@@ -117,12 +119,12 @@ describe("StickyStepNav Component", () => {
     });
   });
 
-  it("re-expands sub labels when scrolled back up and navbar unsticks from top", () => {
+  it("re-expands sub labels when scrolled back up to the unstick boundary", () => {
     render(<StickyStepNav {...defaultProps} />);
 
     const sentinel = screen.getByTestId("sticky-nav-sentinel");
 
-    // First stuck at top
+    // First stuck & collapsed past -72px
     Object.defineProperty(window, "scrollY", { value: 500, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
       top: -150,
@@ -138,25 +140,31 @@ describe("StickyStepNav Component", () => {
     act(() => {
       window.dispatchEvent(new Event("scroll"));
     });
-    expect(document.getElementById("step-content-anchor")).toHaveAttribute("data-scrolled", "true");
+    expect(document.getElementById("step-content-anchor")).toHaveAttribute(
+      "data-scrolled",
+      "true"
+    );
 
-    // Then unstuck (scrolled back up so sentinel top > 0)
-    Object.defineProperty(window, "scrollY", { value: 100, writable: true });
+    // Then scrolled back up so sentinel top >= -8px (e.g., +20px)
+    Object.defineProperty(window, "scrollY", { value: 280, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 50,
-      bottom: 51,
+      top: 20,
+      bottom: 21,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 50,
+      y: 20,
       toJSON: () => {},
     });
     act(() => {
       window.dispatchEvent(new Event("scroll"));
     });
-    expect(document.getElementById("step-content-anchor")).toHaveAttribute("data-scrolled", "false");
+    expect(document.getElementById("step-content-anchor")).toHaveAttribute(
+      "data-scrolled",
+      "false"
+    );
 
     const subLabels = screen.getAllByTestId("step-nav-sublabel");
     subLabels.forEach((el) => {
@@ -165,22 +173,22 @@ describe("StickyStepNav Component", () => {
     });
   });
 
-  it("prevents rapid collapse/expand oscillation via hysteresis when scrolling slowly near the sticky threshold", () => {
+  it("prevents rapid collapse/expand oscillation via hysteresis (-72px collapse vs -8px expand)", () => {
     render(<StickyStepNav {...defaultProps} />);
 
     const sentinel = screen.getByTestId("sticky-nav-sentinel");
 
-    // 1. Navbar reaches sticky threshold (top = 0, scrollY = 320) -> collapses
-    Object.defineProperty(window, "scrollY", { value: 320, writable: true });
+    // 1. Navbar scrolls past -72px threshold -> collapses
+    Object.defineProperty(window, "scrollY", { value: 400, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 0,
-      bottom: 1,
+      top: -75,
+      bottom: -74,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 0,
+      y: -75,
       toJSON: () => {},
     });
     act(() => {
@@ -191,18 +199,17 @@ describe("StickyStepNav Component", () => {
       "true"
     );
 
-    // 2. Slow scroll / layout shift nudges sentinel slightly positive (top = 18px < 36px hysteresis deadband)
-    // Navbar MUST stay collapsed instead of glitching back to expanded
-    Object.defineProperty(window, "scrollY", { value: 302, writable: true });
+    // 2. User scrolls up slightly (sentinel top = -30px, still < -8px expand threshold) -> stays collapsed
+    Object.defineProperty(window, "scrollY", { value: 355, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 18,
-      bottom: 19,
+      top: -30,
+      bottom: -29,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 18,
+      y: -30,
       toJSON: () => {},
     });
     act(() => {
@@ -213,17 +220,17 @@ describe("StickyStepNav Component", () => {
       "true"
     );
 
-    // 3. Scrolling back up past the 36px hysteresis deadband (top = 42px) cleanly re-expands
-    Object.defineProperty(window, "scrollY", { value: 278, writable: true });
+    // 3. Scrolling back up to the unstick threshold (sentinel top = -4px >= -8px) -> cleanly re-expands
+    Object.defineProperty(window, "scrollY", { value: 325, writable: true });
     jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 42,
-      bottom: 43,
+      top: -4,
+      bottom: -3,
       left: 0,
       right: 1000,
       width: 1000,
       height: 1,
       x: 0,
-      y: 42,
+      y: -4,
       toJSON: () => {},
     });
     act(() => {
@@ -236,84 +243,19 @@ describe("StickyStepNav Component", () => {
   });
 
   it("supports controlled isScrolled prop override", () => {
-    const { rerender } = render(<StickyStepNav {...defaultProps} isScrolled={false} />);
-    expect(document.getElementById("step-content-anchor")).toHaveAttribute("data-scrolled", "false");
+    const { rerender } = render(
+      <StickyStepNav {...defaultProps} isScrolled={false} />
+    );
+    expect(document.getElementById("step-content-anchor")).toHaveAttribute(
+      "data-scrolled",
+      "false"
+    );
 
     rerender(<StickyStepNav {...defaultProps} isScrolled={true} />);
-    expect(document.getElementById("step-content-anchor")).toHaveAttribute("data-scrolled", "true");
-  });
-
-  it("reserves in-flow height delta via marginBottom compensation when collapsed to prevent document scrollHeight shrinkage", () => {
-    render(<StickyStepNav {...defaultProps} />);
-    const navContainer = document.getElementById("step-content-anchor")!;
-    const sentinel = screen.getByTestId("sticky-nav-sentinel");
-
-    // Mock expanded height = 220px while unstuck
-    let currentMockHeight = 220;
-    jest.spyOn(navContainer, "getBoundingClientRect").mockImplementation(() => ({
-      top: 100,
-      bottom: 100 + currentMockHeight,
-      left: 0,
-      right: 390,
-      width: 390,
-      height: currentMockHeight,
-      x: 0,
-      y: 100,
-      toJSON: () => {},
-    }));
-
-    // Trigger unstuck check so expanded height (220px) is recorded
-    Object.defineProperty(window, "scrollY", { value: 5, writable: true });
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
-    expect(navContainer).toHaveAttribute("data-height-compensation", "0");
-
-    // Now simulate sticky collapse where compact nav height shrinks to 120px (delta = 100px)
-    currentMockHeight = 120;
-    Object.defineProperty(window, "scrollY", { value: 360, writable: true });
-    jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 0,
-      bottom: 1,
-      left: 0,
-      right: 390,
-      width: 390,
-      height: 1,
-      x: 0,
-      y: 0,
-      toJSON: () => {},
-    });
-
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
-
-    expect(navContainer).toHaveAttribute("data-scrolled", "true");
-    expect(navContainer).toHaveAttribute("data-height-compensation", "100");
-    expect(navContainer.style.marginBottom).toContain("100px");
-
-    // Re-expanding resets height compensation to 0
-    currentMockHeight = 220;
-    Object.defineProperty(window, "scrollY", { value: 100, writable: true });
-    jest.spyOn(sentinel, "getBoundingClientRect").mockReturnValue({
-      top: 50,
-      bottom: 51,
-      left: 0,
-      right: 390,
-      width: 390,
-      height: 1,
-      x: 0,
-      y: 50,
-      toJSON: () => {},
-    });
-
-    act(() => {
-      window.dispatchEvent(new Event("scroll"));
-    });
-
-    expect(navContainer).toHaveAttribute("data-scrolled", "false");
-    expect(navContainer).toHaveAttribute("data-height-compensation", "0");
-    expect(navContainer.style.marginBottom).toBe("");
+    expect(document.getElementById("step-content-anchor")).toHaveAttribute(
+      "data-scrolled",
+      "true"
+    );
   });
 
   it("calls onSelectTab when a tab button is clicked", () => {
@@ -324,7 +266,13 @@ describe("StickyStepNav Component", () => {
   });
 
   it("renders Date Ruler when activeTab is itinerary and handles day selection", () => {
-    render(<StickyStepNav {...defaultProps} activeTab="itinerary" selectedDayNum={2} />);
+    render(
+      <StickyStepNav
+        {...defaultProps}
+        activeTab="itinerary"
+        selectedDayNum={2}
+      />
+    );
 
     // Full Spread button
     const fullSpreadBtn = screen.getByRole("button", { name: /Full Spread/i });

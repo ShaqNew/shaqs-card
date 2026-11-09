@@ -15,11 +15,11 @@ interface StickyStepNavProps {
   isScrolled?: boolean;
 }
 
-// Hysteresis thresholds (in px) prevent rapid collapse/expand oscillation
-// when scrolling slowly right around the sticky boundary.
-const COLLAPSE_THRESHOLD_PX = 0;
-const EXPAND_THRESHOLD_PX = 36;
-const TOP_RESET_SCROLL_Y = 8;
+// Delay compaction until the user has scrolled 72px past the sticky top edge,
+// and keep a 64px hysteresis deadband (-72px to -8px) so slow scrolling never oscillates.
+const COLLAPSE_THRESHOLD_PX = -72;
+const EXPAND_THRESHOLD_PX = -8;
+const TOP_RESET_SCROLL_Y = 16;
 
 export function StickyStepNav({
   activeTab,
@@ -32,43 +32,8 @@ export function StickyStepNav({
   isScrolled: controlledIsScrolled,
 }: StickyStepNavProps) {
   const sentinelRef = React.useRef<HTMLDivElement>(null);
-  const navRef = React.useRef<HTMLDivElement>(null);
-  const expandedHeightsByTabRef = React.useRef<
-    Partial<Record<ActiveTab, number>>
-  >({});
   const [internalScrolled, setInternalScrolled] = useState(false);
-  const [compensationPx, setCompensationPx] = useState(0);
   const isScrolled = controlledIsScrolled ?? internalScrolled;
-
-  useEffect(() => {
-    const el = navRef.current;
-    if (!el) return;
-
-    const updateHeightTracking = () => {
-      const currentHeight = el.getBoundingClientRect().height;
-      if (currentHeight <= 0) return;
-
-      if (!isScrolled) {
-        expandedHeightsByTabRef.current[activeTab] = currentHeight;
-        setCompensationPx((prev) => (prev !== 0 ? 0 : prev));
-      } else {
-        const expandedHeight = expandedHeightsByTabRef.current[activeTab];
-        const nextComp =
-          expandedHeight && expandedHeight > currentHeight
-            ? Math.round(expandedHeight - currentHeight)
-            : 0;
-        setCompensationPx((prev) => (prev !== nextComp ? nextComp : prev));
-      }
-    };
-
-    updateHeightTracking();
-
-    if (typeof ResizeObserver !== "undefined") {
-      const ro = new ResizeObserver(updateHeightTracking);
-      ro.observe(el);
-      return () => ro.disconnect();
-    }
-  }, [isScrolled, activeTab]);
 
   useEffect(() => {
     if (controlledIsScrolled !== undefined) return;
@@ -80,27 +45,18 @@ export function StickyStepNav({
         typeof window !== "undefined" &&
         window.scrollY <= TOP_RESET_SCROLL_Y
       ) {
-        if (navRef.current) {
-          const h = navRef.current.getBoundingClientRect().height;
-          if (h > 0) expandedHeightsByTabRef.current[activeTab] = h;
-        }
         setInternalScrolled((prev) => (prev ? false : prev));
         return;
       }
       const rect = sentinelRef.current.getBoundingClientRect();
       setInternalScrolled((prev) => {
         if (prev) {
-          // Hysteresis deadband: once stuck, stay collapsed until the user scrolls
-          // back up far enough that the sentinel is at least EXPAND_THRESHOLD_PX below top.
+          // Hysteresis deadband: once collapsed, stay compact until the user scrolls
+          // back up close to the unstick point (rect.top >= -8px).
           return rect.top < EXPAND_THRESHOLD_PX;
         }
-        const willCollapse = rect.top <= COLLAPSE_THRESHOLD_PX;
-        if (!willCollapse && navRef.current) {
-          const h = navRef.current.getBoundingClientRect().height;
-          if (h > 0) expandedHeightsByTabRef.current[activeTab] = h;
-        }
-        // Collapse only once the navbar's top edge reaches or passes top: 0
-        return willCollapse;
+        // Collapse only after scrolling 72px past the point where the navbar sticks
+        return rect.top <= COLLAPSE_THRESHOLD_PX;
       });
     };
 
@@ -108,11 +64,11 @@ export function StickyStepNav({
 
     window.addEventListener("scroll", checkSticky, { passive: true });
     return () => window.removeEventListener("scroll", checkSticky);
-  }, [controlledIsScrolled, activeTab]);
+  }, [controlledIsScrolled]);
 
   return (
     <>
-      {/* Invisible sentinel placed immediately above the sticky nav to detect the exact moment it sticks to the top */}
+      {/* Invisible sentinel placed immediately above the sticky nav to measure scroll depth past the sticky threshold */}
       <div
         ref={sentinelRef}
         data-testid="sticky-nav-sentinel"
@@ -121,18 +77,10 @@ export function StickyStepNav({
         aria-hidden="true"
       />
       <div
-        ref={navRef}
         id="step-content-anchor"
         data-scrolled={isScrolled ? "true" : "false"}
-        data-height-compensation={compensationPx}
-        style={{
-          overflowAnchor: "none",
-          marginBottom:
-            compensationPx > 0
-              ? `calc(1.5rem + ${compensationPx}px)`
-              : undefined,
-        }}
-        className={`sticky top-0 z-30 mb-6 sm:mb-8 transition-shadow duration-200 motion-reduce:transition-none bg-[#F6F1E7]/95 backdrop-blur-md border-y border-[#1F1A16]/20 ${
+        style={{ overflowAnchor: "none" }}
+        className={`sticky top-0 z-30 mb-6 sm:mb-8 transition-shadow duration-300 motion-reduce:transition-none bg-[#F6F1E7]/95 backdrop-blur-md border-y border-[#1F1A16]/20 ${
           isScrolled
             ? "shadow-[0_4px_16px_rgba(31,26,22,0.12)]"
             : "shadow-[0_4px_16px_rgba(31,26,22,0.06)]"
@@ -188,7 +136,7 @@ export function StickyStepNav({
                 key={tab.id}
                 type="button"
                 onClick={() => onSelectTab(tab.id)}
-                className={`group flex flex-col items-start justify-between text-left transition-colors duration-200 motion-reduce:transition-none cursor-pointer relative ${
+                className={`group flex flex-col items-start justify-between text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative ${
                   isScrolled ? "px-2.5 py-1.5 sm:p-4" : "p-3 sm:p-4"
                 } ${
                   isActive
@@ -212,7 +160,7 @@ export function StickyStepNav({
                   >
                     <span
                       style={serifStyle}
-                      className={`italic ${
+                      className={`italic transition-all duration-300 ${
                         isScrolled
                           ? "text-[10px] sm:text-sm"
                           : "text-xs sm:text-sm"
@@ -230,7 +178,7 @@ export function StickyStepNav({
                   </div>
                   <span
                     style={serifStyle}
-                    className={`font-semibold leading-tight tracking-tight block truncate ${
+                    className={`font-semibold leading-tight tracking-tight block truncate transition-all duration-300 ${
                       isScrolled
                         ? "text-[13px] sm:text-xl flex-1 sm:flex-none"
                         : "text-lg sm:text-xl"
@@ -244,7 +192,7 @@ export function StickyStepNav({
                 </div>
                 <div
                   data-testid="step-nav-sublabel"
-                  className={`transition-opacity duration-150 ease-out motion-reduce:transition-none overflow-hidden ${
+                  className={`transition-[max-height,opacity,margin] duration-300 ease-in-out motion-reduce:transition-none overflow-hidden ${
                     isScrolled
                       ? "max-h-0 opacity-0 sm:max-h-12 sm:opacity-100 sm:mt-1"
                       : "max-h-12 opacity-100 mt-1"
@@ -268,7 +216,7 @@ export function StickyStepNav({
         {/* Compact Sticky Date Ruler when viewing Step I */}
         {activeTab === "itinerary" && (
           <div
-            className={`flex items-center gap-1.5 overflow-x-auto bg-[#EFE7D8]/85 border-t border-[#1F1A16]/15 ${
+            className={`flex items-center gap-1.5 overflow-x-auto bg-[#EFE7D8]/85 border-t border-[#1F1A16]/15 transition-all duration-300 ease-in-out ${
               isScrolled ? "px-2 py-1 sm:px-3 sm:py-2" : "px-3 py-2"
             }`}
           >
@@ -276,7 +224,7 @@ export function StickyStepNav({
               type="button"
               onClick={() => onSelectDayNum(null)}
               style={monoStyle}
-              className={`shrink-0 text-[11px] uppercase tracking-[0.14em] border transition-colors duration-200 cursor-pointer ${
+              className={`shrink-0 text-[11px] uppercase tracking-[0.14em] border transition-all duration-300 cursor-pointer ${
                 isScrolled ? "px-2 py-0.5 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
               } ${
                 selectedDayNum === null
@@ -296,7 +244,7 @@ export function StickyStepNav({
                     onSelectDayNum(isSelected ? null : d.dayNumber)
                   }
                   style={monoStyle}
-                  className={`shrink-0 text-[11px] uppercase tracking-[0.12em] border transition-colors duration-200 cursor-pointer ${
+                  className={`shrink-0 text-[11px] uppercase tracking-[0.12em] border transition-all duration-300 cursor-pointer ${
                     isScrolled
                       ? "px-2 py-0.5 sm:px-2.5 sm:py-1.5"
                       : "px-2.5 py-1.5"
