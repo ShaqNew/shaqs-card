@@ -237,7 +237,10 @@ export default function ThailandTripDashboard() {
         onOpenChangeLog={() => setIsChangeLogOpen(true)}
       />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 sm:pt-12">
+      <div
+        style={{ overflowAnchor: "none" }}
+        className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 sm:pt-12"
+      >
         <EditorialMasthead
           countdown={countdown}
           overallReadinessPct={overallReadinessPct}
