@@ -28,7 +28,7 @@ export function useThailandTripState() {
   const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "synced">(
     "local"
   );
-  const [activeActor, setActiveActor] = useState<"Shaq" | "Naana">("Shaq");
+  const [activeActor, setActiveActor] = useState<"Shaq" | "Naana">("Naana");
 
   const [countdown, setCountdown] = useState<CountdownState>({
     days: 96,

@@ -171,28 +171,52 @@ describe("Naana's Space Hub & Thailand 2027 Trip Dashboard", () => {
     expect(screen.getByText(/~£3,051.90/i)).toBeInTheDocument();
   });
 
-  it("records changes in the Folio Change Log when items are completed or added", () => {
+  it("defaults active editor to Naana and preserves existing change log entries without alteration", () => {
+    // Seed pre-existing change log entry from Shaq to verify past entries are not rewritten
+    const existingLog = {
+      id: "log-seed-1",
+      timestamp: 1700000000000,
+      actor: "Shaq" as const,
+      section: "prep" as const,
+      action: "Completed checklist item",
+      detail: "Initial prep item completed by Shaq",
+    };
+    window.localStorage.setItem(
+      "naanas_space_thailand_2027_v1",
+      JSON.stringify({
+        changeLog: [existingLog],
+      })
+    );
+
     render(<ThailandTripDashboard />);
 
-    // Switch active editor to Naana
-    fireEvent.click(screen.getByRole("button", { name: /^Naana$/i }));
+    // Verify Naana is active editor by default in TopEditorialBar (terracotta styling)
+    const naanaEditorBtn = screen.getByRole("button", { name: /^Naana$/i });
+    expect(naanaEditorBtn).toHaveClass("bg-[#A8442A]");
 
-    // Complete a prep item
+    // Complete a prep item as Naana (without having to manually switch editor)
     fireEvent.click(screen.getByRole("button", { name: /Prep & Apps/i }));
     const grabCheckbox = screen.getByRole("checkbox", {
       name: /Southeast Asia's Uber equivalent/i,
     });
     fireEvent.click(grabCheckbox);
 
-    // Open Change Log drawer
-    const logBtn = screen.getByRole("button", { name: /CHANGE LOG \(1\)/i });
+    // Open Change Log drawer - count should be 2 (existing 1 + new 1)
+    const logBtn = screen.getByRole("button", { name: /CHANGE LOG \(2\)/i });
     fireEvent.click(logBtn);
 
     expect(
       screen.getByRole("heading", { name: /Folio Change Log/i })
     ).toBeInTheDocument();
+
+    // Verify the new entry is recorded under Naana
     expect(
       screen.getByText(/Configured essential app/i)
+    ).toBeInTheDocument();
+
+    // Verify the pre-existing entry still retains its original actor (Shaq) intact
+    expect(
+      screen.getByText(/Initial prep item completed by Shaq/i)
     ).toBeInTheDocument();
   });
 
