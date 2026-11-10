@@ -265,7 +265,7 @@ export function StepPackingStudio({
 
       {/* Section 1: Climate Monograph & Sartorial Etiquette */}
       <div className="bg-[#FBF8F3] border border-[#1F1A16]/20">
-        <div className="px-6 py-4 flex items-center justify-between gap-3 border-b border-[#1F1A16]/15 bg-[#EFE7D8]/40">
+        <div className="px-6 py-4 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#1F1A16]/15 bg-[#EFE7D8]/40">
           <div>
             <span
               style={monoStyle}
