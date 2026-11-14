@@ -7,8 +7,19 @@ import ThailandDossierLayout, {
   viewport as v2Viewport,
 } from "../thailand-2027-v2/layout";
 import { CreateLookModal } from "../thailand-2027-v2/components/CreateLookModal";
+import { DriverCardModal } from "../thailand-2027-v2/components/DriverCardModal";
 import { PolaroidOutfitCard } from "../thailand-2027-v2/components/PolaroidOutfitCard";
-import { DEFAULT_WARDROBE_OUTFITS } from "@/lib/thailandTripData";
+import {
+  detectActiveTripDay,
+  formatDualTimezoneClock,
+  isActivityPast,
+  isTravelTransitDay,
+  parseActivityTimelineWindow,
+  resolveCompanionGrabTarget,
+  resolveDayCompanionStatus,
+  resolveHotelIdForDay,
+} from "../thailand-2027-v2/utils/companion";
+import { DEFAULT_WARDROBE_OUTFITS, TRIP_DAYS } from "@/lib/thailandTripData";
 import {
   STORAGE_KEY as V1_STORAGE_KEY,
   ACTOR_STORAGE_KEY as V1_ACTOR_KEY,
@@ -605,5 +616,475 @@ describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
       Element.prototype.scrollIntoView = origScrollIntoView;
       jest.useRealTimers();
     }
+  });
+});
+
+describe("Thailand 2027 v2 Phase 3 Companion Mode, Driver Card & SOS", () => {
+  const origInnerWidth = window.innerWidth;
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 1024,
+    });
+    HTMLDialogElement.prototype.show = function show() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    };
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: origInnerWidth,
+    });
+  });
+
+  it("detects active trip day with GMT on D00 and ICT on D01–D10 and formats Live Dual Timezone Clock", () => {
+    // 4 Feb 2027 afternoon & evening in GMT stays on D00 even after Bangkok passes midnight
+    expect(detectActiveTripDay(new Date("2027-02-04T12:00:00Z"))).toBe(0);
+    expect(detectActiveTripDay(new Date("2027-02-04T18:30:00Z"))).toBe(0);
+
+    // 5–14 Feb in ICT (UTC+7) maps to Days 1..9, while 14 Feb 07:00Z & 18:00Z map to D10 (London-midnight D10 boundary)
+    expect(detectActiveTripDay(new Date("2027-02-05T11:30:00Z"))).toBe(1);
+    expect(detectActiveTripDay(new Date("2027-02-09T09:00:00Z"))).toBe(5);
+    expect(detectActiveTripDay(new Date("2027-02-13T16:30:00Z"))).toBe(9);
+    expect(detectActiveTripDay(new Date("2027-02-14T07:00:00Z"))).toBe(10);
+    expect(detectActiveTripDay(new Date("2027-02-14T18:00:00Z"))).toBe(10);
+
+    // Outside trip dates returns null
+    expect(detectActiveTripDay(new Date("2027-02-03T12:00:00Z"))).toBeNull();
+    expect(detectActiveTripDay(new Date("2027-02-15T12:00:00Z"))).toBeNull();
+
+    const clock = formatDualTimezoneClock(new Date("2027-02-05T09:30:00Z"));
+    expect(clock.londonTime).toBe("09:30");
+    expect(clock.bangkokTime).toBe("16:30");
+    expect(clock.fullLabel).toBe(
+      "London (GMT) 09:30 | Bangkok/Phuket (ICT) 16:30"
+    );
+
+    // Travel & transit day classification (D03 in Bangkok is false; D04 Bangkok->Phuket is true)
+    expect(isTravelTransitDay(0)).toBe(true);
+    expect(isTravelTransitDay(1)).toBe(true);
+    expect(isTravelTransitDay(3)).toBe(false);
+    expect(isTravelTransitDay(4)).toBe(true);
+    expect(isTravelTransitDay(9)).toBe(true);
+    expect(isTravelTransitDay(10)).toBe(true);
+
+    // Leg-aware hotel & Grab resolution
+    expect(resolveHotelIdForDay(0)).toBeNull();
+    expect(resolveHotelIdForDay(3)).toBe("shangri-la-bangkok");
+    expect(resolveHotelIdForDay(10)).toBeNull();
+
+    const d4Checkout = TRIP_DAYS[4].defaultActivities.find(
+      (a) => a.id === "d4-checkout-bkk"
+    )!;
+    const d4Pavilions = TRIP_DAYS[4].defaultActivities.find(
+      (a) => a.id === "d4-pavilions-checkin"
+    )!;
+    expect(resolveHotelIdForDay(4, d4Checkout)).toBe("shangri-la-bangkok");
+    expect(resolveHotelIdForDay(4, d4Pavilions)).toBe("pavilions-phuket");
+    expect(
+      resolveCompanionGrabTarget(0, TRIP_DAYS[0].defaultActivities[0], null)
+    ).toBeNull();
+    expect(
+      resolveCompanionGrabTarget(10, TRIP_DAYS[10].defaultActivities[0], null)
+    ).toBeNull();
+    expect(
+      resolveCompanionGrabTarget(1, TRIP_DAYS[1].defaultActivities[0], "shangri-la-bangkok")?.label
+    ).toBe("Copy Hotel Grab");
+
+    const d1Status = resolveDayCompanionStatus(
+      TRIP_DAYS[1].defaultActivities,
+      [],
+      1,
+      new Date("2027-02-05T11:30:00Z")
+    );
+    expect(d1Status.upNextActivity?.id).toBe("d1-shangrila-checkin");
+    expect(d1Status.countdownLabel).toBe("in 1h");
+  });
+
+  it("parses multi-timezone overnight D10 flights and treats D01 BKK flight window as active until landing", () => {
+    const d10Activities = TRIP_DAYS[10].defaultActivities;
+    const shjLayover = d10Activities.find((a) => a.id === "d10-shj-layover")!;
+    const shjLgw = d10Activities.find((a) => a.id === "d10-flight-g9265")!;
+    const shjLayoverWin = parseActivityTimelineWindow(shjLayover, 10, 0);
+    const shjLgwWin = parseActivityTimelineWindow(shjLgw, 10, 1);
+    expect(shjLayoverWin.hasClockTime).toBe(true);
+    expect(shjLgwWin.hasClockTime).toBe(true);
+    expect(shjLayoverWin.sortMinutes).toBeLessThan(shjLgwWin.sortMinutes);
+
+    // D01 "07:50 GST" -> "Duration: 6h 15m • Lands 17:05 ICT Local Time" is active (not past) at 15:00 ICT (08:00Z)
+    const d1InFlight = resolveDayCompanionStatus(
+      TRIP_DAYS[1].defaultActivities,
+      ["d1-shj-layover"],
+      1,
+      new Date("2027-02-05T08:00:00Z")
+    );
+    expect(d1InFlight.upNextActivity?.id).toBe("d1-flight-g9816");
+    expect(d1InFlight.countdownLabel).toBe("Happening now");
+
+    // Non-clock labels ("Evening • After arrival") are never marked past
+    expect(
+      isActivityPast(
+        { time: "Evening • After arrival", subtitle: "Flexible" },
+        2,
+        23 * 60 + 50,
+        1
+      )
+    ).toBe(false);
+  });
+
+  it("toggles Companion / Today View pre-trip as preview mode (no false NOW/Past), restores Full Spread on toggle off, and opens Driver Modal", () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-14T10:00:00Z"));
+
+    render(<ThailandTripDashboardV2 />);
+
+    // Pre-trip: Companion Mode is off and desktop spread is unchanged
+    expect(screen.queryByTestId("top-bar-dual-clock")).toBeNull();
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+    expect(document.getElementById("day-card-10")).toBeInTheDocument();
+
+    const toggleBtn = screen.getByTestId("companion-mode-toggle");
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Live Dual Clock appears in TopEditorialBar and UP NEXT preview renders on D01 without false NOW or Past warnings
+    expect(screen.getByTestId("top-bar-dual-clock")).toHaveTextContent(
+      /London \(GMT\) 10:00 \| Bangkok\/Phuket \(ICT\) 17:00/i
+    );
+    const upNextCard = screen.getByTestId("up-next-card-d1");
+    expect(upNextCard).toHaveTextContent(/UP NEXT/i);
+    expect(upNextCard).toHaveTextContent(/Preview mode/i);
+    expect(upNextCard).toHaveTextContent(/Today's outfit:/i);
+    expect(screen.queryByTestId("now-timeline-marker-d1")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /Past scheduled time/i })
+    ).toBeNull();
+
+    // Quick Hotel Grab copy action & Hotel Driver Card modal launch
+    fireEvent.click(screen.getByRole("button", { name: /Copy Hotel Grab/i }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("โรงแรมแชงกรี-ลา")
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Hotel Driver Card$/i })
+    );
+    const driverDialog = document.querySelector(
+      "dialog[aria-labelledby='driver-card-hotel-title']"
+    ) as HTMLDialogElement;
+    expect(driverDialog).toHaveAttribute("open");
+    fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+    expect(driverDialog).not.toHaveAttribute("open");
+
+    // Toggling off restores Full Spread pre-trip
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByTestId("top-bar-dual-clock")).toBeNull();
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+    expect(document.getElementById("day-card-10")).toBeInTheDocument();
+  });
+
+  it("auto-defaults to Today on mobile (<640px) during 4–14 Feb 2027, scopes NOW/Past strictly to today, and gates Dual Clock by transit day", () => {
+    // 1. D03 (7 Feb 2027 in Bangkok, non-transit day) hides Top Bar Dual Clock
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-07T06:00:00Z"));
+    window.innerWidth = 1024;
+    const d03Render = render(<ThailandTripDashboardV2 />);
+    expect(screen.queryByTestId("top-bar-dual-clock")).toBeNull();
+    d03Render.unmount();
+
+    // 2. D04 (8 Feb 2027 BKK -> HKT transit day) shows Top Bar Dual Clock
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-08T06:00:00Z"));
+    const d04Render = render(<ThailandTripDashboardV2 />);
+    expect(screen.getByTestId("top-bar-dual-clock")).toBeInTheDocument();
+    d04Render.unmount();
+
+    // 3. D01 (5 Feb 2027 18:30 ICT): Desktop preserves Full Spread while scoping live companion indicators to D01 only
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-05T11:30:00Z"));
+    const desktopRender = render(<ThailandTripDashboardV2 />);
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+    expect(document.getElementById("day-card-5")).toBeInTheDocument();
+    expect(document.getElementById("day-card-10")).toBeInTheDocument();
+
+    expect(screen.getByTestId("top-bar-dual-clock")).toHaveTextContent(
+      /London \(GMT\) 11:30 \| Bangkok\/Phuket \(ICT\) 18:30/i
+    );
+    expect(screen.getByTestId("up-next-card-d1")).toHaveTextContent(
+      /Check-in at Shangri-La Bangkok/i
+    );
+    expect(screen.getByTestId("up-next-card-d1")).toHaveTextContent(
+      /Tonight's outfit:/i
+    );
+    expect(screen.getByTestId("up-next-card-d1")).toHaveTextContent(/in 1h/i);
+    expect(screen.getByTestId("now-timeline-marker-d1")).toHaveTextContent(
+      /NOW .* 18:30 ICT/i
+    );
+
+    // Selecting D05 while on D01 does NOT render companion cards or NOW/Past markers on D05
+    fireEvent.click(document.querySelector('[data-day-chip="5"]') as HTMLElement);
+    expect(document.getElementById("day-card-5")).toBeInTheDocument();
+    expect(screen.queryByTestId("up-next-card-d5")).toBeNull();
+    expect(screen.queryByTestId("now-timeline-marker-d5")).toBeNull();
+
+    // Return to Full Spread and verify D01 past item prompt marks done on tap
+    fireEvent.click(document.querySelector('[data-day-chip="all"]') as HTMLElement);
+    const pastPromptBtns = screen.getAllByRole("button", {
+      name: /Past scheduled time/i,
+    });
+    expect(pastPromptBtns.length).toBeGreaterThanOrEqual(1);
+    const initialCount = pastPromptBtns.length;
+    fireEvent.click(pastPromptBtns[0]);
+    expect(
+      screen.getAllByRole("button", { name: /Past scheduled time/i }).length
+    ).toBe(initialCount - 1);
+    desktopRender.unmount();
+
+    // 4. Mobile (< 640px) opens directly on Today's Day Card (D01)
+    window.innerWidth = 375;
+    render(<ThailandTripDashboardV2 />);
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+    expect(document.getElementById("day-card-0")).toBeNull();
+    expect(screen.getByTestId("single-day-pagination")).toBeInTheDocument();
+  });
+
+  it("upgrades DriverCardModal to native showModal <dialog>, lg: desktop bounds, Wake Lock re-acquisition on visibilitychange, Share fallback, and bottom Done", async () => {
+    const showModalSpy = jest.fn(function showModal(this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    const closeSpy = jest.fn(function close(this: HTMLDialogElement) {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    });
+    HTMLDialogElement.prototype.showModal = showModalSpy;
+    HTMLDialogElement.prototype.close = closeSpy;
+
+    const releaseListeners: Record<string, () => void> = {};
+    const releaseMock = jest.fn().mockResolvedValue(undefined);
+    const requestWakeLockMock = jest.fn().mockImplementation(async () => ({
+      release: releaseMock,
+      addEventListener: jest.fn((evt: string, cb: () => void) => {
+        releaseListeners[evt] = cb;
+      }),
+      removeEventListener: jest.fn((evt: string) => {
+        delete releaseListeners[evt];
+      }),
+    }));
+    const shareMock = jest.fn().mockResolvedValue(undefined);
+    const origWakeLock = (navigator as Navigator & { wakeLock?: unknown })
+      .wakeLock;
+    const origShare = (navigator as Navigator & { share?: unknown }).share;
+    const origVisibility = Object.getOwnPropertyDescriptor(
+      document,
+      "visibilityState"
+    );
+
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      writable: true,
+      value: { request: requestWakeLockMock },
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      writable: true,
+      value: shareMock,
+    });
+
+    try {
+      const onClose = jest.fn();
+      const onCopy = jest.fn();
+
+      const invokerBtn = document.createElement("button");
+      invokerBtn.textContent = "Launch Driver Card";
+      document.body.appendChild(invokerBtn);
+      invokerBtn.focus();
+
+      const { rerender } = render(
+        <DriverCardModal
+          hotelId="pavilions-phuket"
+          onClose={onClose}
+          onCopy={onCopy}
+        />
+      );
+
+      await act(async () => {});
+
+      const dialog = document.querySelector(
+        "dialog[aria-labelledby='driver-card-hotel-title']"
+      ) as HTMLDialogElement;
+      expect(dialog).toHaveAttribute("open");
+      expect(dialog).not.toHaveAttribute("aria-modal");
+      expect(showModalSpy).toHaveBeenCalledTimes(1);
+      expect(requestWakeLockMock).toHaveBeenCalledTimes(1);
+      expect(dialog).toHaveClass("inset-0", "w-full", "h-dvh", "lg:max-w-3xl");
+      expect(dialog.querySelector(".landscape\\:flex-row")).not.toBeNull();
+
+      // Simulate browser releasing wake lock when tab backgrounds, then returning to visible
+      act(() => {
+        releaseListeners.release?.();
+      });
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        get: () => "visible",
+      });
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      expect(requestWakeLockMock).toHaveBeenCalledTimes(2);
+
+      expect(screen.getByTestId("driver-thai-name")).toHaveClass("text-4xl");
+      expect(screen.getByTestId("driver-thai-address")).toHaveClass("text-2xl");
+
+      const callHotelLink = screen.getByRole("link", {
+        name: /Call Hotel \(\+66 76 317 600\)/i,
+      });
+      expect(callHotelLink).toHaveAttribute("href", "tel:+6676317600");
+
+      // Night contrast mode toggle
+      const nightToggle = screen.getByTestId("driver-night-mode-toggle");
+      expect(nightToggle).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(nightToggle);
+      expect(nightToggle).toHaveAttribute("aria-pressed", "true");
+      expect(dialog).toHaveClass("bg-black");
+
+      // Native navigator.share call
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Share Address/i }));
+      });
+      expect(shareMock).toHaveBeenCalledTimes(1);
+
+      // Clipboard fallback when navigator.share is unavailable
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Share Address/i }));
+      });
+      expect(onCopy).toHaveBeenCalledWith(
+        expect.stringContaining("เดอะ พาวิลเลี่ยนส์ ภูเก็ต"),
+        expect.stringContaining("Pavilions Phuket Thai Address")
+      );
+
+      // Bottom Done button triggers onClose
+      fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      // Transitioning hotelId -> null closes dialog, releases Wake Lock, and restores focus
+      rerender(
+        <DriverCardModal hotelId={null} onClose={onClose} onCopy={onCopy} />
+      );
+      expect(closeSpy).toHaveBeenCalled();
+      expect(releaseMock).toHaveBeenCalled();
+      expect(document.activeElement).toBe(invokerBtn);
+
+      // Wake Lock Battery Saver rejection handles silently without throwing
+      requestWakeLockMock.mockRejectedValueOnce(new Error("Battery Saver"));
+      rerender(
+        <DriverCardModal
+          hotelId="shangri-la-bangkok"
+          onClose={onClose}
+          onCopy={onCopy}
+        />
+      );
+      await act(async () => {});
+      expect(dialog).toHaveAttribute("open");
+      invokerBtn.remove();
+    } finally {
+      Object.defineProperty(navigator, "wakeLock", {
+        configurable: true,
+        writable: true,
+        value: origWakeLock,
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        writable: true,
+        value: origShare,
+      });
+      if (origVisibility) {
+        Object.defineProperty(document, "visibilityState", origVisibility);
+      }
+    }
+  });
+
+  it("exposes complete SOS contacts, Dual Clock, Taxi cards inside Pocket Desk & More sheet, and hands focus back cleanly", () => {
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-05T09:30:00Z"));
+    render(<ThailandTripDashboardV2 />);
+
+    // 1. QuickPocketDesk SOS + Live Dual Clock
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open Quick Pocket Desk/i })
+    );
+    const pocketDialog = document.querySelector(
+      "dialog[aria-labelledby='pocket-desk-title']"
+    ) as HTMLDialogElement;
+    expect(screen.getByTestId("pocket-dual-clock")).toHaveTextContent(
+      "London (GMT) 09:30 | Bangkok/Phuket (ICT) 16:30"
+    );
+    for (const href of [
+      "tel:1155",
+      "tel:1669",
+      "tel:+6623058333",
+      "tel:+6622367777",
+      "tel:+6676317600",
+    ]) {
+      expect(pocketDialog.querySelector(`a[href="${href}"]`)).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /CLOSE/i }));
+
+    // 2. More Sheet SOS links + Hotel Taxi Card -> DriverCardModal focus handoff
+    const moreTriggerBtn = screen.getByRole("button", {
+      name: /More steps and tools/i,
+    });
+    moreTriggerBtn.focus();
+    fireEvent.click(moreTriggerBtn);
+    const moreDialog = document.querySelector(
+      "dialog[aria-labelledby='more-sheet-title']"
+    ) as HTMLDialogElement;
+    for (const href of [
+      "tel:1155",
+      "tel:1669",
+      "tel:+6623058333",
+      "tel:+6622367777",
+      "tel:+6676317600",
+    ]) {
+      expect(moreDialog.querySelector(`a[href="${href}"]`)).toBeInTheDocument();
+    }
+
+    const shangriLaCardBtn = screen.getByRole("button", {
+      name: /Shangri-La Taxi Card/i,
+    });
+    const pavilionsCardBtn = screen.getByRole("button", {
+      name: /Pavilions Taxi Card/i,
+    });
+    expect(pavilionsCardBtn).toBeInTheDocument();
+
+    fireEvent.click(shangriLaCardBtn);
+    expect(moreDialog).not.toHaveAttribute("open");
+    const driverDialog = document.querySelector(
+      "dialog[aria-labelledby='driver-card-hotel-title']"
+    ) as HTMLDialogElement;
+    expect(driverDialog).toHaveAttribute("open");
+    expect(driverDialog).toHaveTextContent(/Shangri-La Bangkok/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+    expect(driverDialog).not.toHaveAttribute("open");
+    expect(document.activeElement).toBe(moreTriggerBtn);
   });
 });

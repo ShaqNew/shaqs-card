@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   TRIP_DAYS,
+  HOTEL_BOOKINGS,
   DEFAULT_WARDROBE_OUTFITS,
   ItineraryActivity,
   WardrobeOutfit,
@@ -14,10 +15,7 @@ import {
   CalendarIcon,
   HangerIcon,
 } from "../../styles";
-import {
-  formatDayNumber,
-  parseActivitySortMinutes,
-} from "../../utils/formatters";
+import { formatDayNumber } from "../../utils/formatters";
 import {
   buildGoogleCalendarUrl,
   buildActivityIcsContent,
@@ -31,6 +29,14 @@ import {
   resolveActivityOutfit,
   validateOutfitForActivity,
 } from "../../utils/wardrobe";
+import {
+  detectActiveTripDay,
+  parseActivityTimelineWindow,
+  resolveDayCompanionStatus,
+  isActivityPast,
+  resolveHotelIdForDay,
+  resolveCompanionGrabTarget,
+} from "../../utils/companion";
 
 interface StepItineraryProps {
   tripState: PersistedTripState;
@@ -54,6 +60,12 @@ interface StepItineraryProps {
     dayNumber: number,
     activity?: ItineraryActivity
   ) => void;
+  isCompanionMode?: boolean;
+  onToggleCompanionMode?: () => void;
+  detectedTripDayNum?: number | null;
+  now?: Date;
+  onOpenDriverModal?: (hotelId: string) => void;
+  onCopy?: (text: string, label?: string) => void;
 }
 
 export function StepItinerary({
@@ -68,8 +80,32 @@ export function StepItinerary({
   onUpdateCustomActivity,
   allOutfits = DEFAULT_WARDROBE_OUTFITS,
   onOpenWardrobeDrawer,
+  isCompanionMode: controlledCompanionMode,
+  onToggleCompanionMode,
+  detectedTripDayNum,
+  now,
+  onOpenDriverModal,
+  onCopy,
 }: StepItineraryProps) {
+  const [internalCompanionMode, setInternalCompanionMode] = useState(false);
+  const companionActive = controlledCompanionMode ?? internalCompanionMode;
+  const effectiveNow = now ?? new Date();
+  const effectiveDetectedDay =
+    detectedTripDayNum !== undefined
+      ? detectedTripDayNum
+      : detectActiveTripDay(effectiveNow);
   const [collapsedDayNums, setCollapsedDayNums] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (!companionActive) return;
+    const targetDay =
+      selectedDayNum ?? effectiveDetectedDay ?? 1;
+    setCollapsedDayNums((prev) =>
+      prev.includes(targetDay)
+        ? prev.filter((d) => d !== targetDay)
+        : prev
+    );
+  }, [companionActive, selectedDayNum, effectiveDetectedDay]);
   const [addingToDay, setAddingToDay] = useState<number | null>(null);
   const [openSuggestionInfoKey, setOpenSuggestionInfoKey] = useState<
     string | null
@@ -142,9 +178,8 @@ export function StepItinerary({
   };
 
   const jumpToActiveOrFirstDay = () => {
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const matchedDay = TRIP_DAYS.find((d) => d.dateIso === todayIso);
-    const targetDayNum = matchedDay ? matchedDay.dayNumber : 0;
+    const matchedDayNum = detectActiveTripDay(effectiveNow);
+    const targetDayNum = matchedDayNum !== null ? matchedDayNum : 0;
     onSelectDayNum(null);
     onSetPhaseFilter("all");
     setCollapsedDayNums((prev) => prev.filter((d) => d !== targetDayNum));
@@ -307,6 +342,28 @@ export function StepItinerary({
               </button>
               <button
                 type="button"
+                data-testid="companion-mode-toggle"
+                aria-pressed={companionActive}
+                onClick={() => {
+                  if (onToggleCompanionMode) {
+                    onToggleCompanionMode();
+                  } else {
+                    setInternalCompanionMode((prev) => !prev);
+                  }
+                }}
+                style={monoStyle}
+                className={`min-h-11 sm:min-h-0 px-3 py-1 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border transition-colors cursor-pointer ${
+                  companionActive
+                    ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                    : "bg-[#EFE7D8] text-[#13382E] border-[#13382E]/35 hover:bg-[#13382E] hover:text-[#F6F1E7]"
+                }`}
+              >
+                {companionActive
+                  ? "● Companion Mode: ON"
+                  : "Companion / Today View"}
+              </button>
+              <button
+                type="button"
                 onClick={jumpToActiveOrFirstDay}
                 style={monoStyle}
                 className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 hover:bg-[#13382E] hover:text-[#F6F1E7] transition-colors cursor-pointer"
@@ -335,7 +392,8 @@ export function StepItinerary({
           const allDayActivities = rawActivities
             .map((act, idx) => ({
               act,
-              sortKey: parseActivitySortMinutes(act.time, idx),
+              sortKey: parseActivityTimelineWindow(act, day.dayNumber, idx)
+                .sortMinutes,
               idx,
             }))
             .sort((a, b) =>
@@ -370,6 +428,60 @@ export function StepItinerary({
             act: ItineraryActivity;
             check: ReturnType<typeof validateOutfitForActivity>;
           }[];
+
+          const isLiveTripDay = Boolean(
+            companionActive &&
+              effectiveDetectedDay !== null &&
+              day.dayNumber === effectiveDetectedDay
+          );
+
+          const showCompanionForDay =
+            companionActive &&
+            (effectiveDetectedDay !== null
+              ? day.dayNumber === effectiveDetectedDay
+              : selectedDayNum !== null
+              ? day.dayNumber === selectedDayNum
+              : day.dayNumber === 1);
+
+          const companionStatus = showCompanionForDay
+            ? resolveDayCompanionStatus(
+                allDayActivities,
+                tripState.completedActivityIds,
+                day.dayNumber,
+                effectiveNow
+              )
+            : null;
+          const activeHotelId = resolveHotelIdForDay(
+            day.dayNumber,
+            companionStatus?.upNextActivity,
+            companionStatus?.currentMinutes
+          );
+          const activeHotel = activeHotelId
+            ? HOTEL_BOOKINGS.find((h) => h.id === activeHotelId)
+            : undefined;
+          const upNextOverride = companionStatus?.upNextActivity
+            ? resolveActivityOutfit(
+                companionStatus.upNextActivity,
+                tripState.activityOutfitById,
+                allOutfits
+              )
+            : undefined;
+          const tonightLook = upNextOverride || resolvedDayLook;
+          const upNextMapHref =
+            companionStatus?.upNextActivity?.mapUrl ||
+            (companionStatus?.upNextActivity?.location
+              ? `https://maps.google.com/?q=${encodeURIComponent(
+                  companionStatus.upNextActivity.location
+                )}`
+              : activeHotel?.mapUrl ||
+                `https://maps.google.com/?q=${encodeURIComponent(
+                  day.locationBadge
+                )}`);
+          const grabTarget = resolveCompanionGrabTarget(
+            day.dayNumber,
+            companionStatus?.upNextActivity || null,
+            activeHotelId
+          );
 
           return (
             <article
@@ -752,10 +864,163 @@ export function StepItinerary({
 
                   {/* Right Column (8 cols): Chronological Schedule & Custom Entry Form */}
                   <div className="lg:col-span-8 p-6 sm:p-8 flex flex-col justify-between space-y-6">
+                    {showCompanionForDay &&
+                      companionStatus &&
+                      (() => {
+                        const upNextWin = companionStatus.upNextActivity
+                          ? parseActivityTimelineWindow(
+                              companionStatus.upNextActivity,
+                              day.dayNumber,
+                              0
+                            )
+                          : null;
+                        const isEveningUpNext = Boolean(
+                          companionStatus.upNextActivity &&
+                            (companionStatus.upNextActivity.category ===
+                              "romance" ||
+                              companionStatus.upNextActivity.category ===
+                                "dining" ||
+                              (upNextWin?.hasClockTime &&
+                                upNextWin.startMinutes >= 17 * 60))
+                        );
+
+                        return (
+                          <div
+                            data-testid={`up-next-card-d${day.dayNumber}`}
+                            className="bg-[#EFE7D8] border-2 border-[#13382E] p-4 sm:p-5 space-y-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span
+                                style={monoStyle}
+                                className="text-[11px] uppercase tracking-[0.14em] text-[#13382E] font-bold"
+                              >
+                                {isLiveTripDay
+                                  ? "UP NEXT • TODAY COMPANION"
+                                  : "UP NEXT • COMPANION PREVIEW"}
+                              </span>
+                              <span
+                                style={monoStyle}
+                                className="px-2 py-0.5 bg-[#13382E] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold"
+                              >
+                                {isLiveTripDay
+                                  ? companionStatus.countdownLabel
+                                  : "Preview mode"}
+                              </span>
+                            </div>
+
+                            {companionStatus.upNextActivity ? (
+                              <div className="space-y-1">
+                                <div
+                                  style={monoStyle}
+                                  className="text-xs text-[#A8442A] font-semibold"
+                                >
+                                  {companionStatus.upNextActivity.time}
+                                </div>
+                                <h4
+                                  style={serifStyle}
+                                  className="text-xl sm:text-2xl font-medium text-[#1F1A16]"
+                                >
+                                  {companionStatus.upNextActivity.title}
+                                </h4>
+                                {companionStatus.upNextActivity.location && (
+                                  <p
+                                    style={monoStyle}
+                                    className="text-[11px] text-[#5C5248]"
+                                  >
+                                    LOC: {companionStatus.upNextActivity.location}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-[#13382E] font-medium">
+                                Every planned movement for Day{" "}
+                                {formatDayNumber(day.dayNumber)} is checked off.
+                              </p>
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <a
+                                href={upNextMapHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={monoStyle}
+                                className="min-h-11 px-3 py-2 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] text-[#13382E] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1"
+                              >
+                                <span>Maps</span>
+                                <ExternalArrow />
+                              </a>
+
+                              {activeHotelId && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onOpenDriverModal?.(activeHotelId)
+                                  }
+                                  style={monoStyle}
+                                  className="min-h-11 px-3 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
+                                >
+                                  Hotel Driver Card
+                                </button>
+                              )}
+
+                              {grabTarget && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onCopy?.(
+                                      grabTarget.script,
+                                      grabTarget.toastLabel
+                                    )
+                                  }
+                                  style={monoStyle}
+                                  className="min-h-11 px-3 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
+                                >
+                                  {grabTarget.label}
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onOpenWardrobeDrawer?.(
+                                    day.dayNumber,
+                                    companionStatus.upNextActivity || undefined
+                                  )
+                                }
+                                disabled={!onOpenWardrobeDrawer}
+                                style={monoStyle}
+                                className="min-h-11 px-3 py-2 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border border-[#1F1A16]/25 text-[11px] uppercase tracking-[0.08em] inline-flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
+                              >
+                                <HangerIcon className="w-3.5 h-3.5" />
+                                <span>
+                                  {isEveningUpNext
+                                    ? "Tonight's outfit:"
+                                    : "Today's outfit:"}{" "}
+                                  {tonightLook
+                                    ? tonightLook.title
+                                    : "Choose Look"}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
                     <div className="divide-y divide-[#1F1A16]/12">
-                      {allDayActivities.map((act) => {
+                      {allDayActivities.map((act, actIdx) => {
                         const isDone =
                           tripState.completedActivityIds.includes(act.id);
+                        const pastUncompleted = Boolean(
+                          isLiveTripDay &&
+                            companionStatus &&
+                            !isDone &&
+                            isActivityPast(
+                              act,
+                              actIdx,
+                              companionStatus.currentMinutes,
+                              day.dayNumber
+                            )
+                        );
                         const style = CATEGORY_EDITORIAL_STYLES[act.category];
                         const actOutfit = resolveActivityOutfit(
                           act,
@@ -768,12 +1033,35 @@ export function StepItinerary({
                           act
                         );
                         return (
-                          <div
-                            key={act.id}
-                            className={`py-4 first:pt-0 last:pb-0 flex items-start gap-4 transition-opacity ${
-                              isDone ? "opacity-55" : ""
-                            }`}
-                          >
+                          <React.Fragment key={act.id}>
+                            {isLiveTripDay &&
+                              companionStatus &&
+                              actIdx === companionStatus.nowMarkerIndex && (
+                                <div
+                                  data-testid={`now-timeline-marker-d${day.dayNumber}`}
+                                  className="py-2 flex items-center gap-2"
+                                >
+                                  <span
+                                    style={monoStyle}
+                                    className="px-2.5 py-0.5 bg-[#A8442A] text-[#FBF8F3] text-[11px] uppercase tracking-[0.14em] font-bold"
+                                  >
+                                    NOW &bull; {companionStatus.currentTimeLabel}
+                                  </span>
+                                  <span className="flex-1 h-px bg-[#A8442A]/50" />
+                                </div>
+                              )}
+                            <div
+                              data-past-uncompleted={
+                                pastUncompleted ? "true" : undefined
+                              }
+                              className={`py-4 first:pt-0 last:pb-0 flex items-start gap-4 transition-opacity ${
+                                isDone
+                                  ? "opacity-55"
+                                  : pastUncompleted
+                                  ? "opacity-70"
+                                  : ""
+                              }`}
+                            >
                             {/* Editorial Ink Checkbox */}
                             <button
                               type="button"
@@ -975,6 +1263,20 @@ export function StepItinerary({
                                   </p>
                                 )}
 
+                                {pastUncompleted && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      onToggleActivityCompleted(act.id)
+                                    }
+                                    style={monoStyle}
+                                    className="min-h-11 sm:min-h-0 px-2.5 py-1 bg-[#EFE7D8] hover:bg-[#13382E] hover:text-[#F6F1E7] border border-[#1F1A16]/20 text-[11px] text-[#5C5248] transition-colors cursor-pointer inline-flex items-center gap-1"
+                                  >
+                                    Past scheduled time &mdash; tap &#10003; to
+                                    mark done
+                                  </button>
+                                )}
+
                                 {act.notes && (
                                   <div className="text-xs text-[#4A4036] bg-[#EFE7D8]/70 border-l-2 border-[#9E7B3B] pl-3 py-2 mt-1.5">
                                     {act.notes}
@@ -1100,9 +1402,27 @@ export function StepItinerary({
                                   )}
                               </div>
                             )}
-                          </div>
+                            </div>
+                          </React.Fragment>
                         );
                       })}
+                      {isLiveTripDay &&
+                        companionStatus &&
+                        companionStatus.nowMarkerIndex ===
+                          allDayActivities.length && (
+                          <div
+                            data-testid={`now-timeline-marker-d${day.dayNumber}`}
+                            className="py-2 flex items-center gap-2"
+                          >
+                            <span
+                              style={monoStyle}
+                              className="px-2.5 py-0.5 bg-[#A8442A] text-[#FBF8F3] text-[11px] uppercase tracking-[0.14em] font-bold"
+                            >
+                              NOW &bull; {companionStatus.currentTimeLabel}
+                            </span>
+                            <span className="flex-1 h-px bg-[#A8442A]/50" />
+                          </div>
+                        )}
                     </div>
 
                     {/* Add Custom Activity Drawer */}

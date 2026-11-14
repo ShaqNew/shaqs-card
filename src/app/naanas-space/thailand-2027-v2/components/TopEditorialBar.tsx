@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { monoStyle, serifStyle } from "../styles";
+import { DualTimezoneClock } from "../utils/companion";
 
 interface TopEditorialBarProps {
   activeActor: "Shaq" | "Naana";
@@ -9,6 +10,8 @@ interface TopEditorialBarProps {
   onOpenChangeLog: () => void;
   syncStatus: "local" | "syncing" | "synced";
   onSyncFromCloud: () => void;
+  dualClock?: DualTimezoneClock;
+  showDualClock?: boolean;
 }
 
 export function TopEditorialBar({
@@ -18,6 +21,8 @@ export function TopEditorialBar({
   onOpenChangeLog,
   syncStatus,
   onSyncFromCloud,
+  dualClock,
+  showDualClock = false,
 }: TopEditorialBarProps) {
   const syncLabel =
     syncStatus === "synced"
@@ -141,6 +146,29 @@ export function TopEditorialBar({
           </span>
         </div>
       </div>
+
+      {showDualClock && dualClock && (
+        <div
+          data-testid="top-bar-dual-clock"
+          style={monoStyle}
+          className="max-w-6xl mx-auto mt-1.5 pt-1.5 border-t border-[#1F1A16]/10 flex items-center justify-between gap-2 text-[11px] sm:text-[10px] tracking-[0.06em] sm:tracking-[0.14em] text-[#13382E] font-medium"
+        >
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <span className="whitespace-nowrap">
+              London (GMT) {dualClock.londonTime}
+            </span>{" "}
+            <span aria-hidden="true" className="text-[#8A7E71]">
+              |
+            </span>{" "}
+            <span className="whitespace-nowrap">
+              Bangkok/Phuket (ICT) {dualClock.bangkokTime}
+            </span>
+          </div>
+          <span className="hidden sm:inline text-[#8A7E71] uppercase shrink-0">
+            Live GMT / ICT
+          </span>
+        </div>
+      )}
     </div>
   );
 }

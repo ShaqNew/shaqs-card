@@ -6,11 +6,13 @@ interface UseBottomSheetDialogOptions {
   /**
    * "non-modal": uses showModal() on mobile (<640px) and non-modal show() on sm+.
    * "close": mobile-only sheet that uses showModal() on mobile and closes if resized to sm+.
+   * "modal": always uses top-layer showModal() across all viewports.
    */
-  desktopMode: "non-modal" | "close";
+  desktopMode: "non-modal" | "close" | "modal";
 }
 
 const DESKTOP_MEDIA_QUERY = "(min-width: 640px)";
+let lastClosedOpener: { el: HTMLElement; time: number } | null = null;
 
 function matchesDesktopViewport(): boolean {
   return (
@@ -69,10 +71,27 @@ export function useBottomSheetDialog({
 
     if (open) {
       if (!wasOpenRef.current) {
-        openerRef.current =
+        const currentActive =
           document.activeElement instanceof HTMLElement
             ? document.activeElement
             : null;
+        if (
+          currentActive &&
+          currentActive !== document.body &&
+          !dialog.contains(currentActive) &&
+          !currentActive.closest("dialog")
+        ) {
+          openerRef.current = currentActive;
+        } else if (
+          lastClosedOpener &&
+          Date.now() - lastClosedOpener.time < 500 &&
+          lastClosedOpener.el.isConnected
+        ) {
+          openerRef.current = lastClosedOpener.el;
+          lastClosedOpener = null;
+        } else {
+          openerRef.current = currentActive;
+        }
       }
       wasOpenRef.current = true;
 
@@ -82,7 +101,7 @@ export function useBottomSheetDialog({
         return;
       }
 
-      const wantModal = !desktopNow || desktopMode !== "non-modal";
+      const wantModal = desktopMode === "modal" || !desktopNow || desktopMode !== "non-modal";
 
       if (dialog.open && isModalRef.current !== wantModal) {
         suppressCloseCountRef.current += 1;
@@ -117,14 +136,19 @@ export function useBottomSheetDialog({
       if (hadBeenOpen) {
         const opener = openerRef.current;
         openerRef.current = null;
-        if (
-          opener &&
-          opener.isConnected &&
-          (!document.activeElement ||
-            document.activeElement === document.body ||
-            dialog.contains(document.activeElement))
-        ) {
-          opener.focus();
+        if (opener && opener.isConnected) {
+          lastClosedOpener = { el: opener, time: Date.now() };
+          const otherOpenModal = Array.from(
+            document.querySelectorAll("dialog[open]")
+          ).some((el) => el !== dialog);
+          if (
+            !otherOpenModal &&
+            (!document.activeElement ||
+              document.activeElement === document.body ||
+              dialog.contains(document.activeElement))
+          ) {
+            opener.focus();
+          }
         }
       }
       return;
@@ -179,6 +203,18 @@ export function useBottomSheetDialog({
       cleanups.forEach((fn) => fn());
     };
   }, [open, viewportChangeCount, desktopMode]);
+
+  // Lock background document scroll when running as a dedicated full modal
+  useEffect(() => {
+    if (!open || desktopMode !== "modal" || typeof document === "undefined") {
+      return;
+    }
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, desktopMode]);
 
   const handleDialogClose = () => {
     if (suppressCloseCountRef.current > 0) {

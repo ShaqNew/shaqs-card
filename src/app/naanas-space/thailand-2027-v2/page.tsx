@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TRIP_METADATA, TRIP_DAYS, WardrobeOutfit } from "@/lib/thailandTripData";
 import { ActiveTab, PhaseFilter, ChangeLogEntry } from "./types";
 import { monoStyle } from "./styles";
@@ -10,6 +10,11 @@ import {
   resolveDayOutfit,
   resolveActivityOutfit,
 } from "./utils/wardrobe";
+import {
+  detectActiveTripDay,
+  formatDualTimezoneClock,
+  isTravelTransitDay,
+} from "./utils/companion";
 import { TopEditorialBar } from "./components/TopEditorialBar";
 import { ChangeLogDrawer } from "./components/ChangeLogDrawer";
 import { DriverCardModal } from "./components/DriverCardModal";
@@ -30,10 +35,89 @@ import { StepBudgetAndLedger } from "./components/steps/StepBudgetAndLedger";
 
 export type { ChangeLogEntry };
 
+const SSR_ANCHOR_DATE = new Date("2026-01-01T00:00:00Z");
+
 export default function ThailandTripDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("itinerary");
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [selectedDayNum, setSelectedDayNum] = useState<number | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [now, setNow] = useState<Date>(SSR_ANCHOR_DATE);
+  const detectedTripDayNum = useMemo(
+    () => (isHydrated ? detectActiveTripDay(now) : null),
+    [isHydrated, now]
+  );
+  const [isCompanionMode, setIsCompanionMode] = useState(false);
+  const didInitMobileCompanionRef = useRef(false);
+  const prevDetectedDayRef = useRef<number | null>(null);
+  const preCompanionDayRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const syncNow = () => setNow(new Date());
+    setIsHydrated(true);
+    syncNow();
+
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const startAlignedTicker = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+      const msIntoMinute = Date.now() % 60_000;
+      const delay = msIntoMinute === 0 ? 60_000 : 60_000 - msIntoMinute;
+      timeoutId = setTimeout(() => {
+        syncNow();
+        intervalId = setInterval(syncNow, 60_000);
+      }, delay);
+    };
+
+    const handleVisibleOrFocus = () => {
+      if (
+        typeof document === "undefined" ||
+        document.visibilityState === "visible"
+      ) {
+        syncNow();
+        startAlignedTicker();
+      }
+    };
+
+    startAlignedTicker();
+    window.addEventListener("focus", handleVisibleOrFocus);
+    document.addEventListener("visibilitychange", handleVisibleOrFocus);
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+      window.removeEventListener("focus", handleVisibleOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibleOrFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isHydrated) return;
+    const prevDay = prevDetectedDayRef.current;
+    const isFirstHydration = !didInitMobileCompanionRef.current;
+    if (!isFirstHydration && prevDay === detectedTripDayNum) {
+      return;
+    }
+
+    didInitMobileCompanionRef.current = true;
+    prevDetectedDayRef.current = detectedTripDayNum;
+
+    if (detectedTripDayNum !== null) {
+      setIsCompanionMode(true);
+      if (typeof window !== "undefined" && window.innerWidth < 640) {
+        setActiveTab("itinerary");
+        setPhaseFilter("all");
+        setSelectedDayNum(detectedTripDayNum);
+      }
+    } else if (prevDay !== null) {
+      setIsCompanionMode(false);
+      if (typeof window !== "undefined" && window.innerWidth < 640) {
+        setSelectedDayNum(null);
+      }
+    }
+  }, [isHydrated, detectedTripDayNum]);
 
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [driverModalHotelId, setDriverModalHotelId] = useState<string | null>(
@@ -123,6 +207,31 @@ export default function ThailandTripDashboard() {
     setSelectedDayNum(dayNum);
   };
 
+  const handleToggleCompanionMode = () => {
+    const next = !isCompanionMode;
+    if (next) {
+      preCompanionDayRef.current = selectedDayNum;
+      setIsCompanionMode(true);
+      setActiveTab("itinerary");
+      setPhaseFilter("all");
+      if (selectedDayNum === null) {
+        setSelectedDayNum(detectedTripDayNum ?? 1);
+      }
+      return;
+    }
+
+    setIsCompanionMode(false);
+    if (detectedTripDayNum === null) {
+      setSelectedDayNum(preCompanionDayRef.current);
+    }
+  };
+
+  const dualClock = useMemo(() => formatDualTimezoneClock(now), [now]);
+  const showDualClock =
+    isHydrated &&
+    (isTravelTransitDay(detectedTripDayNum) ||
+      (isCompanionMode && detectedTripDayNum === null));
+
   const plannedTotalThb = tripState.plannedExpenses.reduce(
     (sum, exp) => sum + exp.amountThb,
     0
@@ -142,6 +251,8 @@ export default function ThailandTripDashboard() {
         onOpenChangeLog={() => setIsChangeLogOpen(true)}
         syncStatus={syncStatus}
         onSyncFromCloud={fetchFromCloud}
+        dualClock={dualClock}
+        showDualClock={showDualClock}
       />
 
       <ChangeLogDrawer
@@ -160,7 +271,11 @@ export default function ThailandTripDashboard() {
           role="status"
           aria-live="polite"
           className={`${
-            isPocketDeskOpen ? "hidden sm:flex" : "flex"
+            driverModalHotelId
+              ? "hidden"
+              : isPocketDeskOpen
+              ? "hidden sm:flex"
+              : "flex"
           } fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl`}
         >
           <span
@@ -172,12 +287,6 @@ export default function ThailandTripDashboard() {
           <span className="text-sm font-medium">{copiedText}</span>
         </div>
       )}
-
-      <DriverCardModal
-        hotelId={driverModalHotelId}
-        onClose={() => setDriverModalHotelId(null)}
-        onCopy={handleCopy}
-      />
 
       <CreateLookModal
         isOpen={isCreateLookModalOpen}
@@ -253,6 +362,7 @@ export default function ThailandTripDashboard() {
         onOpenChange={setIsPocketDeskOpen}
         onJumpToBudget={() => setActiveTab("budget")}
         copiedText={copiedText}
+        dualClock={dualClock}
       />
 
       <div
@@ -306,6 +416,12 @@ export default function ThailandTripDashboard() {
             onOpenWardrobeDrawer={(dayNumber, activity) =>
               setWardrobeDrawerTarget({ dayNumber, activity })
             }
+            isCompanionMode={isCompanionMode}
+            onToggleCompanionMode={handleToggleCompanionMode}
+            detectedTripDayNum={detectedTripDayNum}
+            now={now}
+            onOpenDriverModal={(hotelId) => setDriverModalHotelId(hotelId)}
+            onCopy={handleCopy}
           />
         )}
 
@@ -375,6 +491,13 @@ export default function ThailandTripDashboard() {
           />
         )}
       </div>
+
+      <DriverCardModal
+        hotelId={driverModalHotelId}
+        onClose={() => setDriverModalHotelId(null)}
+        onCopy={handleCopy}
+        copiedText={copiedText}
+      />
     </div>
   );
 }
