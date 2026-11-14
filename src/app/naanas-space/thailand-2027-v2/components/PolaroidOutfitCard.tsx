@@ -760,7 +760,7 @@ export function PolaroidOutfitCard({
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showActionsSheet, setShowActionsSheet] = useState(false);
-  const [isLinksExpanded, setIsLinksExpanded] = useState(true);
+  const [isLinksExpanded, setIsLinksExpanded] = useState(false);
   const [localCardCollapsed, setLocalCardCollapsed] = useState(false);
 
   const effectiveCollapsed =

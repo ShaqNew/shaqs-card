@@ -413,13 +413,21 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(handleAssign).toHaveBeenCalledWith(3, outfitWithGarments.id);
     });
 
-    it("collapses and expands the GARMENT LINKS list on click", () => {
+    it("keeps GARMENT LINKS collapsed by default and expands/collapses on click", () => {
       render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
 
       const toggleBtn = screen.getByRole("button", {
         name: /GARMENT LINKS \(2\)/i,
       });
+      expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+      expect(toggleBtn).toHaveTextContent(/Show ▼/i);
+      expect(
+        screen.queryByRole("link", { name: /Linen Overshirt/i })
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(toggleBtn);
       expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+      expect(toggleBtn).toHaveTextContent(/Hide ▲/i);
       expect(
         screen.getByRole("link", { name: /Linen Overshirt/i })
       ).toBeInTheDocument();
@@ -429,12 +437,6 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(
         screen.queryByRole("link", { name: /Linen Overshirt/i })
       ).not.toBeInTheDocument();
-
-      fireEvent.click(toggleBtn);
-      expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
-      expect(
-        screen.getByRole("link", { name: /Linen Overshirt/i })
-      ).toBeInTheDocument();
     });
 
     it("invokes onPackOutfitGarments when + To Packing Ledger is clicked and disables when already in ledger", () => {
@@ -549,8 +551,13 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
     it("collapses and expands the entire outfit card on clicking the Collapse/Expand card button", () => {
       render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
 
-      // Initially expanded: Polaroid collage grid and garment links are visible
+      // Initially expanded card shows Polaroid collage grid with GARMENT LINKS collapsed by default
       expect(screen.getByTestId("polaroid-collage-grid")).toBeInTheDocument();
+      const linksToggleBtn = screen.getByRole("button", {
+        name: /GARMENT LINKS \(2\)/i,
+      });
+      expect(linksToggleBtn).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(linksToggleBtn);
       expect(
         screen.getByRole("link", { name: /Linen Overshirt/i })
       ).toBeInTheDocument();
@@ -742,9 +749,17 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         />
       );
 
-      // Compact corner expand cue + overflow-safe garment link guards
+      // Compact corner expand cue + collapsible garment links (collapsed by default) with overflow-safe guards
       const expandCues = screen.getAllByTestId("polaroid-tile-expand-cue");
       expect(expandCues).toHaveLength(2);
+      const garmentLinksToggle = screen.getByRole("button", {
+        name: /GARMENT LINKS \(2\)/i,
+      });
+      expect(garmentLinksToggle).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("link", { name: /Silk Halter Top/i })
+      ).not.toBeInTheDocument();
+      fireEvent.click(garmentLinksToggle);
       const firstLink = screen.getByRole("link", { name: /Silk Halter Top/i });
       expect(firstLink).toHaveClass("max-w-full", "min-w-0");
 
