@@ -34,6 +34,22 @@ export default function NaanasSpaceHub() {
               </p>
             </div>
           </Link>
+          <Link
+            href="/naanas-space/thailand-2027-v2"
+            className="md:col-span-2 group flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-slate-900/70 backdrop-blur-sm border border-emerald-500/30 rounded-2xl shadow-lg transition-all hover:bg-slate-800/80 hover:border-emerald-400/60"
+          >
+            <div className="flex items-center gap-3">
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-400/30 text-emerald-300 text-xs font-bold tracking-wide uppercase">
+                v2 Mobile Companion
+              </span>
+              <span className="text-sm sm:text-base font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                Open Thailand 2027 v2 (Mobile-First View &bull; Shared Live Data)
+              </span>
+            </div>
+            <span className="text-xs font-mono text-emerald-300 group-hover:translate-x-0.5 transition-transform">
+              /thailand-2027-v2 &rarr;
+            </span>
+          </Link>
           <Link 
             href="/naanas-space/loml-renewal"
             className="group flex flex-col justify-between p-8 bg-slate-900/50 backdrop-blur-sm border border-slate-800 rounded-3xl shadow-xl transition-all hover:bg-slate-800 hover:border-purple-500/30 hover:shadow-purple-500/10"
