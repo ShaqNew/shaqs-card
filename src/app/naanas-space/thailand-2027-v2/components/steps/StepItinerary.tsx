@@ -1227,6 +1227,52 @@ export function StepItinerary({
           );
         })}
       </div>
+
+      {selectedDayNum !== null && (
+        <div
+          data-testid="single-day-pagination"
+          className="bg-[#FBF8F3] border border-[#1F1A16]/20 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2"
+        >
+          <button
+            type="button"
+            disabled={selectedDayNum <= 0}
+            onClick={() => {
+              onSelectDayNum(selectedDayNum - 1);
+              document
+                .getElementById("step-content-anchor")
+                ?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+            }}
+            style={monoStyle}
+            className="min-h-11 px-4 py-2.5 bg-[#F6F1E7] border border-[#1F1A16]/25 hover:border-[#13382E] text-[11px] uppercase tracking-[0.1em] text-[#1F1A16] font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            &larr; Prev Day
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSelectDayNum(null)}
+            style={monoStyle}
+            className="min-h-11 px-4 py-2.5 bg-[#EFE7D8] hover:bg-[#1F1A16] hover:text-[#F6F1E7] border border-[#1F1A16]/25 text-[11px] uppercase tracking-[0.1em] text-[#1F1A16] font-semibold cursor-pointer transition-colors"
+          >
+            Full Spread (All 11 Days)
+          </button>
+
+          <button
+            type="button"
+            disabled={selectedDayNum >= TRIP_DAYS.length - 1}
+            onClick={() => {
+              onSelectDayNum(selectedDayNum + 1);
+              document
+                .getElementById("step-content-anchor")
+                ?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+            }}
+            style={monoStyle}
+            className="min-h-11 px-4 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] border border-[#13382E] text-[11px] uppercase tracking-[0.1em] text-[#F6F1E7] font-semibold cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next Day &rarr;
+          </button>
+        </div>
+      )}
     </section>
   );
 }

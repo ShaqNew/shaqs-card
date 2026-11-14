@@ -16,6 +16,13 @@ describe("StickyStepNav Component", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     Object.defineProperty(window, "scrollY", { value: 0, writable: true });
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    };
   });
 
   it("renders all 6 step navigation buttons with labels and sub labels when not stuck", () => {

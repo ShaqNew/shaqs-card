@@ -40,6 +40,7 @@ export default function ThailandTripDashboard() {
     null
   );
   const [isChangeLogOpen, setIsChangeLogOpen] = useState(false);
+  const [isPocketDeskOpen, setIsPocketDeskOpen] = useState(false);
   const [isCreateLookModalOpen, setIsCreateLookModalOpen] = useState(false);
   const [editingOutfit, setEditingOutfit] = useState<WardrobeOutfit | null>(
     null
@@ -231,15 +232,19 @@ export default function ThailandTripDashboard() {
         gbpInput={gbpInput}
         onThbChange={handleThbChange}
         onGbpChange={handleGbpChange}
+        onSetQuickThbPreset={setQuickThbPreset}
         onCopy={handleCopy}
         onOpenDriverModal={(hotelId) => setDriverModalHotelId(hotelId)}
         changeLogCount={(tripState.changeLog || []).length}
         onOpenChangeLog={() => setIsChangeLogOpen(true)}
+        isOpen={isPocketDeskOpen}
+        onOpenChange={setIsPocketDeskOpen}
+        onJumpToBudget={() => setActiveTab("budget")}
       />
 
       <div
         style={{ overflowAnchor: "none" }}
-        className="max-w-6xl mx-auto px-4 sm:px-8 pt-8 sm:pt-12"
+        className="max-w-6xl mx-auto px-4 sm:px-8 pt-6 sm:pt-12"
       >
         <EditorialMasthead
           countdown={countdown}
@@ -258,6 +263,15 @@ export default function ThailandTripDashboard() {
           packingProgress={packingProgress}
           selectedDayNum={selectedDayNum}
           onSelectDayNum={setSelectedDayNum}
+          activeActor={activeActor}
+          onSetActiveActor={handleSetActiveActor}
+          changeLogCount={(tripState.changeLog || []).length}
+          onOpenChangeLog={() => setIsChangeLogOpen(true)}
+          syncStatus={syncStatus}
+          onSyncFromCloud={fetchFromCloud}
+          onOpenPocketDesk={() => setIsPocketDeskOpen(true)}
+          isPocketOpen={isPocketDeskOpen}
+          onOpenDriverModal={(hotelId) => setDriverModalHotelId(hotelId)}
         />
 
         {activeTab === "itinerary" && (

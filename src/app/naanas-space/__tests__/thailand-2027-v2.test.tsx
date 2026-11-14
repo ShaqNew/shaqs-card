@@ -115,12 +115,13 @@ describe("Thailand 2027 v2 Route & Cross-Route Shared State", () => {
 describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
   beforeEach(() => {
     window.localStorage.clear();
-    if (!HTMLDialogElement.prototype.showModal) {
-      HTMLDialogElement.prototype.showModal = jest.fn();
-    }
-    if (!HTMLDialogElement.prototype.close) {
-      HTMLDialogElement.prototype.close = jest.fn();
-    }
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    };
   });
 
   it("exports viewport metadata with cover fit, cream themeColor, interactiveWidget, and renders min-h-dvh without @import style", () => {
@@ -155,7 +156,7 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
 
     // Quick Pocket Desk
     fireEvent.click(screen.getByRole("button", { name: /Quick Tools/i }));
-    expect(screen.getByText(/INSTANT CURRENCY \(1 GBP ≈ 44\.5 THB\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 GBP ≈ 44\.5 THB/i)).toBeInTheDocument();
     expect(screen.queryByText(/&approx;/i)).toBeNull();
     const pocketThb = screen.getByLabelText(/Quick THB input/i);
     const pocketGbp = screen.getByLabelText(/Quick GBP input/i);
@@ -297,5 +298,183 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     );
     expect(tileExpandPill).toBeDefined();
     expect(tileExpandPill).toHaveClass("opacity-100", "sm:opacity-0");
+  });
+});
+
+describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    };
+  });
+
+  it("mounts a single responsive <nav> with the 5-slot mobile bottom bar and opens the More dialog sheet to switch steps", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    const navs = screen.getAllByRole("navigation", {
+      name: /Trip Dashboard Views/i,
+    });
+    expect(navs).toHaveLength(1);
+    expect(navs[0]).toHaveClass(
+      "fixed",
+      "bottom-0",
+      "grid-cols-5",
+      "sm:static",
+      "pb-[env(safe-area-inset-bottom)]"
+    );
+
+    expect(screen.getByText("Plan")).toBeInTheDocument();
+    expect(screen.getByText("Vault")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Open Quick Pocket Desk/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Pack")).toBeInTheDocument();
+
+    const moreBtn = screen.getByRole("button", {
+      name: /More steps and tools/i,
+    });
+    fireEvent.click(moreBtn);
+
+    const moreDialog = document.querySelector(
+      "dialog[aria-labelledby='more-sheet-title']"
+    );
+    expect(moreDialog).toBeInTheDocument();
+    expect(moreDialog).toHaveAttribute("open");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Step III .* Pre-Departure/i })
+    );
+    expect(
+      document.querySelector("dialog[aria-labelledby='more-sheet-title']")
+    ).toBeNull();
+    expect(
+      screen.getByRole("checkbox", { name: /Southeast Asia's Uber equivalent/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(moreBtn);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Step V .* Cultural Guide/i })
+    );
+    expect(
+      document.querySelector('a[href="tel:1155"]')
+    ).toBeInTheDocument();
+
+    fireEvent.click(moreBtn);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Step VI .* Budget Ledger/i })
+    );
+    expect(screen.getByLabelText(/SIAMESE BAHT/i)).toBeInTheDocument();
+  });
+
+  it("renders compact TopEditorialBar on mobile with single DOM S/N avatar chips and mobile-hidden Change Log button", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    expect(screen.getByText("Thailand '27")).toHaveClass("sm:hidden");
+
+    const shaqBtns = screen.getAllByRole("button", { name: /^Shaq$/i });
+    const naanaBtns = screen.getAllByRole("button", { name: /^Naana$/i });
+    expect(shaqBtns).toHaveLength(1);
+    expect(naanaBtns).toHaveLength(1);
+    expect(shaqBtns[0]).toHaveTextContent(/SShaq/);
+    expect(naanaBtns[0]).toHaveTextContent(/NNaana/);
+
+    const changeLogBtn = screen.getByRole("button", { name: /CHANGE LOG/i });
+    expect(changeLogBtn).toHaveClass("hidden", "sm:inline-flex");
+  });
+
+  it("keeps #masthead-chronometer mounted while toggling collapsible mobile masthead dossier", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    expect(document.getElementById("masthead-chronometer")).toBeInTheDocument();
+    expect(
+      screen.getByTestId("mobile-compact-countdown")
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("mobile-readiness-ring")).toBeInTheDocument();
+
+    const extendedDossier = document.getElementById(
+      "masthead-extended-dossier"
+    );
+    expect(extendedDossier).toHaveClass("hidden", "sm:block");
+
+    const toggleBtn = screen.getByRole("button", {
+      name: /Show full dossier/i,
+    });
+    expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+    expect(toggleBtn).toHaveTextContent(/Hide full dossier/i);
+    expect(extendedDossier).toHaveClass("block");
+  });
+
+  it("enables snap-scrolling on Step I Date Ruler and navigates single days via Prev/Next Day buttons", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    const ruler = screen.getByTestId("step-date-ruler");
+    expect(ruler).toHaveClass("snap-x", "snap-mandatory");
+
+    fireEvent.click(screen.getByRole("button", { name: /D00/i }));
+    expect(screen.getByTestId("single-day-pagination")).toBeInTheDocument();
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+    expect(document.getElementById("day-card-1")).toBeNull();
+
+    const prevBtn = screen.getByRole("button", { name: /Prev Day/i });
+    const nextBtn = screen.getByRole("button", { name: /Next Day/i });
+    expect(prevBtn).toBeDisabled();
+    expect(nextBtn).not.toBeDisabled();
+
+    fireEvent.click(nextBtn);
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+    expect(document.getElementById("day-card-0")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /Prev Day/i }));
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Full Spread \(All 11 Days\)/i })
+    );
+    expect(screen.queryByTestId("single-day-pagination")).toBeNull();
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+  });
+
+  it("opens QuickPocketDesk as a native dialog bottom sheet with THB presets, stacked PNR chips, SOS dials, and Log Expense shortcut", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open Quick Pocket Desk/i })
+    );
+
+    const dialog = document.querySelector(
+      "dialog[aria-labelledby='pocket-desk-title']"
+    );
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("open");
+    expect(dialog?.textContent).toContain("≈");
+
+    const thbInput = screen.getByLabelText(/Quick THB input/i) as HTMLInputElement;
+    fireEvent.click(screen.getByRole("button", { name: "500 ฿" }));
+    expect(thbInput.value).toBe("500");
+
+    const pavilionsBtn = screen
+      .getByText("78165SH099776")
+      .closest("button") as HTMLButtonElement;
+    expect(pavilionsBtn).toHaveClass("flex-col");
+    expect(
+      pavilionsBtn.querySelectorAll("span").length
+    ).toBeGreaterThanOrEqual(2);
+
+    expect(dialog?.querySelector('a[href="tel:1155"]')).toBeInTheDocument();
+    expect(dialog?.querySelector('a[href="tel:1669"]')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Log Expense/i }));
+    expect(
+      document.querySelector("dialog[aria-labelledby='pocket-desk-title']")
+    ).toBeNull();
+    expect(screen.getByLabelText(/SIAMESE BAHT/i)).toBeInTheDocument();
   });
 });
