@@ -91,7 +91,7 @@ export function GarmentLightboxModal({
           : "Expanded garment preview"
       }
       onClose={handleDialogClose}
-      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[70] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[70] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 sm:backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
       {isOpen && garment && (
         <div
@@ -282,7 +282,7 @@ export function DeleteOutfitConfirmModal({
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-label={`Confirm deletion of ${outfit.title}`}
       onClose={handleDialogClose}
-      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[75] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[75] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 sm:backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
       {isOpen && (
         <div
@@ -407,7 +407,7 @@ function OutfitActionsSheetModal({
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-label={`Actions for ${outfit.title}`}
       onClose={handleDialogClose}
-      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[85dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-sm sm:rounded-lg bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[74] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/75 backdrop:backdrop-blur-xs backdrop:overflow-hidden backdrop:overscroll-contain"
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[85dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-sm sm:rounded-lg bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[74] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/75 sm:backdrop:backdrop-blur-xs backdrop:overflow-hidden backdrop:overscroll-contain"
     >
       {isOpen && (
         <div

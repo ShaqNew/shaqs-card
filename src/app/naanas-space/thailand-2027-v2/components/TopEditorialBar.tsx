@@ -12,6 +12,12 @@ interface TopEditorialBarProps {
   onSyncFromCloud: () => void;
   dualClock?: DualTimezoneClock;
   showDualClock?: boolean;
+  isOffline?: boolean;
+  storageError?: string | null;
+  onDismissStorageError?: () => void;
+  needsActorSelection?: boolean;
+  onDismissActorPrompt?: () => void;
+  isStandaloneApp?: boolean;
 }
 
 export function TopEditorialBar({
@@ -23,6 +29,12 @@ export function TopEditorialBar({
   onSyncFromCloud,
   dualClock,
   showDualClock = false,
+  isOffline = false,
+  storageError = null,
+  onDismissStorageError,
+  needsActorSelection = false,
+  onDismissActorPrompt,
+  isStandaloneApp = false,
 }: TopEditorialBarProps) {
   const syncLabel =
     syncStatus === "synced"
@@ -167,6 +179,80 @@ export function TopEditorialBar({
           <span className="hidden sm:inline text-[#8A7E71] uppercase shrink-0">
             Live GMT / ICT
           </span>
+        </div>
+      )}
+
+      {isOffline && (
+        <div
+          data-testid="offline-status-banner"
+          role="status"
+          style={monoStyle}
+          className="max-w-6xl mx-auto mt-1.5 pt-1.5 border-t border-[#9E7B3B]/30 flex items-center justify-between gap-2 text-[11px] sm:text-[10px] tracking-[0.06em] sm:tracking-[0.12em] text-[#7A591D] font-medium normal-case"
+        >
+          <span>
+            Offline mode &mdash; edits save on this device and sync when back online.
+          </span>
+        </div>
+      )}
+
+      {storageError && (
+        <div
+          data-testid="storage-quota-banner"
+          role="alert"
+          className="max-w-6xl mx-auto mt-1.5 px-2.5 py-2 border border-[#A8442A]/50 bg-[#A8442A]/10 text-[#A8442A] flex items-center justify-between gap-2 text-xs normal-case tracking-normal"
+        >
+          <span className="font-medium">{storageError}</span>
+          {onDismissStorageError && (
+            <button
+              type="button"
+              onClick={onDismissStorageError}
+              style={monoStyle}
+              className="min-h-11 px-2.5 text-[11px] uppercase tracking-wider underline shrink-0 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          )}
+        </div>
+      )}
+
+      {needsActorSelection && (
+        <div
+          data-testid="standalone-actor-prompt"
+          className={`${
+            isStandaloneApp ? "flex" : "flex sm:hidden"
+          } max-w-6xl mx-auto mt-1.5 pt-1.5 border-t border-[#1F1A16]/10 flex-wrap items-center justify-between gap-2 text-xs normal-case tracking-normal text-[#1F1A16]`}
+        >
+          <span className="text-[12px] font-medium text-[#4A4036]">
+            Who is editing on this phone?
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onSetActiveActor("Shaq")}
+              style={monoStyle}
+              className="min-h-11 px-3 py-1 bg-[#13382E] text-[#F6F1E7] text-[11px] uppercase tracking-[0.08em] font-semibold cursor-pointer"
+            >
+              Continue as Shaq
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetActiveActor("Naana")}
+              style={monoStyle}
+              className="min-h-11 px-3 py-1 bg-[#A8442A] text-[#FBF8F3] text-[11px] uppercase tracking-[0.08em] font-semibold cursor-pointer"
+            >
+              Continue as Naana
+            </button>
+            {onDismissActorPrompt && (
+              <button
+                type="button"
+                onClick={onDismissActorPrompt}
+                aria-label="Dismiss profile selection"
+                className="min-h-11 min-w-11 inline-flex items-center justify-center text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+              >
+                &times;
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { TRIP_METADATA, TRIP_DAYS, WardrobeOutfit } from "@/lib/thailandTripData";
 import { ActiveTab, PhaseFilter, ChangeLogEntry, PersistedTripState } from "./types";
 import { monoStyle } from "./styles";
@@ -10,6 +11,7 @@ import {
   triggerPresetHaptic,
 } from "./utils/haptics";
 import { useThailandTripState } from "./hooks/useThailandTripState";
+import { usePwaInstall } from "./hooks/usePwaInstall";
 import {
   isInspirationOutfit,
   resolveDayOutfit,
@@ -21,22 +23,79 @@ import {
   isTravelTransitDay,
 } from "./utils/companion";
 import { TopEditorialBar } from "./components/TopEditorialBar";
-import { ChangeLogDrawer } from "./components/ChangeLogDrawer";
-import { DriverCardModal } from "./components/DriverCardModal";
 import { QuickPocketDesk } from "./components/QuickPocketDesk";
 import { EditorialMasthead } from "./components/EditorialMasthead";
 import { StickyStepNav } from "./components/StickyStepNav";
-import { CreateLookModal } from "./components/CreateLookModal";
-import {
-  WardrobeDrawer,
-  WardrobeDrawerTarget,
-} from "./components/WardrobeDrawer";
+import type { WardrobeDrawerTarget } from "./components/WardrobeDrawer";
 import { StepItinerary } from "./components/steps/StepItinerary";
-import { StepBookingsVault } from "./components/steps/StepBookingsVault";
-import { StepPrepAndApps } from "./components/steps/StepPrepAndApps";
-import { StepPackingStudio } from "./components/steps/StepPackingStudio";
-import { StepGuideAndSos } from "./components/steps/StepGuideAndSos";
-import { StepBudgetAndLedger } from "./components/steps/StepBudgetAndLedger";
+
+function StepTabLoadingFallback() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="min-h-[40vh] border border-[#C9BFA8] bg-[#FBF8F3] p-6 sm:p-10 flex items-center justify-center text-xs uppercase tracking-[0.14em] text-[#8A7E71]"
+      style={monoStyle}
+    >
+      Loading dossier section...
+    </div>
+  );
+}
+
+const ChangeLogDrawer = dynamic(
+  () =>
+    import("./components/ChangeLogDrawer").then((mod) => mod.ChangeLogDrawer),
+  { ssr: false }
+);
+const DriverCardModal = dynamic(
+  () =>
+    import("./components/DriverCardModal").then((mod) => mod.DriverCardModal),
+  { ssr: false }
+);
+const CreateLookModal = dynamic(
+  () =>
+    import("./components/CreateLookModal").then((mod) => mod.CreateLookModal),
+  { ssr: false }
+);
+const WardrobeDrawer = dynamic(
+  () => import("./components/WardrobeDrawer").then((mod) => mod.WardrobeDrawer),
+  { ssr: false }
+);
+const StepBookingsVault = dynamic(
+  () =>
+    import("./components/steps/StepBookingsVault").then(
+      (mod) => mod.StepBookingsVault
+    ),
+  { loading: () => <StepTabLoadingFallback /> }
+);
+const StepPrepAndApps = dynamic(
+  () =>
+    import("./components/steps/StepPrepAndApps").then(
+      (mod) => mod.StepPrepAndApps
+    ),
+  { loading: () => <StepTabLoadingFallback /> }
+);
+const StepPackingStudio = dynamic(
+  () =>
+    import("./components/steps/StepPackingStudio").then(
+      (mod) => mod.StepPackingStudio
+    ),
+  { loading: () => <StepTabLoadingFallback /> }
+);
+const StepGuideAndSos = dynamic(
+  () =>
+    import("./components/steps/StepGuideAndSos").then(
+      (mod) => mod.StepGuideAndSos
+    ),
+  { loading: () => <StepTabLoadingFallback /> }
+);
+const StepBudgetAndLedger = dynamic(
+  () =>
+    import("./components/steps/StepBudgetAndLedger").then(
+      (mod) => mod.StepBudgetAndLedger
+    ),
+  { loading: () => <StepTabLoadingFallback /> }
+);
 
 export type { ChangeLogEntry };
 
@@ -160,6 +219,11 @@ export default function ThailandTripDashboard() {
     tripState,
     updateTripState,
     syncStatus,
+    isOffline,
+    storageError,
+    dismissStorageError,
+    needsActorSelection,
+    dismissActorPrompt,
     fetchFromCloud,
     activeActor,
     handleSetActiveActor,
@@ -192,6 +256,15 @@ export default function ThailandTripDashboard() {
     deleteChangeLogEntry,
     clearAllChangeLogs,
   } = useThailandTripState();
+
+  const {
+    canInstall: canInstallApp,
+    isStandalone: isStandaloneApp,
+    isIosSafari: isIosSafariBrowser,
+    isPrompting: isInstallPrompting,
+    installStatusMessage,
+    promptInstall: handleInstallApp,
+  } = usePwaInstall();
 
   const handleCopy = (text: string, label?: string) => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -387,6 +460,12 @@ export default function ThailandTripDashboard() {
         onSyncFromCloud={fetchFromCloud}
         dualClock={dualClock}
         showDualClock={showDualClock}
+        isOffline={isOffline}
+        storageError={storageError}
+        onDismissStorageError={dismissStorageError}
+        needsActorSelection={needsActorSelection}
+        onDismissActorPrompt={dismissActorPrompt}
+        isStandaloneApp={isStandaloneApp}
       />
 
       <ChangeLogDrawer
@@ -573,6 +652,12 @@ export default function ThailandTripDashboard() {
             plannedTotalThb,
             exchangeRate: tripState.exchangeRate,
           }}
+          canInstallApp={canInstallApp}
+          isStandaloneApp={isStandaloneApp}
+          isIosSafariBrowser={isIosSafariBrowser}
+          isInstallPrompting={isInstallPrompting}
+          installStatusMessage={installStatusMessage}
+          onInstallApp={handleInstallApp}
         />
 
         {activeTab === "itinerary" && (

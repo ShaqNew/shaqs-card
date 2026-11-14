@@ -119,7 +119,7 @@
   - **Prefer Option B (Separate Upstash Redis Key per Photo) over Option A (Vercel Blob):** Upstash Redis is already configured in `route.ts`, whereas `@vercel/blob` is not installed or provisioned. For a 2-person trip (~15–30 compressed WebP photos at ~60–80 KB each = ~1.5–2.5 MB total), storing each photo under `naanas_space_thailand_2027_img_<id>` served via a `GET` route with `Cache-Control: public, max-age=31536000, immutable` requires zero new vendors/tokens, keeps `naanas_space_thailand_2027_v1` under 30 KB, and lets the browser and Service Worker cache images permanently.
   - **Additional Code Fix:** Add the missing **500ms debounce** to the `PUT` request in `useThailandTripState.ts` (keeping `localStorage.setItem` immediate) so rapid checklist taps do not race each other in Upstash.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana (Option A vs Option B recommended for Phase 5)._ **Interim Phase 4 status (`feat/thailand-2027-v2-phase-4`):** `CreateLookModal.tsx` implemented local photo selection (`accept="image/*"` without `capture="environment"`) using client-side `readAndDownscalePhoto()` (`720px` max edge, WebP `0.85` data URL stored inline in `garment.imageUrl` with `url: "#local-photo"`). Keep local photo counts modest until Decision 3 migrates `data:image/*` payloads out of `PersistedTripState` and Phase 5.2 adds `500ms` `PUT` debouncing.
+- **Decision:** **Confirmed & Implemented (`Option B` — Phase 5, `feat/thailand-2027-v2-phase-5`)** — Separate Upstash Redis keys per uploaded photo (`naanas_space_thailand_2027_img_<id>`) via `/api/naanas-space/thailand-2027/wardrobe-image/[id]` (`GET`/`PUT`/`DELETE` with `450_000` char limit and `Cache-Control: public, max-age=31536000, immutable`), shared KV helper (`kv.ts`), `CreateLookModal.tsx` upload-on-submit (`aria-disabled` busy state), and `7.5s` delayed orphan cleanup inside `useThailandTripState.ts` (`extractManagedWardrobeImageIds`) so Undo remains intact while keeping `PersistedTripState` small.
 
 ---
 
@@ -139,7 +139,7 @@
   - **Critical Bug Found in `useThailandTripState.ts` (`fetchFromCloud`):** Currently (lines 62–76), when an edit is made offline, `localStorage` gets `updatedAt = now` and `syncStatus = "local"`. When back online and the window focuses, `fetchFromCloud()` checks `if (cloudUpdated >= localUpdated)`. Because `localUpdated > cloudUpdated`, it keeps local state in memory and sets `setSyncStatus("synced")` **without ever `PUT`-ing the newer local state to Redis**—meaning the next online edit from the other phone silently overwrites those offline changes.
   - **Recommendation:** Add an `else if (localUpdated > cloudUpdated)` branch in `fetchFromCloud()` (plus a `window` `online` listener) that pushes the newer local state (or union-merges ID arrays) to `PUT /api/naanas-space/thailand-2027`. This delivers reliable offline editing in ~25 lines of code without an operation queue.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana (scheduled for Phase 5.2)._
+- **Decision:** **Implemented (Phase 5.2 — `feat/thailand-2027-v2-phase-5`)** — Lightweight dirty-state sync + Set-Union reconciliation (`utils/syncMerge.ts`) shared across `fetchFromCloud()` (`localUpdated > cloudUpdated` push on `focus` / `online`) and `window` `storage` cross-tab sync (`STORAGE_KEY`, `ACTOR_STORAGE_KEY`, plus `newValue === null` reset), `500ms` `PUT` debounce + `visibilitychange` (`hidden`) / `pagehide` `keepalive` flush, explicit `QuotaExceededError` banner, amber `Offline Mode` banner in `TopEditorialBar.tsx`, and custom Service Worker (`public/thailand-2027-sw.js`).
 
 ---
 
@@ -155,7 +155,7 @@
   - **Android / Google Pixel Priority:** Since this project prioritises Android devices—specifically Google Pixels—Chrome on Android supports the native `beforeinstallprompt` 1-tap **"Install App"** flow (creating a WebAPK that shares Chrome's origin `localStorage`, avoiding any isolated storage partition).
   - **iOS Standalone Nice-to-Have Fallback:** On iOS Safari, installing to the Home Screen requires a manual "Add to Home Screen" tip and creates an isolated `localStorage` partition separate from Safari tabs. While `PersistedTripState` will hydrate from Upstash Redis automatically, `thailand_2027_active_actor_v1` (`activeActor`) is local-only and defaults to `"Naana"`. Prompting `"Using this phone as: [Shaq] [Naana]"` when `ACTOR_STORAGE_KEY` is null remains a lightweight fallback so iOS standalone users aren't silently logged under the wrong name.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana (scheduled for Phase 5.1)._
+- **Decision:** **Confirmed & Implemented (Phase 5.1 — `feat/thailand-2027-v2-phase-5`)** — Route-scoped `public/thailand-2027-v2.webmanifest` (`id` and `start_url: "/naanas-space/thailand-2027-v2"`), custom editorial `"T27"` / `"BKK · HKT"` icons (`public/icons/thailand-2027-{180,192,512,maskable-512}.png`), `v2/layout.tsx` metadata (`appleWebApp` + manifest link), `usePwaInstall.ts` (`beforeinstallprompt` single-use capture + `navigator.install()` check), `"Install Thailand '27 App"` & iOS A2HS tip in `More`, and standalone `"Continue as Shaq"` / `"Continue as Naana"` actor prompt when `ACTOR_STORAGE_KEY` is unset.
 
 ---
 

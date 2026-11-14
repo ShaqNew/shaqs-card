@@ -62,6 +62,7 @@ export function CreateLookModal({
   const [manualImageInput, setManualImageInput] = useState("");
   const [editingGarmentId, setEditingGarmentId] = useState<string | null>(null);
   const [isScraping, setIsScraping] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [scrapeStatus, setScrapeStatus] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -405,9 +406,64 @@ export function CreateLookModal({
     }
   };
 
+  const uploadPendingDataUrlPhotos = async (
+    list: GarmentLink[]
+  ): Promise<GarmentLink[]> => {
+    const hasInlinePhotos = list.some((g) =>
+      g.imageUrl?.startsWith("data:image/")
+    );
+    if (
+      !hasInlinePhotos ||
+      typeof fetch === "undefined" ||
+      (typeof navigator !== "undefined" && navigator.onLine === false)
+    ) {
+      return list;
+    }
+
+    setIsUploadingPhotos(true);
+    try {
+      const now = Date.now().toString(36);
+      const uploaded = await Promise.all(
+        list.map(async (g, idx) => {
+          if (!g.imageUrl || !g.imageUrl.startsWith("data:image/")) {
+            return g;
+          }
+          const imgId = `img_${now}_${idx}_${Math.random()
+            .toString(36)
+            .slice(2, 7)}`;
+          try {
+            const res = await fetch(
+              `/api/naanas-space/thailand-2027/wardrobe-image/${imgId}`,
+              {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ dataUrl: g.imageUrl }),
+              }
+            );
+            if (!res.ok) return g;
+            const data = (await res.json()) as {
+              configured?: boolean;
+              saved?: boolean;
+              imageUrl?: string;
+            };
+            if (data?.configured && data?.saved && data?.imageUrl) {
+              return { ...g, imageUrl: data.imageUrl };
+            }
+          } catch {
+            // Keep compressed local data URL fallback when upload fails or offline
+          }
+          return g;
+        })
+      );
+      return uploaded;
+    } finally {
+      setIsUploadingPhotos(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || isUploadingPhotos) return;
 
     let finalGarments = [...garments];
     const pendingUrl = urlInput.trim();
@@ -448,6 +504,8 @@ export function CreateLookModal({
       }
     }
 
+    finalGarments = await uploadPendingDataUrlPhotos(finalGarments);
+
     const payload: Omit<WardrobeOutfit, "id"> = {
       title: title.trim(),
       owner,
@@ -477,7 +535,7 @@ export function CreateLookModal({
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-labelledby="create-look-modal-title"
       onClose={handleDialogClose}
-      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:max-h-[90dvh] sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/80 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:max-h-[90dvh] sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/80 sm:backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
       {isOpen && (
         <div
@@ -963,10 +1021,15 @@ export function CreateLookModal({
               </button>
               <button
                 type="submit"
+                aria-disabled={isUploadingPhotos ? "true" : undefined}
                 style={monoStyle}
-                className="min-h-11 px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
+                className="min-h-11 px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] aria-disabled:opacity-70 text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
               >
-                {isEditMode ? "Save Look Changes" : "Save Look to Wardrobe"}
+                {isUploadingPhotos
+                  ? "Uploading Photos..."
+                  : isEditMode
+                  ? "Save Look Changes"
+                  : "Save Look to Wardrobe"}
               </button>
             </div>
           </form>

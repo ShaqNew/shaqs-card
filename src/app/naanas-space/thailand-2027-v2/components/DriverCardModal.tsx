@@ -148,7 +148,7 @@ export function DriverCardModal({
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-labelledby="driver-card-hotel-title"
       onClose={handleDialogClose}
-      className={`[&:not([open])]:hidden fixed inset-0 m-0 w-full h-dvh max-w-none max-h-none p-0 lg:m-auto lg:w-full lg:max-w-3xl lg:h-auto lg:max-h-[92dvh] overflow-y-auto overscroll-contain border-0 lg:border-2 shadow-2xl z-50 backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm ${
+      className={`[&:not([open])]:hidden fixed inset-0 m-0 w-full h-dvh max-w-none max-h-none p-0 lg:m-auto lg:w-full lg:max-w-3xl lg:h-auto lg:max-h-[92dvh] overflow-y-auto overscroll-contain border-0 lg:border-2 shadow-2xl z-50 backdrop:bg-[#1F1A16]/85 sm:backdrop:backdrop-blur-sm ${
         isNightContrast
           ? "bg-black text-[#FFE600] border-[#FFE600]"
           : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]"

@@ -1,5 +1,5 @@
 import React from "react";
-import type { Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 
 const dmSerifDisplay = localFont({
@@ -45,6 +45,39 @@ const orbitron = localFont({
   variable: "--font-digital",
   adjustFontFallback: false,
 });
+
+export const metadata: Metadata = {
+  title: "Thailand 2027 Escape — Shaq & Naana",
+  description:
+    "Mobile-first itinerary, confirmed bookings vault, packing studio, and offline travel companion for Shaq & Naana's Thailand 2027 escape.",
+  manifest: "/thailand-2027-v2.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Thailand '27",
+  },
+  icons: {
+    icon: [
+      {
+        url: "/icons/thailand-2027-192.png",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        url: "/icons/thailand-2027-512.png",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+    apple: [
+      {
+        url: "/icons/thailand-2027-180.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
+};
 
 export const viewport: Viewport = {
   width: "device-width",

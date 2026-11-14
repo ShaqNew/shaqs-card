@@ -1,4 +1,38 @@
 import React from "react";
+import fs from "fs";
+import path from "path";
+
+jest.mock("next/dynamic", () => {
+  const g = globalThis as { __v2DynamicPreloads?: Promise<unknown>[] };
+  g.__v2DynamicPreloads = [];
+  return {
+    __esModule: true,
+    default: (
+      loader: () => Promise<
+        | React.ComponentType<unknown>
+        | { default: React.ComponentType<unknown> }
+      >
+    ) => {
+      let Resolved: React.ComponentType<Record<string, unknown>> | null = null;
+      const promise = Promise.resolve()
+        .then(() => loader())
+        .then((mod) => {
+          const m = mod as {
+            default?: React.ComponentType<Record<string, unknown>>;
+          };
+          Resolved =
+            m?.default ??
+            (mod as React.ComponentType<Record<string, unknown>>);
+        });
+      g.__v2DynamicPreloads!.push(promise);
+      return function DynamicTestComponent(props: Record<string, unknown>) {
+        if (!Resolved) return null;
+        return React.createElement(Resolved, props);
+      };
+    },
+  };
+});
+
 import {
   render,
   screen,
@@ -11,6 +45,7 @@ import ThailandTripDashboardV1 from "../thailand-2027/page";
 import ThailandTripDashboardV2 from "../thailand-2027-v2/page";
 import ThailandDossierLayout, {
   viewport as v2Viewport,
+  metadata as v2Metadata,
 } from "../thailand-2027-v2/layout";
 import { CreateLookModal } from "../thailand-2027-v2/components/CreateLookModal";
 import { DriverCardModal } from "../thailand-2027-v2/components/DriverCardModal";
@@ -34,6 +69,11 @@ import {
   STORAGE_KEY as V2_STORAGE_KEY,
   ACTOR_STORAGE_KEY as V2_ACTOR_KEY,
 } from "../thailand-2027-v2/types";
+
+beforeAll(async () => {
+  const g = globalThis as { __v2DynamicPreloads?: Promise<unknown>[] };
+  await Promise.all(g.__v2DynamicPreloads ?? []);
+});
 
 describe("Thailand 2027 v2 Route & Cross-Route Shared State", () => {
   beforeEach(() => {
@@ -1408,6 +1448,370 @@ describe("Thailand 2027 v2 Phase 4 — Component-Level Mobile Polish", () => {
         writable: true,
         value: origVibrate,
       });
+    }
+  });
+});
+
+describe("Thailand 2027 v2 Phase 5 PWA, Offline Sync Debounce, Cross-Tab & Per-Photo Storage", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
+  it("5.1 exports route-scoped PWA manifest, Apple Web App metadata, and valid standalone webmanifest JSON with icons", () => {
+    expect(v2Metadata.manifest).toBe("/thailand-2027-v2.webmanifest");
+    expect(v2Metadata.appleWebApp).toMatchObject({
+      capable: true,
+      title: "Thailand '27",
+    });
+
+    const manifestPath = path.join(
+      process.cwd(),
+      "public",
+      "thailand-2027-v2.webmanifest"
+    );
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    expect(manifest.id).toBe("/naanas-space/thailand-2027-v2");
+    expect(manifest.start_url).toBe("/naanas-space/thailand-2027-v2");
+    expect(manifest.scope).toBe("/naanas-space/thailand-2027-v2");
+    expect(manifest.display).toBe("standalone");
+    expect(manifest.icons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sizes: "192x192", type: "image/png" }),
+        expect.objectContaining({
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "maskable",
+        }),
+      ])
+    );
+
+    expect(
+      fs.existsSync(path.join(process.cwd(), "public", "thailand-2027-sw.js"))
+    ).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(process.cwd(), "public", "icons", "thailand-2027-192.png")
+      )
+    ).toBe(true);
+    expect(
+      fs.existsSync(
+        path.join(process.cwd(), "public", "icons", "thailand-2027-512.png")
+      )
+    ).toBe(true);
+  });
+
+  it("5.1 registers scoped SW, captures beforeinstallprompt for 1-tap Install App in More, and prompts unset actor safely", async () => {
+    const origSw = navigator.serviceWorker;
+    const registerMock = jest.fn().mockResolvedValue({ scope: "/naanas-space/thailand-2027-v2" });
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: { register: registerMock },
+    });
+
+    try {
+      render(<ThailandTripDashboardV2 />);
+
+      expect(registerMock).toHaveBeenCalledWith("/thailand-2027-sw.js", {
+        scope: "/naanas-space/thailand-2027-v2",
+      });
+
+      // Actor selection banner renders when ACTOR_STORAGE_KEY is unset and does not collide with ^Shaq$ query
+      const actorPrompt = screen.getByTestId("standalone-actor-prompt");
+      expect(actorPrompt).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: /^Shaq$/i })).toHaveLength(1);
+
+      fireEvent.click(
+        within(actorPrompt).getByRole("button", { name: /Continue as Shaq/i })
+      );
+      expect(window.localStorage.getItem(V2_ACTOR_KEY)).toBe("Shaq");
+      expect(
+        screen.queryByTestId("standalone-actor-prompt")
+      ).not.toBeInTheDocument();
+
+      // Open More sheet before beforeinstallprompt: no dead install button shown
+      const moreBtn = screen.getByRole("button", {
+        name: /More steps and tools/i,
+      });
+      fireEvent.click(moreBtn);
+      expect(
+        screen.queryByRole("button", { name: /Install Thailand '27 App/i })
+      ).not.toBeInTheDocument();
+
+      // Fire single-use beforeinstallprompt
+      const promptFn = jest.fn().mockResolvedValue(undefined);
+      const installEvent = new Event("beforeinstallprompt", { cancelable: true });
+      Object.assign(installEvent, {
+        prompt: promptFn,
+        userChoice: Promise.resolve({ outcome: "accepted", platform: "android" }),
+      });
+
+      act(() => {
+        window.dispatchEvent(installEvent);
+      });
+      expect(installEvent.defaultPrevented).toBe(true);
+
+      const installBtn = screen.getByRole("button", {
+        name: /Install Thailand '27 App/i,
+      });
+      expect(installBtn).toBeInTheDocument();
+
+      await act(async () => {
+        fireEvent.click(installBtn);
+        await Promise.resolve();
+      });
+
+      expect(promptFn).toHaveBeenCalledTimes(1);
+      expect(screen.getByText(/Thailand '27 app installed/i)).toBeInTheDocument();
+    } finally {
+      Object.defineProperty(navigator, "serviceWorker", {
+        configurable: true,
+        value: origSw,
+      });
+    }
+  });
+
+  it("5.2 debounces PUT sync by 500ms, flushes on visibilitychange hidden, pushes localUpdated > cloudUpdated, and reacts to cross-tab storage resets", async () => {
+    jest.useFakeTimers();
+    const origFetch = global.fetch;
+    const origOnLine = navigator.onLine;
+    let currentCloudUpdatedAt = 500;
+    const putBodies: Array<{ updatedAt?: number; packedItemIds?: string[] }> = [];
+
+    const fetchMock = jest.fn(async (_url: RequestInfo | URL, init?: RequestInit) => {
+      const method = (init?.method || "GET").toUpperCase();
+      if (method === "GET") {
+        return {
+          ok: true,
+          json: async () => ({
+            configured: true,
+            state: {
+              completedPrepIds: ["cloud-prep-older"],
+              updatedAt: currentCloudUpdatedAt,
+            },
+          }),
+        } as Response;
+      }
+      if (method === "PUT") {
+        const parsed = JSON.parse(String(init?.body || "{}"));
+        putBodies.push(parsed.state);
+        currentCloudUpdatedAt = parsed.state?.updatedAt || currentCloudUpdatedAt;
+        return {
+          ok: true,
+          json: async () => ({
+            configured: true,
+            saved: true,
+            updatedAt: currentCloudUpdatedAt,
+          }),
+        } as Response;
+      }
+      return { ok: true, json: async () => ({}) } as Response;
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    try {
+      // Seed newer offline local edits ahead of cloud (localUpdated > cloudUpdated)
+      window.localStorage.setItem(
+        V2_STORAGE_KEY,
+        JSON.stringify({
+          completedPrepIds: ["local-offline-prep"],
+          packedItemIds: [],
+          customPackingItems: [],
+          completedActivityIds: [],
+          customActivitiesByDay: {},
+          dayNotes: {},
+          pavilionsBalancePaid: false,
+          plannedExpenses: [],
+          exchangeRate: 44.48,
+          updatedAt: 9999999999999,
+        })
+      );
+
+      render(<ThailandTripDashboardV2 />);
+
+      // Initial mount GET detects localUpdated > cloudUpdated -> pushes newer local state via PUT
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(putBodies.length).toBeGreaterThanOrEqual(1);
+      const countAfterInitialPush = putBodies.length;
+
+      // Rapidly toggle 2 packing checkboxes -> only ONE debounced PUT fires after 500ms
+      fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Ultra-breathable linen/i })
+      );
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Passports \(valid past Aug 2027\)/i })
+      );
+
+      // Immediately after synchronous clicks, zero new PUT has been sent yet
+      expect(putBodies.length).toBe(countAfterInitialPush);
+
+      await act(async () => {
+        jest.advanceTimersByTime(500);
+        await Promise.resolve();
+      });
+      expect(putBodies.length).toBe(countAfterInitialPush + 1);
+      expect(putBodies[putBodies.length - 1].packedItemIds?.length).toBe(2);
+
+      // Another rapid edit followed by visibilitychange hidden flushes BEFORE 500ms
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Universal travel adapter/i })
+      );
+      expect(putBodies.length).toBe(countAfterInitialPush + 1);
+
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "hidden",
+      });
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+        await Promise.resolve();
+      });
+      expect(putBodies.length).toBe(countAfterInitialPush + 2);
+
+      // Offline banner toggles cleanly on offline/online events
+      act(() => {
+        window.dispatchEvent(new Event("offline"));
+      });
+      expect(screen.getByTestId("offline-status-banner")).toBeInTheDocument();
+
+      act(() => {
+        window.dispatchEvent(new Event("online"));
+      });
+      expect(
+        screen.queryByTestId("offline-status-banner")
+      ).not.toBeInTheDocument();
+
+      // Cross-tab storage removal (e.newValue === null) resets state cleanly
+      act(() => {
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: V2_STORAGE_KEY,
+            newValue: null,
+          })
+        );
+      });
+      expect(
+        screen.getByRole("checkbox", { name: /Ultra-breathable linen/i })
+      ).not.toBeChecked();
+    } finally {
+      jest.useRealTimers();
+      global.fetch = origFetch;
+      Object.defineProperty(navigator, "onLine", {
+        configurable: true,
+        value: origOnLine,
+      });
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+    }
+  });
+
+  it("5.2 surfaces explicit alert on QuotaExceededError instead of failing silently", async () => {
+    const origSetItem = Storage.prototype.setItem;
+    const setItemSpy = jest
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new DOMException("Quota exceeded", "QuotaExceededError");
+      });
+
+    try {
+      render(<ThailandTripDashboardV2 />);
+      fireEvent.click(screen.getByRole("button", { name: /Prep & Apps/i }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Southeast Asia's Uber equivalent/i })
+      );
+
+      expect(screen.getByTestId("storage-quota-banner")).toHaveTextContent(
+        /storage limit reached/i
+      );
+    } finally {
+      setItemSpy.mockRestore();
+      Storage.prototype.setItem = origSetItem;
+    }
+  });
+
+  it("Decision 3 uploads inline data:image/* garment photos to /wardrobe-image/[id] on CreateLookModal save", async () => {
+    const origFetch = global.fetch;
+    const uploadedPayloads: string[] = [];
+
+    global.fetch = jest.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const targetUrl = String(url);
+      if (
+        targetUrl.startsWith("/api/naanas-space/thailand-2027/wardrobe-image/") &&
+        init?.method === "PUT"
+      ) {
+        uploadedPayloads.push(targetUrl);
+        return {
+          ok: true,
+          json: async () => ({
+            configured: true,
+            saved: true,
+            id: "img_uploaded_1",
+            imageUrl: targetUrl,
+          }),
+        } as Response;
+      }
+      return { ok: true, json: async () => ({}) } as Response;
+    }) as unknown as typeof fetch;
+
+    const onCreateOutfit = jest.fn();
+    const onClose = jest.fn();
+
+    try {
+      render(
+        <CreateLookModal
+          isOpen={true}
+          onClose={onClose}
+          editingOutfit={{
+            id: "look-draft-inline",
+            title: "Rooftop Silk Edit",
+            owner: "naana",
+            dressCode: "rooftop",
+            climateTag: "29°C Evening",
+            garments: [
+              {
+                id: "g-inline-1",
+                label: "Cream Silk Dress",
+                url: "#local-photo",
+                imageUrl: "data:image/webp;base64,UklGRh4AAABXRUJQVlA4",
+                category: "Dress",
+              },
+            ],
+          }}
+          onCreateOutfit={onCreateOutfit}
+          onUpdateOutfit={(_id, updates) => onCreateOutfit(updates)}
+        />
+      );
+
+      await act(async () => {
+        fireEvent.click(
+          screen.getByRole("button", { name: /Save Look Changes/i })
+        );
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(uploadedPayloads).toHaveLength(1);
+      expect(uploadedPayloads[0]).toMatch(
+        /^\/api\/naanas-space\/thailand-2027\/wardrobe-image\/img_/
+      );
+      expect(onCreateOutfit).toHaveBeenCalledWith(
+        expect.objectContaining({
+          garments: [
+            expect.objectContaining({
+              id: "g-inline-1",
+              imageUrl: uploadedPayloads[0],
+            }),
+          ],
+        })
+      );
+      expect(onClose).toHaveBeenCalled();
+    } finally {
+      global.fetch = origFetch;
     }
   });
 });

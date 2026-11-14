@@ -28,7 +28,7 @@ For future reference, ongoing roadmap tracking, and architectural decisions, con
 This document serves as the living specification for enhancements, including:
 - **Agreed Architectural Decisions:** PWA offline caching, Open-Meteo live weather API, Leaflet map route previews, Google Calendar/.ics sync, and S3/Vault PDF attachments.
 - **Implementation Roadmap:** Prioritised feature tiers (Tier 1: Food safety guide, outfit suggestions, notes; Tier 2: Calendar & timezone UI; Tier 3: PWA, Weather, and Dossier).
-- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development), universal calendar integration (`utils/calendar.ts`, Option A: 1-tap Google Calendar links + universal RFC 5545 `.ics` export for master trip, single day, and individual movements), **Outfit Suggestions & Digital Wardrobe** (Tier 1 — #2: polaroid split-grid garment collages, `/api/link-preview` OpenGraph `og:image` scraper, `CreateLookModal`, Step I `ATTIRE` slot + activity hanger overrides via `WardrobeDrawer`, and contextual dress-code conflict warnings), **Mobile `v2` Companion Phases 1–3 (`/naanas-space/thailand-2027-v2`, Merged via PRs #4–#6)** introducing mobile ergonomics & bundled `next/font/local` fonts, a 5-slot bottom bar + `<dialog>` `QuickPocketDesk` & `More` sheets, Companion / Today Mode with Live Dual Clock (`GMT`/`ICT`), upgraded `<dialog>` `DriverCardModal` (Night Mode, Wake Lock, Share Address), and 1-tap SOS dials, and **Phase 4 (`feat/thailand-2027-v2-phase-4`, implemented & verified, pending PR/merge)** delivering responsive `<dialog>` bottom sheets with swipe-to-dismiss (`ChangeLogDrawer`, `WardrobeDrawer`, `CreateLookModal`, `PolaroidLightboxModal`, `OutfitActionsSheetModal`, itinerary `⋯` / edit sheets), collapsed top-3 suggestions, stacked `FINANCIAL_MATRIX` mobile cards + sticky surplus bar, single-column Digital Wardrobe Polaroid cards (`2×2` tiles, corner `⤢` cues, weather strip below collage, collapsed-by-default `GARMENT LINKS` toggle, segmented Wardrobe/Ledger switch, local photo picker `accept="image/*"`, `⋯` look action sheet, `Hide packed` filter), swipeable PNR cipher strip + collapsible flight details, subtle Web Vibration haptics (`utils/haptics.ts`), and a 6-second floating Undo Snackbar (**Phase 5 PWA & offline sync next**).
+- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development), universal calendar integration (`utils/calendar.ts`, Option A: 1-tap Google Calendar links + universal RFC 5545 `.ics` export for master trip, single day, and individual movements), **Outfit Suggestions & Digital Wardrobe** (Tier 1 — #2: polaroid split-grid garment collages, `/api/link-preview` OpenGraph `og:image` scraper, `CreateLookModal`, Step I `ATTIRE` slot + activity hanger overrides via `WardrobeDrawer`, and contextual dress-code conflict warnings), **Mobile `v2` Companion Phases 1–3 (`/naanas-space/thailand-2027-v2`, Merged via PRs #4–#6)** introducing mobile ergonomics & bundled `next/font/local` fonts, a 5-slot bottom bar + `<dialog>` `QuickPocketDesk` & `More` sheets, Companion / Today Mode with Live Dual Clock (`GMT`/`ICT`), upgraded `<dialog>` `DriverCardModal` (Night Mode, Wake Lock, Share Address), and 1-tap SOS dials, **Phase 4 (`feat/thailand-2027-v2-phase-4`, Open PR #7)** delivering responsive `<dialog>` bottom sheets with swipe-to-dismiss (`ChangeLogDrawer`, `WardrobeDrawer`, `CreateLookModal`, `PolaroidLightboxModal`, `OutfitActionsSheetModal`, itinerary `⋯` / edit sheets), collapsed top-3 suggestions, stacked `FINANCIAL_MATRIX` mobile cards + sticky surplus bar, single-column Digital Wardrobe Polaroid cards (`2×2` tiles, corner `⤢` cues, weather strip below collage, collapsed-by-default `GARMENT LINKS` toggle, segmented Wardrobe/Ledger switch, local photo picker `accept="image/*"`, `⋯` look action sheet, `Hide packed` filter), swipeable PNR cipher strip + collapsible flight details, subtle Web Vibration haptics (`utils/haptics.ts`), and a 6-second floating Undo Snackbar, and **Phase 5 (`feat/thailand-2027-v2-phase-5`, stacked on PR #7, implemented & verified)** delivering Decision 3 Option B external wardrobe photo storage (`/api/naanas-space/thailand-2027/wardrobe-image/[id]` + `kv.ts`, `immutable` HTTP caching, `7.5s` delayed orphan cleanup), route-scoped PWA installability (`public/thailand-2027-v2.webmanifest`, editorial `"T27"` icons, `public/thailand-2027-sw.js`, `usePwaInstall.ts`, standalone `[Shaq] / [Naana]` prompt), offline & multi-tab resilience (`500ms` `PUT` debounce, `keepalive` flush, Set-Union `utils/syncMerge.ts`, cross-tab `storage` sync, explicit offline banner & storage quota alert), and performance polish (`sm:backdrop:backdrop-blur-*` & `next/dynamic` code-splitting).
 
 ---
 
@@ -78,12 +78,18 @@ Every future update to this route **must** adhere to these foundational rules:
 ## 5. Technical Architecture & Persistence
 
 ```
+public/
+├── thailand-2027-v2.webmanifest    # Route-scoped PWA manifest (id + start_url: /naanas-space/thailand-2027-v2)
+├── thailand-2027-sw.js             # Custom Service Worker (NetworkFirst docs/manifest, CacheFirst static/wardrobe images)
+└── icons/thailand-2027-*.png       # Custom editorial "T27" / "BKK · HKT" PWA icons (180, 192, 512, maskable-512)
 src/
 ├── lib/
 │   └── thailandTripData.ts         # Static master trip dataset (flights, hotels, schedule, prep, apps, packing)
 └── app/
     ├── api/naanas-space/thailand-2027/
-    │   └── route.ts                # App Router GET / PUT endpoint syncing state to Vercel KV / Upstash
+    │   ├── kv.ts                   # Shared Upstash Redis / Vercel KV REST helper
+    │   ├── route.ts                # App Router GET / PUT endpoint syncing state to Vercel KV / Upstash
+    │   └── wardrobe-image/[id]/route.ts # GET/PUT/DELETE per-photo wardrobe image API (Cache-Control: immutable)
     └── naanas-space/
         ├── thailand-2027/
         │   ├── layout.tsx          # Font declarations & layout wrapper (v1 classic)
@@ -93,9 +99,10 @@ src/
         │   ├── utils/
         │   │   ├── calendar.ts     # Google Calendar & .ics helpers
         │   │   ├── formatters.ts   # formatDayNumber() & parseActivitySortMinutes()
+        │   │   ├── syncMerge.ts    # Set-Union state merge + managed wardrobe-image ID helpers
         │   │   └── wardrobe.ts     # Outfit resolution & garment dress-code helpers
         │   ├── hooks/
-        │   │   └── useThailandTripState.ts # Shared LocalStorage + KV sync, countdown, & change log mutations
+        │   │   └── useThailandTripState.ts # Shared LocalStorage + 500ms debounced KV sync, cross-tab storage listener & Change Log
         │   ├── components/         # Shared chrome, masthead, modals, & drawers (v1)
         │   │   └── steps/          # Step I through Step VI views (v1)
         │   ├── mobile-ux-plan/     # Mobile UX specs, decisions, drawbacks & PR #4–#6 reviews
@@ -103,19 +110,19 @@ src/
         │   └── README.md           # This document
         └── thailand-2027-v2/       # Mobile-first v2 route sharing types, hooks, utils & Redis state with v1
             ├── fonts/              # Bundled .woff2 fonts for next/font/local
-            ├── hooks/              # Re-exported shared hook + useBottomSheetDialog.ts
+            ├── hooks/              # Re-exported shared hook + useBottomSheetDialog.ts + usePwaInstall.ts
             ├── utils/              # Re-exported shared utils + companion.ts & haptics.ts
-            ├── layout.tsx, page.tsx, styles.tsx, components/
+            ├── layout.tsx, page.tsx, styles.tsx, components/ # PWA metadata + next/dynamic split steps & overlays
             └── types.ts            # Re-exported from ../thailand-2027/types.ts
 ```
 
 ### State Management
-Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and synced to `/api/naanas-space/thailand-2027` (500ms debouncing scheduled in Phase 5.2; persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
+Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering (with explicit quota error UI banners if exceeded), synced across tabs via `window` `storage` events, and synced to `/api/naanas-space/thailand-2027` with a `500ms` `PUT` debounce + `visibilitychange`/`pagehide` `keepalive` flush (`naanas_space_thailand_2027_v1`). Uploaded local wardrobe photos are stored separately per photo under `/api/naanas-space/thailand-2027/wardrobe-image/[id]` (`naanas_space_thailand_2027_img_<id>`) with `7.5s` delayed orphan cleanup on look delete/replace. Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer via `syncMerge.ts`.
 
 ### Testing
-Run the dedicated test suites (`8` suites, `129` tests covering `v1`, `v2`, cross-route shared persistence, interactive checklists, currency conversion, mobile `<dialog>` bottom sheets, Companion Mode, Dual Clock, Thai driver modal, SOS speed-dials, Digital Wardrobe single-column Polaroid cards & `⋯` sheet, stacked budget cards, Undo Snackbar, and the Change Log):
+Run the dedicated test suites (`10` suites, `138` tests covering `v1`, `v2`, cross-route shared persistence, `syncMerge` Set-Union merges, `wardrobe-image/[id]` API routes, PWA install prompt & SW offline handling, debounced cloud push & cross-tab storage events, interactive checklists, currency conversion, mobile `<dialog>` bottom sheets, Companion Mode, Dual Clock, Thai driver modal, SOS speed-dials, Digital Wardrobe single-column Polaroid cards & `⋯` sheet, stacked budget cards, Undo Snackbar, and the Change Log):
 ```bash
-npx jest src/app/naanas-space
+npx jest src/app/naanas-space src/app/api/naanas-space
 ```
 
 ---
