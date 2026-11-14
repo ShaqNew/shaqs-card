@@ -123,6 +123,7 @@ describe("StickyStepNav Component", () => {
       expect(el).toHaveClass("overflow-hidden");
       expect(el).toHaveClass("sm:max-h-12");
       expect(el).toHaveClass("sm:opacity-100");
+      expect(el).not.toHaveAttribute("aria-hidden", "true");
     });
   });
 
@@ -337,5 +338,116 @@ describe("StickyStepNav Component", () => {
     });
 
     document.body.removeChild(chronometerTarget);
+  });
+
+  it("exposes aria-current, aria-pressed, Pocket dialog ARIA state, single-row scrolled Step I bar, dynamic budgetSummary, horizontal-only ruler centering, and responsive More sheet close", () => {
+    const origMatchMedia = window.matchMedia;
+    let mqChangeListener: ((e: MediaQueryListEvent) => void) | null = null;
+    let isDesktopMock = false;
+
+    try {
+      window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+        get matches() {
+          return query === "(min-width: 640px)" ? isDesktopMock : false;
+        },
+        media: query,
+        addEventListener: (_type: string, cb: (e: MediaQueryListEvent) => void) => {
+          mqChangeListener = cb;
+        },
+        removeEventListener: jest.fn(),
+      })) as unknown as typeof window.matchMedia;
+
+      const scrollToSpy = jest.fn();
+      const chipScrollIntoViewSpy = jest.fn();
+
+      const { rerender } = render(
+        <StickyStepNav
+          {...defaultProps}
+          activeTab="itinerary"
+          selectedDayNum={null}
+          isScrolled={true}
+          isPocketOpen={true}
+          budgetSummary={{ plannedTotalThb: 4923, exchangeRate: 44.5 }}
+        />
+      );
+
+      // Stacking context fix: mobile z-40 promoted on #step-content-anchor, desktop sm:z-30
+      const anchor = document.getElementById("step-content-anchor");
+      expect(anchor).toHaveClass("z-40", "sm:z-30");
+
+      // Step I scrolled mobile view drops the second "Thailand '27 Dossier" row and keeps single inline Top jump
+      expect(screen.queryByText(/Thailand '27 Dossier/i)).toBeNull();
+      expect(
+        screen.getByRole("button", { name: /Jump to top countdown/i })
+      ).toBeInTheDocument();
+
+      // ARIA states
+      expect(
+        screen.getByRole("button", { name: /Itinerary & Plan/i })
+      ).toHaveAttribute("aria-current", "page");
+      expect(
+        screen.getByRole("button", { name: /Packing Studio/i })
+      ).not.toHaveAttribute("aria-current");
+      expect(
+        screen.getByRole("button", { name: /Full Spread/i })
+      ).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: /D02/i })).toHaveAttribute(
+        "aria-pressed",
+        "false"
+      );
+
+      const pocketBtn = screen.getByRole("button", {
+        name: /Open Quick Pocket Desk/i,
+      });
+      expect(pocketBtn).toHaveAttribute("aria-expanded", "true");
+      expect(pocketBtn).toHaveAttribute("aria-haspopup", "dialog");
+
+      // Dynamic budget summary label on Step VI
+      expect(screen.getByText(/฿4,923 \(~£110\.63\)/)).toBeInTheDocument();
+
+      // Date Ruler scrolls horizontally via ruler.scrollTo rather than chip.scrollIntoView
+      const ruler = screen.getByTestId("step-date-ruler");
+      (ruler as unknown as { scrollTo: jest.Mock }).scrollTo = scrollToSpy;
+      const day4Btn = screen.getByRole("button", { name: /D04/i });
+      day4Btn.scrollIntoView = chipScrollIntoViewSpy;
+
+      rerender(
+        <StickyStepNav
+          {...defaultProps}
+          activeTab="itinerary"
+          selectedDayNum={4}
+          isScrolled={true}
+          isPocketOpen={false}
+          budgetSummary={{ plannedTotalThb: 4923, exchangeRate: 44.5 }}
+        />
+      );
+      expect(scrollToSpy).toHaveBeenCalled();
+      expect(chipScrollIntoViewSpy).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: /D04/i })).toHaveAttribute(
+        "aria-pressed",
+        "true"
+      );
+
+      // More sheet displays dynamic budget badge and auto-closes + restores focus on resize >= 640px
+      const moreBtn = screen.getByRole("button", {
+        name: /More steps and tools/i,
+      });
+      moreBtn.focus();
+      fireEvent.click(moreBtn);
+      const moreDialog = document.querySelector(
+        "dialog[aria-labelledby='more-sheet-title']"
+      ) as HTMLDialogElement;
+      expect(moreDialog).toHaveAttribute("open");
+      expect(moreDialog.textContent).toContain("฿4,923 (~£110.63)");
+
+      act(() => {
+        isDesktopMock = true;
+        mqChangeListener?.({ matches: true } as MediaQueryListEvent);
+      });
+      expect(moreDialog).not.toHaveAttribute("open");
+      expect(document.activeElement).toBe(moreBtn);
+    } finally {
+      window.matchMedia = origMatchMedia;
+    }
   });
 });

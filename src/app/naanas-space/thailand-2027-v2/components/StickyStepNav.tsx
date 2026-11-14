@@ -1,9 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { TRIP_DAYS, HOTEL_BOOKINGS } from "@/lib/thailandTripData";
+import {
+  TRIP_DAYS,
+  TRIP_METADATA,
+  HOTEL_BOOKINGS,
+} from "@/lib/thailandTripData";
 import { ActiveTab, ProgressMetric } from "../types";
 import { serifStyle, monoStyle } from "../styles";
 import { formatDayNumber } from "../utils/formatters";
+import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
+
+export interface BudgetNavSummary {
+  plannedTotalThb: number;
+  exchangeRate: number;
+}
 
 interface StickyStepNavProps {
   activeTab: ActiveTab;
@@ -23,6 +33,7 @@ interface StickyStepNavProps {
   onOpenPocketDesk?: () => void;
   isPocketOpen?: boolean;
   onOpenDriverModal?: (hotelId: string) => void;
+  budgetSummary?: BudgetNavSummary;
 }
 
 // Delay compaction until the user has scrolled 72px past the sticky top edge,
@@ -47,14 +58,21 @@ export function StickyStepNav({
   onOpenPocketDesk,
   isPocketOpen = false,
   onOpenDriverModal,
+  budgetSummary,
 }: StickyStepNavProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const dateRulerRef = useRef<HTMLDivElement>(null);
-  const moreDialogRef = useRef<HTMLDialogElement>(null);
 
   const [internalScrolled, setInternalScrolled] = useState(false);
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+
+  const { dialogRef: moreDialogRef, handleDialogClose: handleMoreDialogClose } =
+    useBottomSheetDialog({
+      open: isMoreOpen,
+      onClose: () => setIsMoreOpen(false),
+      desktopMode: "close",
+    });
 
   const isScrolled = controlledIsScrolled ?? internalScrolled;
 
@@ -103,79 +121,27 @@ export function StickyStepNav({
     return () => window.removeEventListener("scroll", checkSticky);
   }, [controlledIsScrolled]);
 
-  // Auto-center selected date chip on Step I ruler
+  // Auto-center selected date chip horizontally without scrolling the outer document
   useEffect(() => {
     if (activeTab !== "itinerary" || !dateRulerRef.current) return;
+    const ruler = dateRulerRef.current;
     const chipKey = selectedDayNum === null ? "all" : String(selectedDayNum);
-    const activeChip = dateRulerRef.current.querySelector<HTMLElement>(
+    const activeChip = ruler.querySelector<HTMLElement>(
       `[data-day-chip="${chipKey}"]`
     );
-    if (activeChip && typeof activeChip.scrollIntoView === "function") {
-      activeChip.scrollIntoView({
-        behavior: "smooth",
-        block: "nearest",
-        inline: "center",
-      });
+    if (!activeChip) return;
+
+    const rulerRect = ruler.getBoundingClientRect();
+    const chipRect = activeChip.getBoundingClientRect();
+    const deltaCenter =
+      chipRect.left - rulerRect.left - rulerRect.width / 2 + chipRect.width / 2;
+    const nextLeft = Math.max(0, ruler.scrollLeft + deltaCenter);
+    if (typeof ruler.scrollTo === "function") {
+      ruler.scrollTo({ left: nextLeft, behavior: "smooth" });
+    } else {
+      ruler.scrollLeft = nextLeft;
     }
   }, [selectedDayNum, activeTab]);
-
-  // Open / close native <dialog> for the mobile More sheet & attach light-dismiss fallback
-  useEffect(() => {
-    const dialog = moreDialogRef.current;
-    if (!dialog) return;
-
-    if (isMoreOpen) {
-      if (!dialog.open) {
-        if (typeof dialog.showModal === "function") {
-          dialog.showModal();
-        } else {
-          dialog.setAttribute("open", "");
-        }
-      }
-    } else if (dialog.open) {
-      if (typeof dialog.close === "function") {
-        dialog.close();
-      } else {
-        dialog.removeAttribute("open");
-      }
-      return;
-    }
-
-    if (
-      typeof HTMLDialogElement !== "undefined" &&
-      !("closedBy" in HTMLDialogElement.prototype)
-    ) {
-      const outside = (e: PointerEvent) => {
-        const r = dialog.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) return e.target === dialog;
-        return (
-          e.clientX < r.left ||
-          e.clientX > r.right ||
-          e.clientY < r.top ||
-          e.clientY > r.bottom
-        );
-      };
-      let pressedOutside = false;
-      const onPointerDown = (e: PointerEvent) => {
-        pressedOutside = outside(e);
-      };
-      const onPointerUp = (e: PointerEvent) => {
-        if (pressedOutside && outside(e)) {
-          if (typeof dialog.close === "function") {
-            dialog.close();
-          } else {
-            setIsMoreOpen(false);
-          }
-        }
-      };
-      dialog.addEventListener("pointerdown", onPointerDown);
-      dialog.addEventListener("pointerup", onPointerUp);
-      return () => {
-        dialog.removeEventListener("pointerdown", onPointerDown);
-        dialog.removeEventListener("pointerup", onPointerUp);
-      };
-    }
-  }, [isMoreOpen]);
 
   const handleScrollToChronometer = () => {
     const chronometerEl = document.getElementById("masthead-chronometer");
@@ -188,6 +154,19 @@ export function StickyStepNav({
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
+
+  const defaultSurplusLabel = `+£${TRIP_METADATA.accommodationSurplusGbp.toFixed(2)}`;
+  const plannedGbpFormatted = budgetSummary
+    ? (
+        budgetSummary.plannedTotalThb / (budgetSummary.exchangeRate || 1)
+      ).toFixed(2)
+    : null;
+  const budgetSubLabel = budgetSummary
+    ? `฿${budgetSummary.plannedTotalThb.toLocaleString()} (~£${plannedGbpFormatted})`
+    : `${defaultSurplusLabel} Surplus`;
+  const budgetSheetBadge = budgetSummary
+    ? `฿${budgetSummary.plannedTotalThb.toLocaleString()} (~£${plannedGbpFormatted})`
+    : defaultSurplusLabel;
 
   const tabs = [
     {
@@ -255,7 +234,7 @@ export function StickyStepNav({
       label: "Budget & THB",
       mobileLabel: "Budget",
       mobileIcon: "฿",
-      sub: "+£72.65 Surplus",
+      sub: budgetSubLabel,
       mobileBadge: undefined as string | undefined,
       mobileOrder: "",
       showOnMobileBar: false,
@@ -265,6 +244,21 @@ export function StickyStepNav({
   const activeTabMeta = tabs.find((t) => t.id === activeTab) ?? tabs[0];
   const shangriLa = HOTEL_BOOKINGS.find((h) => h.id === "shangri-la");
   const pavilions = HOTEL_BOOKINGS.find((h) => h.id === "pavilions");
+
+  const mobileTopJumpButton = isScrolled ? (
+    <button
+      type="button"
+      onClick={handleScrollToChronometer}
+      aria-label="Jump to top countdown"
+      style={monoStyle}
+      className="min-h-11 px-3 py-1 bg-[#1F1A16] text-[#F6F1E7] border border-[#9E7B3B] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+    >
+      <span className="text-[#D8B979]" aria-hidden="true">
+        &uarr;
+      </span>
+      <span>Top</span>
+    </button>
+  ) : null;
 
   return (
     <>
@@ -280,7 +274,7 @@ export function StickyStepNav({
         id="step-content-anchor"
         data-scrolled={isScrolled ? "true" : "false"}
         style={{ overflowAnchor: "none" }}
-        className={`sticky top-0 z-30 mb-6 sm:mb-8 transition-shadow duration-300 motion-reduce:transition-none bg-[#F6F1E7] sm:bg-[#F6F1E7]/95 sm:backdrop-blur-md border-y border-[#1F1A16]/20 ${
+        className={`sticky top-0 z-40 sm:z-30 mb-6 sm:mb-8 transition-shadow duration-300 motion-reduce:transition-none bg-[#F6F1E7] sm:bg-[#F6F1E7]/95 sm:backdrop-blur-md border-y border-[#1F1A16]/20 ${
           isScrolled
             ? "shadow-[0_4px_16px_rgba(31,26,22,0.12)]"
             : "shadow-[0_4px_16px_rgba(31,26,22,0.06)]"
@@ -297,12 +291,11 @@ export function StickyStepNav({
               <button
                 key={tab.id}
                 type="button"
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => onSelectTab(tab.id)}
-                className={`group flex-col items-center sm:items-start justify-center sm:justify-between text-center sm:text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative min-h-14 sm:min-h-0 px-1 py-1.5 ${
-                  isScrolled ? "sm:p-4" : "sm:p-4"
-                } ${tab.showOnMobileBar ? "flex" : "hidden sm:flex"} ${
-                  tab.mobileOrder
-                } sm:order-none ${
+                className={`group flex-col items-center sm:items-start justify-center sm:justify-between text-center sm:text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative min-h-14 sm:min-h-0 px-1 py-1.5 sm:p-4 ${
+                  tab.showOnMobileBar ? "flex" : "hidden sm:flex"
+                } ${tab.mobileOrder} sm:order-none ${
                   isActive
                     ? "bg-[#13382E] text-[#F6F1E7]"
                     : "hover:bg-[#2A231D] sm:hover:bg-[#EFE7D8]/80 text-[#F6F1E7] sm:text-[#1F1A16]"
@@ -382,7 +375,6 @@ export function StickyStepNav({
                       ? "max-h-0 opacity-0 sm:max-h-12 sm:opacity-100 sm:mt-1"
                       : "max-h-12 opacity-100 mt-1"
                   }`}
-                  aria-hidden={isScrolled ? "true" : undefined}
                 >
                   <span
                     style={monoStyle}
@@ -402,6 +394,8 @@ export function StickyStepNav({
             type="button"
             onClick={() => onOpenPocketDesk?.()}
             aria-label="Open Quick Pocket Desk"
+            aria-expanded={isPocketOpen}
+            aria-haspopup="dialog"
             className={`order-3 sm:hidden flex flex-col items-center justify-center min-h-14 px-1 py-1.5 text-center cursor-pointer transition-colors ${
               isPocketOpen
                 ? "bg-[#13382E] text-[#F6F1E7]"
@@ -451,55 +445,64 @@ export function StickyStepNav({
           </button>
         </nav>
 
-        {/* Compact Sticky Date Ruler when viewing Step I */}
+        {/* Compact Sticky Date Ruler when viewing Step I (keeps Top jump inline in one compact row on mobile scroll) */}
         {activeTab === "itinerary" ? (
-          <div
-            ref={dateRulerRef}
-            data-testid="step-date-ruler"
-            className={`flex items-center gap-1.5 overflow-x-auto snap-x snap-mandatory scroll-px-3 [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] sm:[mask-image:none] bg-[#EFE7D8]/85 border-t sm:border-t border-[#1F1A16]/15 transition-all duration-300 ease-in-out ${
-              isScrolled ? "px-2 py-1 sm:px-3 sm:py-2" : "px-3 py-1.5 sm:py-2"
-            }`}
-          >
-            <button
-              type="button"
-              data-day-chip="all"
-              onClick={() => onSelectDayNum(null)}
-              style={monoStyle}
-              className={`shrink-0 snap-center min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border transition-all duration-300 cursor-pointer ${
-                isScrolled ? "px-2.5 py-0.5 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
-              } ${
-                selectedDayNum === null
-                  ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
-                  : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+          <div className="flex items-center bg-[#EFE7D8]/85 border-t border-[#1F1A16]/15">
+            <div
+              ref={dateRulerRef}
+              data-testid="step-date-ruler"
+              className={`flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto snap-x snap-mandatory scroll-px-3 [mask-image:linear-gradient(to_right,black_calc(100%-24px),transparent)] sm:[mask-image:none] transition-all duration-300 ease-in-out ${
+                isScrolled ? "px-2 py-1 sm:px-3 sm:py-2" : "px-3 py-1.5 sm:py-2"
               }`}
             >
-              Full Spread
-            </button>
-            {TRIP_DAYS.map((d) => {
-              const isSelected = selectedDayNum === d.dayNumber;
-              return (
-                <button
-                  key={d.dayNumber}
-                  type="button"
-                  data-day-chip={String(d.dayNumber)}
-                  onClick={() =>
-                    onSelectDayNum(isSelected ? null : d.dayNumber)
-                  }
-                  style={monoStyle}
-                  className={`shrink-0 snap-center min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] border transition-all duration-300 cursor-pointer ${
-                    isScrolled
-                      ? "px-2.5 py-0.5 sm:px-2.5 sm:py-1.5"
-                      : "px-2.5 py-1.5"
-                  } ${
-                    isSelected
-                      ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
-                      : "bg-[#FBF8F3] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
-                  }`}
-                >
-                  D{formatDayNumber(d.dayNumber)} &bull; {d.shortDate}
-                </button>
-              );
-            })}
+              <button
+                type="button"
+                data-day-chip="all"
+                aria-pressed={selectedDayNum === null}
+                onClick={() => onSelectDayNum(null)}
+                style={monoStyle}
+                className={`shrink-0 snap-center min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border transition-all duration-300 cursor-pointer ${
+                  isScrolled ? "px-2.5 py-0.5 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
+                } ${
+                  selectedDayNum === null
+                    ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A] font-semibold"
+                    : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                }`}
+              >
+                Full Spread
+              </button>
+              {TRIP_DAYS.map((d) => {
+                const isSelected = selectedDayNum === d.dayNumber;
+                return (
+                  <button
+                    key={d.dayNumber}
+                    type="button"
+                    data-day-chip={String(d.dayNumber)}
+                    aria-pressed={isSelected}
+                    onClick={() =>
+                      onSelectDayNum(isSelected ? null : d.dayNumber)
+                    }
+                    style={monoStyle}
+                    className={`shrink-0 snap-center min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] border transition-all duration-300 cursor-pointer ${
+                      isScrolled
+                        ? "px-2.5 py-0.5 sm:px-2.5 sm:py-1.5"
+                        : "px-2.5 py-1.5"
+                    } ${
+                      isSelected
+                        ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                        : "bg-[#FBF8F3] text-[#4A4036] border-[#1F1A16]/15 hover:border-[#1F1A16]"
+                    }`}
+                  >
+                    D{formatDayNumber(d.dayNumber)} &bull; {d.shortDate}
+                  </button>
+                );
+              })}
+            </div>
+            {mobileTopJumpButton && (
+              <div className="sm:hidden shrink-0 pr-2 pl-1">
+                {mobileTopJumpButton}
+              </div>
+            )}
           </div>
         ) : (
           /* Mobile-only slim sticky Step header (~44px) for Steps II–VI */
@@ -510,57 +513,20 @@ export function StickyStepNav({
             >
               Step {activeTabMeta.numeral} &bull; {activeTabMeta.label}
             </span>
-            {isScrolled && (
-              <button
-                type="button"
-                onClick={handleScrollToChronometer}
-                aria-label="Jump to top countdown"
-                style={monoStyle}
-                className="min-h-11 px-3 py-1 bg-[#1F1A16] text-[#F6F1E7] border border-[#9E7B3B] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0"
-              >
-                <span className="text-[#D8B979]" aria-hidden="true">
-                  &uarr;
-                </span>
-                <span>Top</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Mobile-only compact Jump-to-Top trigger in sticky header when scrolled on Step I */}
-        {isScrolled && activeTab === "itinerary" && (
-          <div className="sm:hidden flex items-center justify-between px-3 py-1 bg-[#EFE7D8]/95 border-t border-[#1F1A16]/15">
-            <span
-              style={monoStyle}
-              className="text-[11px] uppercase tracking-[0.1em] text-[#5C5248]"
-            >
-              Thailand &apos;27 Dossier
-            </span>
-            <button
-              type="button"
-              onClick={handleScrollToChronometer}
-              aria-label="Jump to top countdown"
-              style={monoStyle}
-              className="min-h-11 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] border border-[#9E7B3B] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <span className="text-[#D8B979]" aria-hidden="true">
-                &uarr;
-              </span>
-              <span>Top</span>
-            </button>
+            {mobileTopJumpButton}
           </div>
         )}
       </div>
 
-      {/* Native <dialog> More Steps & Tools Bottom Sheet (Mobile < sm) */}
-      {isMoreOpen && (
-        <dialog
-          ref={moreDialogRef}
-          {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
-          aria-labelledby="more-sheet-title"
-          onClose={() => setIsMoreOpen(false)}
-          className="fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t-2 border-[#1F1A16] bg-[#FBF8F3] text-[#1F1A16] p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain shadow-2xl z-50 backdrop:bg-[#1F1A16]/60 backdrop:overflow-hidden backdrop:overscroll-contain"
-        >
+      {/* Native <dialog> More Steps & Tools Bottom Sheet (Mobile < sm, mounted permanently for focus restoration) */}
+      <dialog
+        ref={moreDialogRef}
+        {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+        aria-labelledby="more-sheet-title"
+        onClose={handleMoreDialogClose}
+        className="[&:not([open])]:hidden fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t-2 border-[#1F1A16] bg-[#FBF8F3] text-[#1F1A16] p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain shadow-2xl z-50 backdrop:bg-[#1F1A16]/60 backdrop:overflow-hidden backdrop:overscroll-contain"
+      >
+        {isMoreOpen && (
           <div className="space-y-4">
             <div
               aria-hidden="true"
@@ -674,7 +640,7 @@ export function StickyStepNav({
                     activeTab === "budget" ? "text-[#D8B979]" : "text-[#13382E]"
                   }`}
                 >
-                  +&pound;72.65
+                  {budgetSheetBadge}
                 </span>
               </button>
             </div>
@@ -779,8 +745,8 @@ export function StickyStepNav({
               )}
             </div>
           </div>
-        </dialog>
-      )}
+        )}
+      </dialog>
 
       {/* Floating Scroll-to-Chronometer Button (Desktop sm+) — Reveals once scrolled past the -72px sticky threshold */}
       <div

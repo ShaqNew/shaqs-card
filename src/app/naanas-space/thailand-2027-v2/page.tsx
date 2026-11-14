@@ -118,6 +118,16 @@ export default function ThailandTripDashboard() {
     }
   };
 
+  const handleSelectDayNumFromNav = (dayNum: number | null) => {
+    setPhaseFilter("all");
+    setSelectedDayNum(dayNum);
+  };
+
+  const plannedTotalThb = tripState.plannedExpenses.reduce(
+    (sum, exp) => sum + exp.amountThb,
+    0
+  );
+
   const setQuickThbPreset = (thbAmount: number) => {
     setThbInput(thbAmount.toString());
     setGbpInput((thbAmount / tripState.exchangeRate).toFixed(2));
@@ -149,7 +159,9 @@ export default function ThailandTripDashboard() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
+          className={`${
+            isPocketDeskOpen ? "hidden sm:flex" : "flex"
+          } fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl`}
         >
           <span
             style={monoStyle}
@@ -240,6 +252,7 @@ export default function ThailandTripDashboard() {
         isOpen={isPocketDeskOpen}
         onOpenChange={setIsPocketDeskOpen}
         onJumpToBudget={() => setActiveTab("budget")}
+        copiedText={copiedText}
       />
 
       <div
@@ -262,7 +275,7 @@ export default function ThailandTripDashboard() {
           appsProgress={appsProgress}
           packingProgress={packingProgress}
           selectedDayNum={selectedDayNum}
-          onSelectDayNum={setSelectedDayNum}
+          onSelectDayNum={handleSelectDayNumFromNav}
           activeActor={activeActor}
           onSetActiveActor={handleSetActiveActor}
           changeLogCount={(tripState.changeLog || []).length}
@@ -272,6 +285,10 @@ export default function ThailandTripDashboard() {
           onOpenPocketDesk={() => setIsPocketDeskOpen(true)}
           isPocketOpen={isPocketDeskOpen}
           onOpenDriverModal={(hotelId) => setDriverModalHotelId(hotelId)}
+          budgetSummary={{
+            plannedTotalThb,
+            exchangeRate: tripState.exchangeRate,
+          }}
         />
 
         {activeTab === "itinerary" && (

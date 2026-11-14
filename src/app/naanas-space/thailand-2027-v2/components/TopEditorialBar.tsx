@@ -27,8 +27,8 @@ export function TopEditorialBar({
       : "Local cache — tap to sync";
 
   return (
-    <div className="border-b border-[#1F1A16]/15 bg-[#EFE7D8]/70 px-3 sm:px-8 py-2 sm:py-3">
-      <div className="max-w-6xl mx-auto flex flex-nowrap sm:flex-wrap items-center justify-between gap-2 sm:gap-4 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#5C5248]">
+    <div className="border-b border-[#1F1A16]/15 bg-[#EFE7D8]/70 px-2.5 sm:px-8 py-2 sm:py-3">
+      <div className="max-w-6xl mx-auto flex flex-nowrap sm:flex-wrap items-center justify-between gap-1.5 sm:gap-4 text-[11px] uppercase tracking-[0.06em] sm:tracking-[0.2em] text-[#5C5248]">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
           <Link
             href="/naanas-space"
@@ -53,7 +53,7 @@ export function TopEditorialBar({
 
         <span
           style={serifStyle}
-          className="sm:hidden text-sm font-semibold text-[#1F1A16] tracking-tight truncate normal-case"
+          className="sm:hidden text-[13px] font-semibold text-[#1F1A16] tracking-tight truncate min-w-0 normal-case"
         >
           Thailand &apos;27
         </span>

@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { HOTEL_BOOKINGS } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle } from "../styles";
+import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
 
 interface QuickPocketDeskProps {
   exchangeRate: number;
@@ -16,6 +17,7 @@ interface QuickPocketDeskProps {
   onOpenChange?: (open: boolean) => void;
   onSetQuickThbPreset?: (thbAmount: number) => void;
   onJumpToBudget?: () => void;
+  copiedText?: string | null;
 }
 
 export function QuickPocketDesk({
@@ -32,9 +34,9 @@ export function QuickPocketDesk({
   onOpenChange,
   onSetQuickThbPreset,
   onJumpToBudget,
+  copiedText,
 }: QuickPocketDeskProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const open = controlledOpen ?? internalOpen;
   const setOpen = (next: boolean) => {
@@ -44,66 +46,21 @@ export function QuickPocketDesk({
     onOpenChange?.(next);
   };
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
+  const { dialogRef, handleDialogClose } = useBottomSheetDialog({
+    open,
+    onClose: () => setOpen(false),
+    desktopMode: "non-modal",
+  });
 
-    if (open) {
-      if (!dialog.open) {
-        if (typeof dialog.showModal === "function") {
-          dialog.showModal();
-        } else {
-          dialog.setAttribute("open", "");
+  return (
+    <>
+      <div
+        className={
+          open
+            ? "hidden"
+            : "hidden sm:block fixed bottom-5 left-5 z-40 pb-[env(safe-area-inset-bottom)]"
         }
-      }
-    } else if (dialog.open) {
-      if (typeof dialog.close === "function") {
-        dialog.close();
-      } else {
-        dialog.removeAttribute("open");
-      }
-      return;
-    }
-
-    if (
-      typeof HTMLDialogElement !== "undefined" &&
-      !("closedBy" in HTMLDialogElement.prototype)
-    ) {
-      const outside = (e: PointerEvent) => {
-        const r = dialog.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) return e.target === dialog;
-        return (
-          e.clientX < r.left ||
-          e.clientX > r.right ||
-          e.clientY < r.top ||
-          e.clientY > r.bottom
-        );
-      };
-      let pressedOutside = false;
-      const onPointerDown = (e: PointerEvent) => {
-        pressedOutside = outside(e);
-      };
-      const onPointerUp = (e: PointerEvent) => {
-        if (pressedOutside && outside(e)) {
-          if (typeof dialog.close === "function") {
-            dialog.close();
-          } else {
-            setOpen(false);
-          }
-        }
-      };
-      dialog.addEventListener("pointerdown", onPointerDown);
-      dialog.addEventListener("pointerup", onPointerUp);
-      return () => {
-        dialog.removeEventListener("pointerdown", onPointerDown);
-        dialog.removeEventListener("pointerup", onPointerUp);
-      };
-    }
-  }, [open]);
-
-  if (!open) {
-    return (
-      <div className="hidden sm:block fixed bottom-5 left-5 z-40 pb-[env(safe-area-inset-bottom)]">
+      >
         <button
           type="button"
           onClick={() => setOpen(true)}
@@ -115,18 +72,16 @@ export function QuickPocketDesk({
           <span>Quick Tools</span>
         </button>
       </div>
-    );
-  }
 
-  return (
-    <dialog
-      ref={dialogRef}
-      {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
-      aria-labelledby="pocket-desk-title"
-      onClose={() => setOpen(false)}
-      className="fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t-2 border-[#1F1A16] bg-[#FBF8F3] text-[#1F1A16] p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain shadow-2xl z-50 sm:inset-auto sm:bottom-5 sm:left-5 sm:w-96 sm:max-w-[calc(100vw-2.5rem)] sm:rounded-none sm:border-2 sm:p-4 backdrop:bg-[#1F1A16]/60 sm:backdrop:bg-transparent backdrop:overflow-hidden backdrop:overscroll-contain"
-    >
-      <div className="space-y-4">
+      <dialog
+        ref={dialogRef}
+        {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+        aria-labelledby="pocket-desk-title"
+        onClose={handleDialogClose}
+        className="[&:not([open])]:hidden fixed inset-x-0 bottom-0 top-auto m-0 w-full max-w-none max-h-[85dvh] rounded-t-2xl border-t-2 border-[#1F1A16] bg-[#FBF8F3] text-[#1F1A16] p-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain shadow-2xl z-50 sm:inset-auto sm:bottom-5 sm:left-5 sm:w-96 sm:max-w-[calc(100vw-2.5rem)] sm:rounded-none sm:border-2 sm:p-4 backdrop:bg-[#1F1A16]/60 sm:backdrop:bg-transparent backdrop:overflow-hidden backdrop:overscroll-contain"
+      >
+        {open && (
+          <div className="space-y-4">
         <div
           aria-hidden="true"
           className="sm:hidden w-10 h-1.5 rounded-full bg-[#1F1A16]/20 mx-auto"
@@ -269,6 +224,22 @@ export function QuickPocketDesk({
               </button>
             ))}
           </div>
+          {copiedText && (
+            <div
+              role="status"
+              aria-live="polite"
+              data-testid="pocket-desk-copy-status"
+              className="sm:hidden flex items-center justify-between gap-2 px-3 py-2 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B]"
+            >
+              <span
+                style={monoStyle}
+                className="text-[11px] uppercase tracking-[0.1em] text-[#D8B979] shrink-0"
+              >
+                COPIED TO FOLIO
+              </span>
+              <span className="text-xs font-medium truncate">{copiedText}</span>
+            </div>
+          )}
         </div>
 
         {/* Show Driver Thai Script Triggers */}
@@ -368,7 +339,9 @@ export function QuickPocketDesk({
             View Folio Change Log ({changeLogCount})
           </button>
         </div>
-      </div>
-    </dialog>
+          </div>
+        )}
+      </dialog>
+    </>
   );
 }

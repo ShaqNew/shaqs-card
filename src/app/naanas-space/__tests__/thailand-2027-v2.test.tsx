@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import NaanasSpaceHub from "../page";
 import ThailandTripDashboardV1 from "../thailand-2027/page";
 import ThailandTripDashboardV2 from "../thailand-2027-v2/page";
@@ -115,6 +115,9 @@ describe("Thailand 2027 v2 Route & Cross-Route Shared State", () => {
 describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    HTMLDialogElement.prototype.show = function show() {
+      this.setAttribute("open", "");
+    };
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute("open", "");
     };
@@ -304,6 +307,9 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
 describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    HTMLDialogElement.prototype.show = function show() {
+      this.setAttribute("open", "");
+    };
     HTMLDialogElement.prototype.showModal = function showModal() {
       this.setAttribute("open", "");
     };
@@ -349,9 +355,8 @@ describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
     fireEvent.click(
       screen.getByRole("button", { name: /Step III .* Pre-Departure/i })
     );
-    expect(
-      document.querySelector("dialog[aria-labelledby='more-sheet-title']")
-    ).toBeNull();
+    expect(moreDialog).not.toHaveAttribute("open");
+    expect(moreDialog).toBeEmptyDOMElement();
     expect(
       screen.getByRole("checkbox", { name: /Southeast Asia's Uber equivalent/i })
     ).toBeInTheDocument();
@@ -472,9 +477,133 @@ describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
     expect(dialog?.querySelector('a[href="tel:1669"]')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /Log Expense/i }));
-    expect(
-      document.querySelector("dialog[aria-labelledby='pocket-desk-title']")
-    ).toBeNull();
+    expect(dialog).not.toHaveAttribute("open");
+    expect(dialog).toBeEmptyDOMElement();
     expect(screen.getByLabelText(/SIAMESE BAHT/i)).toBeInTheDocument();
+  });
+
+  it("shows in-sheet COPIED TO FOLIO confirmation on mobile QuickPocketDesk, restores focus on close, and opens non-modally on desktop", () => {
+    const origMatchMedia = window.matchMedia;
+    const origShow = HTMLDialogElement.prototype.show;
+    const origShowModal = HTMLDialogElement.prototype.showModal;
+
+    try {
+      const writeText = jest.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, { clipboard: { writeText } });
+
+      // Mobile (< 640px)
+      window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      })) as unknown as typeof window.matchMedia;
+
+      const showSpy = jest.fn(function show(this: HTMLDialogElement) {
+        this.setAttribute("open", "");
+      });
+      const showModalSpy = jest.fn(function showModal(this: HTMLDialogElement) {
+        this.setAttribute("open", "");
+      });
+      HTMLDialogElement.prototype.show = showSpy;
+      HTMLDialogElement.prototype.showModal = showModalSpy;
+
+      const { unmount } = render(<ThailandTripDashboardV2 />);
+      const pocketBtn = screen.getByRole("button", {
+        name: /Open Quick Pocket Desk/i,
+      });
+      expect(pocketBtn).toHaveAttribute("aria-expanded", "false");
+      expect(pocketBtn).toHaveAttribute("aria-haspopup", "dialog");
+
+      pocketBtn.focus();
+      fireEvent.click(pocketBtn);
+      expect(showModalSpy).toHaveBeenCalledTimes(1);
+      expect(showSpy).not.toHaveBeenCalled();
+      expect(pocketBtn).toHaveAttribute("aria-expanded", "true");
+
+      // Tap PNR chip without closing Pocket Desk: inside-dialog status appears cleanly
+      fireEvent.click(screen.getByText("6I8SOP"));
+      const dialog = document.querySelector(
+        "dialog[aria-labelledby='pocket-desk-title']"
+      ) as HTMLDialogElement;
+      expect(dialog).toHaveAttribute("open");
+      const inSheetStatus = screen.getByTestId("pocket-desk-copy-status");
+      expect(dialog.contains(inSheetStatus)).toBe(true);
+      expect(inSheetStatus).toHaveTextContent(/COPIED TO FOLIO/i);
+      expect(inSheetStatus).toHaveTextContent(/6I8SOP/i);
+
+      // Closing returns focus cleanly to invoker
+      fireEvent.click(screen.getByRole("button", { name: /CLOSE/i }));
+      expect(dialog).not.toHaveAttribute("open");
+      expect(document.activeElement).toBe(pocketBtn);
+      unmount();
+
+      // Desktop (>= 640px)
+      showSpy.mockClear();
+      showModalSpy.mockClear();
+      window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+        matches: query === "(min-width: 640px)",
+        media: query,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      })) as unknown as typeof window.matchMedia;
+
+      render(<ThailandTripDashboardV2 />);
+      fireEvent.click(screen.getByRole("button", { name: /Quick Tools/i }));
+      expect(showSpy).toHaveBeenCalledTimes(1);
+      expect(showModalSpy).not.toHaveBeenCalled();
+    } finally {
+      window.matchMedia = origMatchMedia;
+      HTMLDialogElement.prototype.show = origShow;
+      HTMLDialogElement.prototype.showModal = origShowModal;
+    }
+  });
+
+  it("clears phaseFilter on Full Spread (All 11 Days), enforces D10 Next Day disabled bound, and scrolls directly to target day card", () => {
+    jest.useFakeTimers();
+    const scrolledIds: string[] = [];
+    const origScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function mockScrollIntoView() {
+      scrolledIds.push(this.id);
+    };
+
+    try {
+      render(<ThailandTripDashboardV2 />);
+
+      // Filter to Bangkok phase (D01-D03 visible; D00 & D10 hidden)
+      fireEvent.click(screen.getByRole("button", { name: /II\. Bangkok \(3N\)/i }));
+      expect(document.getElementById("day-card-0")).toBeNull();
+      expect(document.getElementById("day-card-1")).toBeInTheDocument();
+
+      // Pick D02 from Date Ruler -> exits phase slice cleanly, Full Spread restores all 11 days
+      fireEvent.click(screen.getByRole("button", { name: /D02/i }));
+      expect(document.getElementById("day-card-2")).toBeInTheDocument();
+      expect(document.getElementById("day-card-1")).toBeNull();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: /Full Spread \(All 11 Days\)/i })
+      );
+      act(() => {
+        jest.advanceTimersByTime(60);
+      });
+      expect(document.getElementById("day-card-0")).toBeInTheDocument();
+      expect(document.getElementById("day-card-10")).toBeInTheDocument();
+      expect(scrolledIds).toContain("itinerary-step-header");
+
+      // Jump to D10 and verify Next Day is disabled and Prev Day scrolls to #day-card-9
+      scrolledIds.length = 0;
+      fireEvent.click(screen.getByRole("button", { name: /D10/i }));
+      expect(screen.getByRole("button", { name: /Next Day/i })).toBeDisabled();
+      fireEvent.click(screen.getByRole("button", { name: /Prev Day/i }));
+      act(() => {
+        jest.advanceTimersByTime(60);
+      });
+      expect(document.getElementById("day-card-9")).toBeInTheDocument();
+      expect(scrolledIds).toContain("day-card-9");
+      expect(scrolledIds).not.toContain("step-content-anchor");
+    } finally {
+      Element.prototype.scrollIntoView = origScrollIntoView;
+      jest.useRealTimers();
+    }
   });
 });

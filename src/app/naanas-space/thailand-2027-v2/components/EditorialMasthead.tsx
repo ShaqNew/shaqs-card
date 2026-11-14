@@ -251,13 +251,13 @@ export function EditorialMasthead({
                   style={monoStyle}
                   className="text-xs font-semibold text-[#13382E]"
                 >
-                  {overallReadinessPct}% COMPLETE
+                  {clampedPct}% COMPLETE
                 </span>
               </div>
               <div className="w-full h-1.5 bg-[#E5DEC9] overflow-hidden">
                 <div
                   className="h-full bg-[#13382E] transition-all duration-500"
-                  style={{ width: `${overallReadinessPct}%` }}
+                  style={{ width: `${clampedPct}%` }}
                 />
               </div>
             </div>
