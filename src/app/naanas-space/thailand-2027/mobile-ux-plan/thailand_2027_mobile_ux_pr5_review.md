@@ -158,6 +158,18 @@ All verified findings from Sections 3 (`1–5` + Low Severity) and 3b (`6–12`)
 - **ESLint (9 touched `.ts`/`.tsx` files):** Exited `0` with **0 errors, 0 warnings** (`QuickPocketDesk.tsx` warning resolved).
 - **TypeScript (`npx tsc --noEmit`):** Reported `Found 958 errors in 16 files` — all in `*.test.ts`/`*.test.tsx` (pre-existing missing `@types/jest` / jest-dom matcher declarations); **0 errors in non-test application files**.
 
+### Re-verification of Fixes (`7b4009b`) — Sonnet
+
+Independently re-checked commit `7b4009b` against the source on `feat/thailand-2027-v2-phase-2`:
+
+- **Findings 1–12:** Resolutions confirmed in code. Highlights: `useBottomSheetDialog` uses `showModal()` below 640px and `show()` above it, with focus restoration and `matchMedia` handling; the date ruler now scrolls horizontally only; `Full Spread`, `Prev Day` and `Next Day` reset `phaseFilter` and scroll to `#day-card-N` or `#itinerary-step-header`; `aria-current`, `aria-pressed` and `aria-expanded` are present; the budget badge is driven by `budgetSummary`.
+- **Jest (`npx jest src/app/naanas-space`):** 8/8 suites, 113/113 tests passed.
+- **ESLint (`src/app/naanas-space/thailand-2027-v2`):** 0 errors. 3 warnings remain, all in `PolaroidOutfitCard.tsx`, which is not touched by this PR.
+- **Not re-run:** `tsc --noEmit` (the figure above is taken from the log) and GitHub-side PR checks.
+- **Residual nit (non-blocking):** the mobile bottom `<nav>` still lives inside the `#step-content-anchor` stacking context (now `z-40 sm:z-30`). It works today but ties with any other root-level `z-40` element. Consider extracting `<nav>` as a sibling of the sticky container in a follow-up.
+
+— *Sonnet*
+
 ---
 
 *Signed off by Hydrogen · PR #5 (`d2fa996`) + post-review fixes · 2026-11-14*
