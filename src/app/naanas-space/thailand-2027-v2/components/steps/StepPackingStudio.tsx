@@ -752,7 +752,10 @@ export function StepPackingStudio({
             </div>
 
             {/* Polaroid Wardrobe Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
+            <div
+              data-testid="wardrobe-polaroid-grid"
+              className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 items-start"
+            >
               {filteredOutfits.map((outfit) => {
                 const assignedDays = TRIP_DAYS.filter((d) => {
                   const resolved = resolveDayOutfit(
@@ -850,6 +853,7 @@ export function StepPackingStudio({
                 <button
                   type="button"
                   onClick={() => setShowUnpackedOnly(!showUnpackedOnly)}
+                  aria-pressed={showUnpackedOnly}
                   style={monoStyle}
                   className={`min-h-11 sm:min-h-0 px-3.5 py-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                     showUnpackedOnly
@@ -857,7 +861,7 @@ export function StepPackingStudio({
                       : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
                   }`}
                 >
-                  {showUnpackedOnly ? "Showing Unpacked" : "Unpacked Only"}
+                  {showUnpackedOnly ? "Showing Unpacked" : "Hide packed"}
                 </button>
                 <button
                   type="button"

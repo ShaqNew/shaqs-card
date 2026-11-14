@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   DressCodeProfile,
   GarmentLink,
   WardrobeOutfit,
 } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle } from "../styles";
+import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
 import {
   DRESS_CODE_METADATA,
   extractAsosProductMeta,
@@ -35,7 +36,12 @@ export function CreateLookModal({
   onCreateOutfit,
   onUpdateOutfit,
 }: CreateLookModalProps) {
-  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  const { dialogRef, handleDialogClose } = useBottomSheetDialog({
+    open: isOpen,
+    onClose,
+    desktopMode: "modal",
+    lightDismiss: true,
+  });
 
   const [title, setTitle] = useState("");
   const [owner, setOwner] = useState<WardrobeOutfit["owner"]>("both");
@@ -122,26 +128,119 @@ export function CreateLookModal({
     };
   }, [isOpen, editingOutfit]);
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen) {
-      if (!dialog.open) {
-        if (typeof dialog.showModal === "function") {
-          dialog.showModal();
-        } else {
-          dialog.setAttribute("open", "");
+  const readAndDownscalePhoto = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("Failed to read image file"));
+      reader.onload = () => {
+        const rawDataUrl = typeof reader.result === "string" ? reader.result : "";
+        if (!rawDataUrl) {
+          reject(new Error("Empty image data"));
+          return;
         }
-      }
-    } else if (dialog.open) {
-      if (typeof dialog.close === "function") {
-        dialog.close();
+        const isJsdom =
+          typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent);
+        if (isJsdom || typeof Image === "undefined") {
+          resolve(rawDataUrl);
+          return;
+        }
+        let settled = false;
+        const finish = (url: string) => {
+          if (!settled) {
+            settled = true;
+            resolve(url);
+          }
+        };
+        const fallbackTimer = setTimeout(() => finish(rawDataUrl), 250);
+        const img = new Image();
+        img.onload = () => {
+          clearTimeout(fallbackTimer);
+          try {
+            const maxDim = 720;
+            const w = img.naturalWidth || img.width;
+            const h = img.naturalHeight || img.height;
+            if (!w || !h) {
+              finish(rawDataUrl);
+              return;
+            }
+            const scale = Math.min(1, maxDim / Math.max(w, h));
+            const targetW = Math.max(1, Math.round(w * scale));
+            const targetH = Math.max(1, Math.round(h * scale));
+            const canvas = document.createElement("canvas");
+            canvas.width = targetW;
+            canvas.height = targetH;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              finish(rawDataUrl);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, targetW, targetH);
+            const compressed = canvas.toDataURL("image/webp", 0.85);
+            finish(
+              compressed && compressed.startsWith("data:image/")
+                ? compressed
+                : rawDataUrl
+            );
+          } catch {
+            finish(rawDataUrl);
+          }
+        };
+        img.onerror = () => {
+          clearTimeout(fallbackTimer);
+          finish(rawDataUrl);
+        };
+        img.src = rawDataUrl;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handlePieceChange = (
+    pieceId: string,
+    field: keyof GarmentLink,
+    value: string
+  ) => {
+    setGarments((prev) =>
+      prev.map((g) => (g.id === pieceId ? { ...g, [field]: value } : g))
+    );
+  };
+
+  const handleLocalPhotoSelected = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    targetPieceId?: string
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const dataUrl = await readAndDownscalePhoto(file);
+      const cleanName =
+        file.name.replace(/\.[^.]+$/, "").trim() || `${categoryInput} Photo`;
+      if (targetPieceId) {
+        handlePieceChange(targetPieceId, "imageUrl", dataUrl);
+        setScrapeStatus(`Uploaded photo for garment piece.`);
+      } else if (editingGarmentId) {
+        handlePieceChange(editingGarmentId, "imageUrl", dataUrl);
+        setManualImageInput(dataUrl);
+        setScrapeStatus(`Updated piece photo from device.`);
       } else {
-        dialog.removeAttribute("open");
+        const pieceLabel = labelInput.trim() || cleanName;
+        const newGarment: GarmentLink = {
+          id: `garment-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          label: pieceLabel,
+          url: urlInput.trim() || "#local-photo",
+          imageUrl: dataUrl,
+          category: categoryInput,
+        };
+        setGarments((prev) => [...prev, newGarment]);
+        setUrlInput("");
+        setLabelInput("");
+        setManualImageInput("");
+        setScrapeStatus(`Added “${pieceLabel}” from local photo.`);
       }
+    } catch {
+      setScrapeStatus("Could not read selected photo file.");
     }
-  }, [isOpen]);
+  };
 
   const handleDressCodeChange = (nextCode: DressCodeProfile) => {
     const prevDefault = DRESS_CODE_METADATA[dressCode].defaultClimateTag;
@@ -370,53 +469,69 @@ export function CreateLookModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   const isEditMode = Boolean(editingOutfit);
 
   return (
     <dialog
       ref={dialogRef}
+      {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-labelledby="create-look-modal-title"
-      onClose={onClose}
-      className="fixed inset-0 z-50 m-auto bg-[#FBF8F3] text-[#1F1A16] border-2 border-[#1F1A16] max-w-3xl w-[calc(100%-2rem)] max-h-[90dvh] overflow-y-auto p-6 sm:p-8 shadow-2xl backdrop:bg-[#1F1A16]/80 backdrop:backdrop-blur-sm"
+      onClose={handleDialogClose}
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:max-h-[90dvh] sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/80 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
-      <div className="space-y-6">
-        <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/20 pb-4">
-          <div>
-            <span
-              style={monoStyle}
-              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
-            >
-              DIGITAL WARDROBE ATELIER &bull; STEP IV LOOKBOOK
-            </span>
-            <h2
-              id="create-look-modal-title"
-              style={serifStyle}
-              className="text-2xl sm:text-3xl font-normal text-[#1F1A16] mt-0.5"
-            >
-              {isEditMode
-                ? "Edit Look & Garment Collage"
-                : "Create Look & Garment Collage"}
-            </h2>
-            <p className="text-xs text-[#5C5248] mt-1">
-              {isEditMode
-                ? "Refine this look's title, dress code, climate tag, or swap and update garment links."
-                : "Curate a lightweight outfit from Pinterest, ASOS, or boutique URLs to assign across days and activities."}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={monoStyle}
-            className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+      {isOpen && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+          {/* Mobile Drag Handle */}
+          <div
+            data-sheet-drag-handle="true"
+            className="sm:hidden shrink-0 flex justify-center pt-2.5 pb-1 bg-[#FBF8F3]"
           >
-            Close &#10005;
-          </button>
-        </div>
+            <span className="w-10 h-1 rounded-full bg-[#1F1A16]/25" />
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Sticky Modal Header */}
+          <div className="shrink-0 p-4 sm:p-6 border-b border-[#1F1A16]/20 flex items-start justify-between gap-4 bg-[#FBF8F3]">
+            <div>
+              <span
+                style={monoStyle}
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
+              >
+                DIGITAL WARDROBE ATELIER &bull; STEP IV LOOKBOOK
+              </span>
+              <h2
+                id="create-look-modal-title"
+                style={serifStyle}
+                className="text-2xl sm:text-3xl font-normal text-[#1F1A16] mt-0.5"
+              >
+                {isEditMode
+                  ? "Edit Look & Garment Collage"
+                  : "Create Look & Garment Collage"}
+              </h2>
+              <p className="text-xs text-[#5C5248] mt-1">
+                {isEditMode
+                  ? "Refine this look's title, dress code, climate tag, or swap and update garment links."
+                  : "Curate a lightweight outfit from Pinterest, ASOS, or local photos to assign across days and activities."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              style={monoStyle}
+              className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+            >
+              Close &#10005;
+            </button>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          >
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Column (7 cols): Look Details & Dynamic URL Drop Zone */}
             <div className="lg:col-span-7 space-y-4">
               <div>
@@ -684,6 +799,29 @@ export function CreateLookModal({
                   </button>
                 </div>
 
+                {/* Local Device Photo Picker (Camera or Photo Picker without capture restriction) */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#1F1A16]/15">
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
+                  >
+                    OR UPLOAD GARMENT PHOTO FROM DEVICE:
+                  </span>
+                  <label
+                    style={monoStyle}
+                    className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#FBF8F3] hover:bg-[#13382E] hover:text-[#F6F1E7] text-[#13382E] border border-[#13382E]/40 text-[11px] sm:text-[10px] uppercase tracking-wider font-semibold inline-flex items-center cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleLocalPhotoSelected(e)}
+                      className="sr-only"
+                      aria-label="Upload local garment photo"
+                    />
+                    Upload Photo
+                  </label>
+                </div>
+
                 {isPrivateGooglePhotosUrl(urlInput.trim()) && (
                   <p
                     role="alert"
@@ -763,8 +901,8 @@ export function CreateLookModal({
                   >
                     ADDED GARMENTS ({garments.length})
                   </span>
-                  <div className="max-h-32 overflow-y-auto divide-y divide-[#1F1A16]/10 bg-[#FBF8F3] border border-[#1F1A16]/15 px-2.5 py-1">
-                    {garments.map((g) => (
+                  <div className="max-h-36 overflow-y-auto divide-y divide-[#1F1A16]/10 bg-[#FBF8F3] border border-[#1F1A16]/15 px-2.5 py-1">
+                    {garments.map((g, idx) => (
                       <div
                         key={g.id}
                         className="py-1.5 flex items-center justify-between gap-2 text-xs"
@@ -773,6 +911,19 @@ export function CreateLookModal({
                           {g.label}
                         </span>
                         <div className="flex items-center gap-1.5 shrink-0">
+                          <label
+                            style={monoStyle}
+                            className="min-h-11 sm:min-h-0 inline-flex items-center justify-center px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-wider text-[#13382E] border border-[#13382E]/30 hover:bg-[#13382E] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => handleLocalPhotoSelected(e, g.id)}
+                              className="sr-only"
+                              aria-label={`Upload photo for garment piece ${idx + 1}`}
+                            />
+                            Upload Photo
+                          </label>
                           <button
                             type="button"
                             onClick={() => handleStartEditGarment(g)}
@@ -798,26 +949,29 @@ export function CreateLookModal({
               )}
             </div>
           </div>
+            </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#1F1A16]/15">
-            <button
-              type="button"
-              onClick={onClose}
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-4 py-2.5 border border-[#1F1A16]/25 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
-            >
-              {isEditMode ? "Save Look Changes" : "Save Look to Wardrobe"}
-            </button>
-          </div>
-        </form>
-      </div>
+            {/* Sticky Footer Action Bar */}
+            <div className="shrink-0 sticky bottom-0 bg-[#EFE7D8] border-t border-[#D8CEBC] px-4 sm:px-6 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                style={monoStyle}
+                className="min-h-11 px-4 py-2.5 border border-[#1F1A16]/25 bg-[#FBF8F3] text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                style={monoStyle}
+                className="min-h-11 px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
+              >
+                {isEditMode ? "Save Look Changes" : "Save Look to Wardrobe"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </dialog>
   );
 }

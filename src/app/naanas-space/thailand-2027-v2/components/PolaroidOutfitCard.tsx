@@ -11,9 +11,11 @@ import {
   getCollageGridClass,
 } from "../utils/wardrobe";
 import { formatDayNumber } from "../utils/formatters";
+import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
 
 interface GarmentLightboxModalProps {
-  garment: GarmentLink;
+  garment: GarmentLink | null;
+  isOpen?: boolean;
   outfitTitle?: string;
   allGarments?: GarmentLink[];
   onSelectGarment?: (garment: GarmentLink) => void;
@@ -22,23 +24,30 @@ interface GarmentLightboxModalProps {
 
 export function GarmentLightboxModal({
   garment,
+  isOpen: isOpenProp,
   outfitTitle,
   allGarments = [],
   onSelectGarment,
   onClose,
 }: GarmentLightboxModalProps) {
   const [imgError, setImgError] = useState(false);
+  const isOpen = (isOpenProp ?? Boolean(garment)) && Boolean(garment);
+
+  const { dialogRef, handleDialogClose } = useBottomSheetDialog({
+    open: isOpen,
+    onClose,
+    desktopMode: "modal",
+    lightDismiss: true,
+  });
 
   useEffect(() => {
     setImgError(false);
-  }, [garment.id, garment.imageUrl]);
+  }, [garment?.id, garment?.imageUrl]);
 
   useEffect(() => {
+    if (!isOpen || !garment) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      } else if (
+      if (
         (e.key === "ArrowRight" || e.key === "ArrowLeft") &&
         allGarments.length > 1 &&
         onSelectGarment
@@ -55,256 +64,306 @@ export function GarmentLightboxModal({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [garment.id, allGarments, onSelectGarment, onClose]);
+  }, [isOpen, garment, allGarments, onSelectGarment]);
 
-  const domain = extractSourceDomain(garment.url);
-  const showImage = Boolean(garment.imageUrl && !imgError);
+  const activeIndex = garment
+    ? allGarments.findIndex((g) => g.id === garment.id)
+    : -1;
+  const prevGarment =
+    activeIndex !== -1 && allGarments.length > 1
+      ? allGarments[(activeIndex - 1 + allGarments.length) % allGarments.length]
+      : null;
+  const nextGarment =
+    activeIndex !== -1 && allGarments.length > 1
+      ? allGarments[(activeIndex + 1) % allGarments.length]
+      : null;
+
+  const domain = garment ? extractSourceDomain(garment.url) : "";
+  const showImage = Boolean(garment?.imageUrl && !imgError);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Expanded preview: ${garment.label}`}
-      className="fixed inset-0 z-[70] bg-[#1F1A16]/85 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClose();
-      }}
+    <dialog
+      ref={dialogRef}
+      {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+      aria-label={
+        garment
+          ? `Expanded preview: ${garment.label}`
+          : "Expanded garment preview"
+      }
+      onClose={handleDialogClose}
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-3xl sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[70] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
-      <div
-        className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-3xl w-full p-4 sm:p-6 shadow-2xl space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Top Header */}
-        <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/15 pb-3">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                style={monoStyle}
-                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#A8442A] font-semibold"
-              >
-                {garment.category || "GARMENT PIECE"} &bull; {domain}
-              </span>
-              {outfitTitle && (
-                <span
-                  style={monoStyle}
-                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248]"
+      {isOpen && garment && (
+        <div
+          className="flex flex-col flex-1 min-h-0 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Mobile Drag Handle */}
+          <div
+            data-sheet-drag-handle="true"
+            className="sm:hidden shrink-0 flex justify-center pt-2.5 pb-1 bg-[#FBF8F3]"
+          >
+            <span className="w-10 h-1 rounded-full bg-[#1F1A16]/25" />
+          </div>
+
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6 space-y-4">
+            {/* Top Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/15 pb-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#A8442A] font-semibold"
+                  >
+                    {garment.category || "GARMENT PIECE"} &bull; {domain}
+                  </span>
+                  {outfitTitle && (
+                    <span
+                      style={monoStyle}
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248]"
+                    >
+                      ({outfitTitle})
+                    </span>
+                  )}
+                </div>
+                <h3
+                  style={serifStyle}
+                  className="text-xl sm:text-2xl font-semibold text-[#1F1A16] mt-0.5 truncate"
                 >
-                  ({outfitTitle})
-                </span>
+                  {garment.label}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                style={monoStyle}
+                aria-label="Close expanded image"
+                className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center cursor-pointer shrink-0"
+              >
+                Close &#10005;
+              </button>
+            </div>
+
+            {/* Main Image Viewport */}
+            <div className="relative bg-[#EFE7D8]/70 border border-[#1F1A16]/15 flex items-center justify-center min-h-[240px] max-h-[56dvh] overflow-hidden p-2">
+              {showImage ? (
+                <img
+                  src={garment.imageUrl}
+                  alt={garment.label}
+                  referrerPolicy="no-referrer"
+                  onError={() => setImgError(true)}
+                  className="max-h-[52dvh] w-auto max-w-full object-contain mx-auto shadow-sm"
+                />
+              ) : (
+                <div className="p-8 text-center space-y-3 max-w-md">
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
+                  >
+                    {domain} EDITORIAL TILE
+                  </span>
+                  <p
+                    style={serifStyle}
+                    className="text-2xl text-[#1F1A16] font-medium"
+                  >
+                    {garment.label}
+                  </p>
+                  <p className="text-xs text-[#5C5248]">
+                    No direct thumbnail image URL is stored for this piece. Open
+                    the original link below or edit the garment to paste an
+                    image URL.
+                  </p>
+                </div>
               )}
             </div>
-            <h3
-              style={serifStyle}
-              className="text-xl sm:text-2xl font-semibold text-[#1F1A16] mt-0.5 truncate"
-            >
-              {garment.label}
-            </h3>
+
+            {/* Explicit Prev / Next Garment Navigation + Piece Pills */}
+            {allGarments.length > 1 && onSelectGarment && (
+              <div className="space-y-2 pt-2 border-t border-[#1F1A16]/15">
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous garment"
+                    onClick={() => prevGarment && onSelectGarment(prevGarment)}
+                    style={monoStyle}
+                    className="min-h-11 px-3 py-1.5 border border-[#1F1A16]/25 bg-[#EFE7D8] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-xs uppercase tracking-wider font-semibold cursor-pointer transition-colors"
+                  >
+                    &larr; Prev
+                  </button>
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] uppercase tracking-wider text-[#5C5248]"
+                  >
+                    Piece {activeIndex + 1} of {allGarments.length}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Next garment"
+                    onClick={() => nextGarment && onSelectGarment(nextGarment)}
+                    style={monoStyle}
+                    className="min-h-11 px-3 py-1.5 border border-[#1F1A16]/25 bg-[#EFE7D8] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-xs uppercase tracking-wider font-semibold cursor-pointer transition-colors"
+                  >
+                    Next &rarr;
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {allGarments.map((g, idx) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => onSelectGarment(g)}
+                      style={monoStyle}
+                      className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                        g.id === garment.id
+                          ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
+                          : "bg-[#EFE7D8]/70 text-[#1F1A16] border-[#1F1A16]/20 hover:border-[#13382E]"
+                      }`}
+                    >
+                      0{idx + 1} &bull; {g.label.slice(0, 18)}
+                      {g.label.length > 18 ? "…" : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={monoStyle}
-            aria-label="Close expanded image"
-            className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center cursor-pointer shrink-0"
-          >
-            Close &#10005;
-          </button>
-        </div>
 
-        {/* Main Image Viewport */}
-        <div className="relative bg-[#EFE7D8]/70 border border-[#1F1A16]/15 flex items-center justify-center min-h-[260px] max-h-[68dvh] overflow-hidden p-2">
-          {showImage ? (
-            <img
-              src={garment.imageUrl}
-              alt={garment.label}
-              referrerPolicy="no-referrer"
-              onError={() => setImgError(true)}
-              className="max-h-[64dvh] w-auto max-w-full object-contain mx-auto shadow-sm"
-            />
-          ) : (
-            <div className="p-8 text-center space-y-3 max-w-md">
-              <span
-                style={monoStyle}
-                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
-              >
-                {domain} EDITORIAL TILE
-              </span>
-              <p
-                style={serifStyle}
-                className="text-2xl text-[#1F1A16] font-medium"
-              >
-                {garment.label}
-              </p>
-              <p className="text-xs text-[#5C5248]">
-                No direct thumbnail image URL is stored for this piece. Open the
-                original link below or edit the garment to paste an image URL.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Multi-Garment Switcher & External Source Link */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-[#1F1A16]/15">
-          {allGarments.length > 1 && onSelectGarment ? (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span
-                style={monoStyle}
-                className="text-[11px] sm:text-[9px] uppercase tracking-wider text-[#5C5248] mr-1"
-              >
-                PIECES ({allGarments.length}):
-              </span>
-              {allGarments.map((g, idx) => (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={() => onSelectGarment(g)}
-                  style={monoStyle}
-                  className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
-                    g.id === garment.id
-                      ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
-                      : "bg-[#EFE7D8]/70 text-[#1F1A16] border-[#1F1A16]/20 hover:border-[#13382E]"
-                  }`}
-                >
-                  0{idx + 1} &bull; {g.label.slice(0, 18)}
-                  {g.label.length > 18 ? "…" : ""}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <span
+          {/* Sticky Footer */}
+          <div className="shrink-0 sticky bottom-0 bg-[#EFE7D8] border-t border-[#D8CEBC] px-4 sm:px-6 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 flex flex-wrap items-center justify-between gap-2">
+            <a
+              href={garment.url}
+              target="_blank"
+              rel="noopener noreferrer"
               style={monoStyle}
-              className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
+              className="min-h-11 px-3.5 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1.5"
             >
-              SOURCE: {domain}
-            </span>
-          )}
-
-          <a
-            href={garment.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={monoStyle}
-            className="min-h-11 sm:min-h-0 px-3.5 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold inline-flex items-center gap-1.5"
-          >
-            <span>Open Original on {domain}</span>
-            <ExternalArrow />
-          </a>
+              <span>Open Original on {domain}</span>
+              <ExternalArrow />
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              style={monoStyle}
+              className="min-h-11 px-4 py-2 bg-[#1F1A16] text-[#F6F1E7] text-[11px] uppercase tracking-wider font-semibold cursor-pointer"
+            >
+              Done
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </dialog>
   );
 }
 
 interface DeleteOutfitConfirmModalProps {
   outfit: WardrobeOutfit;
+  isOpen?: boolean;
   onConfirm: () => void;
   onClose: () => void;
 }
 
 export function DeleteOutfitConfirmModal({
   outfit,
+  isOpen = true,
   onConfirm,
   onClose,
 }: DeleteOutfitConfirmModalProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+  const { dialogRef, handleDialogClose } = useBottomSheetDialog({
+    open: isOpen,
+    onClose,
+    desktopMode: "modal",
+    lightDismiss: true,
+  });
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
+    <dialog
+      ref={dialogRef}
+      {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-label={`Confirm deletion of ${outfit.title}`}
-      className="fixed inset-0 z-[75] bg-[#1F1A16]/85 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={(e) => {
-        e.stopPropagation();
-        onClose();
-      }}
+      onClose={handleDialogClose}
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#FBF8F3] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] p-0 shadow-2xl z-[75] overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
     >
-      <div
-        className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-md w-full p-6 shadow-2xl space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-[#1F1A16]/15 pb-3">
-          <div>
-            <span
-              style={monoStyle}
-              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
-            >
-              DIGITAL WARDROBE &bull; CONFIRM REMOVAL
-            </span>
-            <h3
-              style={serifStyle}
-              className="text-xl font-semibold text-[#1F1A16] mt-1"
-            >
-              Delete Look?
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            style={monoStyle}
-            aria-label="Close delete confirmation"
-            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 px-2.5 py-1 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center justify-center cursor-pointer shrink-0"
-          >
-            &#10005;
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <p
-            style={serifStyle}
-            className="text-base text-[#1F1A16] font-medium"
-          >
-            “{outfit.title}”
-          </p>
-          <p className="text-xs text-[#5C5248] leading-relaxed">
-            Are you sure you want to remove this look from your Digital Wardrobe?
-            Any itinerary days and activities referencing this look will be unassigned.
-          </p>
-
-          {outfit.isDefault && (
-            <div className="p-2.5 bg-[#EFE7D8]/80 border border-[#1F1A16]/15 text-[11px] text-[#5C5248]">
+      {isOpen && (
+        <div
+          className="p-5 sm:p-6 space-y-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:pb-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-start justify-between gap-3 border-b border-[#1F1A16]/15 pb-3">
+            <div>
               <span
                 style={monoStyle}
-                className="font-semibold text-[#13382E] uppercase tracking-wider block mb-0.5"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
               >
-                Curated Default Look
+                DIGITAL WARDROBE &bull; CONFIRM REMOVAL
               </span>
-              This look is part of the default curated lookbook. It will be hidden from your wardrobe, and can be restored later.
+              <h3
+                style={serifStyle}
+                className="text-xl font-semibold text-[#1F1A16] mt-1"
+              >
+                Delete Look?
+              </h3>
             </div>
-          )}
-        </div>
+            <button
+              type="button"
+              onClick={onClose}
+              style={monoStyle}
+              aria-label="Close delete confirmation"
+              className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 px-2.5 py-1 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center justify-center cursor-pointer shrink-0"
+            >
+              &#10005;
+            </button>
+          </div>
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1F1A16]/15">
-          <button
-            type="button"
-            onClick={onClose}
-            style={monoStyle}
-            className="min-h-11 sm:min-h-0 px-3.5 py-2 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            style={monoStyle}
-            aria-label={`Confirm delete ${outfit.title}`}
-            className="min-h-11 sm:min-h-0 px-4 py-2 text-xs uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold text-[#FBF8F3] bg-[#A8442A] hover:bg-[#8F351E] cursor-pointer shadow-sm"
-          >
-            Confirm Delete
-          </button>
+          <div className="space-y-2">
+            <p
+              style={serifStyle}
+              className="text-base text-[#1F1A16] font-medium"
+            >
+              “{outfit.title}”
+            </p>
+            <p className="text-xs text-[#5C5248] leading-relaxed">
+              Are you sure you want to remove this look from your Digital
+              Wardrobe? Any itinerary days and activities referencing this look
+              will be unassigned.
+            </p>
+
+            {outfit.isDefault && (
+              <div className="p-2.5 bg-[#EFE7D8]/80 border border-[#1F1A16]/15 text-[11px] text-[#5C5248]">
+                <span
+                  style={monoStyle}
+                  className="font-semibold text-[#13382E] uppercase tracking-wider block mb-0.5"
+                >
+                  Curated Default Look
+                </span>
+                This look is part of the default curated lookbook. It will be
+                hidden from your wardrobe, and can be restored later.
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#1F1A16]/15">
+            <button
+              type="button"
+              onClick={onClose}
+              style={monoStyle}
+              className="min-h-11 px-3.5 py-2 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              style={monoStyle}
+              aria-label={`Confirm delete ${outfit.title}`}
+              className="min-h-11 px-4 py-2 text-xs uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold text-[#FBF8F3] bg-[#A8442A] hover:bg-[#8F351E] cursor-pointer shadow-sm"
+            >
+              Confirm Delete
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </dialog>
   );
 }
 
@@ -473,8 +532,9 @@ export function PolaroidCollageTile({
         )}
       </button>
 
-      {localExpanded && (
+      {!onExpandGarment && (
         <GarmentLightboxModal
+          isOpen={localExpanded}
           garment={
             effectiveImageUrl
               ? { ...garment, imageUrl: effectiveImageUrl }
@@ -555,87 +615,90 @@ export function PolaroidOutfitCard({
       }`}
     >
       <div>
-        {/* Polaroid Upper Image Frame: Responsive Split-Grid Collage (hidden when card is collapsed) */}
+        {/* Decoupled Polaroid Badges + Upper Image Frame (hidden when card is collapsed) */}
         {!effectiveCollapsed && (
-          <div
-            data-testid="polaroid-collage-grid"
-            data-tile-count={tileCount}
-            className={`relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid gap-0.5 ${getCollageGridClass(
-              tileCount
-            )}`}
-          >
-            {slots.map((g, idx) => (
-              <PolaroidCollageTile
-                key={g?.id || `empty-${idx}`}
-                garment={g}
-                slotIndex={idx}
-                onExpandGarment={(item) => setExpandedGarment(item)}
-              />
-            ))}
-
-            {/* Overlaid Owner & Source Tag Badges (Top-Left) */}
-            <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
-              <span
-                style={monoStyle}
-                className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold shadow-sm ${
-                  outfit.owner === "shaq"
-                    ? "bg-[#13382E] text-[#F6F1E7]"
-                    : outfit.owner === "naana"
-                    ? "bg-[#A8442A] text-[#FBF8F3]"
-                    : "bg-[#1F1A16] text-[#F6F1E7]"
-                }`}
-              >
-                {formatOwnerBadge(outfit.owner)}
-              </span>
-
-              {onToggleInspiration ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleInspiration(outfit);
-                  }}
-                  title={
-                    isInspo
-                      ? "Tagged as Website Inspiration — click to mark as Owned Wardrobe"
-                      : "Tagged as Owned Wardrobe — click to mark as Website Inspiration"
-                  }
-                  aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
-                    isInspo ? "Inspiration" : "Owned"
-                  })`}
-                  style={monoStyle}
-                  className={`pointer-events-auto min-h-11 sm:min-h-0 inline-flex items-center px-2.5 sm:px-2 py-1 sm:py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
-                    isInspo
-                      ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
-                      : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
-                  }`}
-                >
-                  {isInspo ? "✦ Inspiration" : "✓ Owned"}
-                </button>
-              ) : (
+          <>
+            <div
+              data-testid="polaroid-badge-header"
+              className="flex flex-wrap items-center justify-between gap-1.5 mb-2"
+            >
+              <div className="flex flex-wrap items-center gap-1.5">
                 <span
                   style={monoStyle}
-                  className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold shadow-sm border ${
-                    isInspo
-                      ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
-                      : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40"
+                  className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold ${
+                    outfit.owner === "shaq"
+                      ? "bg-[#13382E] text-[#F6F1E7]"
+                      : outfit.owner === "naana"
+                      ? "bg-[#A8442A] text-[#FBF8F3]"
+                      : "bg-[#1F1A16] text-[#F6F1E7]"
                   }`}
                 >
-                  {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                  {formatOwnerBadge(outfit.owner)}
                 </span>
-              )}
-            </div>
 
-            {/* Overlaid Climate Tag Pill (Bottom) */}
-            <div className="absolute bottom-2 inset-x-2 z-10 flex justify-between items-center pointer-events-none">
+                {onToggleInspiration ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleInspiration(outfit);
+                    }}
+                    title={
+                      isInspo
+                        ? "Tagged as Website Inspiration — click to mark as Owned Wardrobe"
+                        : "Tagged as Owned Wardrobe — click to mark as Website Inspiration"
+                    }
+                    aria-label={`Toggle inspiration status for ${outfit.title} (currently ${
+                      isInspo ? "Inspiration" : "Owned"
+                    })`}
+                    style={monoStyle}
+                    className={`min-h-11 sm:min-h-0 inline-flex items-center px-2.5 sm:px-2 py-1 sm:py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold border cursor-pointer transition-colors ${
+                      isInspo
+                        ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
+                        : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
+                    }`}
+                  >
+                    {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                  </button>
+                ) : (
+                  <span
+                    style={monoStyle}
+                    className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold border ${
+                      isInspo
+                        ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
+                        : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40"
+                    }`}
+                  >
+                    {isInspo ? "✦ Inspiration" : "✓ Owned"}
+                  </span>
+                )}
+              </div>
+
               <span
                 style={monoStyle}
-                className="px-2 py-0.5 bg-[#FBF8F3]/95 text-[#1F1A16] border border-[#1F1A16]/20 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.13em] font-semibold shadow-sm truncate max-w-full"
+                className="px-2 py-0.5 bg-[#EFE7D8] text-[#1F1A16] border border-[#1F1A16]/20 text-[10px] sm:text-[9px] uppercase tracking-[0.08em] sm:tracking-[0.13em] font-semibold truncate max-w-full"
               >
                 {outfit.climateTag}
               </span>
             </div>
-          </div>
+
+            <div
+              data-testid="polaroid-collage-grid"
+              data-tile-count={tileCount}
+              className={`relative aspect-[4/3] bg-[#1F1A16]/10 border border-[#1F1A16]/15 overflow-hidden grid gap-0.5 ${getCollageGridClass(
+                tileCount
+              )}`}
+            >
+              {slots.map((g, idx) => (
+                <PolaroidCollageTile
+                  key={g?.id || `empty-${idx}`}
+                  garment={g}
+                  slotIndex={idx}
+                  onExpandGarment={(item) => setExpandedGarment(item)}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {/* Polaroid Lower Caption Area */}
@@ -977,26 +1040,24 @@ export function PolaroidOutfitCard({
         )
       )}
 
-      {expandedGarment && (
-        <GarmentLightboxModal
-          garment={expandedGarment}
-          outfitTitle={outfit.title}
-          allGarments={outfit.garments}
-          onSelectGarment={(nextGarment) => setExpandedGarment(nextGarment)}
-          onClose={() => setExpandedGarment(null)}
-        />
-      )}
+      <GarmentLightboxModal
+        isOpen={Boolean(expandedGarment)}
+        garment={expandedGarment}
+        outfitTitle={outfit.title}
+        allGarments={outfit.garments}
+        onSelectGarment={(nextGarment) => setExpandedGarment(nextGarment)}
+        onClose={() => setExpandedGarment(null)}
+      />
 
-      {showDeleteConfirm && (
-        <DeleteOutfitConfirmModal
-          outfit={outfit}
-          onConfirm={() => {
-            setShowDeleteConfirm(false);
-            onRemoveCustomOutfit?.(outfit.id);
-          }}
-          onClose={() => setShowDeleteConfirm(false)}
-        />
-      )}
+      <DeleteOutfitConfirmModal
+        isOpen={showDeleteConfirm}
+        outfit={outfit}
+        onConfirm={() => {
+          setShowDeleteConfirm(false);
+          onRemoveCustomOutfit?.(outfit.id);
+        }}
+        onClose={() => setShowDeleteConfirm(false)}
+      />
     </article>
   );
 }
