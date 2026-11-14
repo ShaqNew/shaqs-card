@@ -1,39 +1,49 @@
 import React from "react";
 import type { Viewport } from "next";
-import {
-  DM_Serif_Display,
-  Plus_Jakarta_Sans,
-  JetBrains_Mono,
-  Orbitron,
-} from "next/font/google";
+import localFont from "next/font/local";
 
-const dmSerifDisplay = DM_Serif_Display({
-  weight: "400",
-  style: ["normal", "italic"],
-  subsets: ["latin"],
+const dmSerifDisplay = localFont({
+  src: [
+    {
+      path: "./fonts/DMSerifDisplay-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/DMSerifDisplay-Italic.woff2",
+      weight: "400",
+      style: "italic",
+    },
+  ],
   display: "swap",
   variable: "--font-editorial-serif",
+  adjustFontFallback: "Times New Roman",
 });
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
+const plusJakartaSans = localFont({
+  src: "./fonts/PlusJakartaSans-Variable.woff2",
+  weight: "200 800",
+  style: "normal",
   display: "swap",
   variable: "--font-editorial-sans",
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  weight: ["400", "500", "600"],
-  subsets: ["latin"],
+const jetbrainsMono = localFont({
+  src: "./fonts/JetBrainsMono-Variable.woff2",
+  weight: "100 800",
+  style: "normal",
   display: "swap",
   variable: "--font-editorial-mono",
+  adjustFontFallback: false,
 });
 
-const orbitron = Orbitron({
-  weight: ["500", "600", "700"],
-  subsets: ["latin"],
+const orbitron = localFont({
+  src: "./fonts/Orbitron-Variable.woff2",
+  weight: "400 900",
+  style: "normal",
   display: "swap",
   variable: "--font-digital",
+  adjustFontFallback: false,
 });
 
 export const viewport: Viewport = {
