@@ -35,6 +35,12 @@ interface StickyStepNavProps {
   isPocketOpen?: boolean;
   onOpenDriverModal?: (hotelId: string) => void;
   budgetSummary?: BudgetNavSummary;
+  canInstallApp?: boolean;
+  isStandaloneApp?: boolean;
+  isIosSafariBrowser?: boolean;
+  isInstallPrompting?: boolean;
+  installStatusMessage?: string | null;
+  onInstallApp?: () => void;
 }
 
 // Delay compaction until the user has scrolled 72px past the sticky top edge,
@@ -60,6 +66,12 @@ export function StickyStepNav({
   isPocketOpen = false,
   onOpenDriverModal,
   budgetSummary,
+  canInstallApp = false,
+  isStandaloneApp = false,
+  isIosSafariBrowser = false,
+  isInstallPrompting = false,
+  installStatusMessage = null,
+  onInstallApp,
 }: StickyStepNavProps) {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const dateRulerRef = useRef<HTMLDivElement>(null);
@@ -744,6 +756,52 @@ export function StickyStepNav({
                   </button>
                 )}
               </div>
+              {canInstallApp && onInstallApp && (
+                <button
+                  type="button"
+                  onClick={() => void onInstallApp()}
+                  aria-disabled={isInstallPrompting ? "true" : undefined}
+                  style={monoStyle}
+                  className="w-full min-h-11 px-3 py-2 bg-[#13382E] hover:bg-[#1D4E40] aria-disabled:opacity-70 text-[#F6F1E7] border border-[#13382E] text-[11px] uppercase tracking-[0.1em] font-semibold flex items-center justify-between cursor-pointer transition-colors"
+                >
+                  <span>
+                    {isInstallPrompting
+                      ? "Opening Install Prompt..."
+                      : "Install Thailand '27 App"}
+                  </span>
+                  <span aria-hidden="true">&#8681;</span>
+                </button>
+              )}
+
+              {isStandaloneApp && (
+                <p
+                  style={monoStyle}
+                  className="text-[11px] text-[#13382E] bg-[#13382E]/10 border border-[#13382E]/25 px-3 py-2 font-medium"
+                >
+                  Running as installed Thailand &apos;27 app
+                </p>
+              )}
+
+              {isIosSafariBrowser && !canInstallApp && !isStandaloneApp && (
+                <p
+                  data-testid="ios-a2hs-tip"
+                  style={monoStyle}
+                  className="text-[11px] text-[#4A4036] bg-[#EFE7D8]/70 border border-[#9E7B3B]/40 px-3 py-2 leading-relaxed"
+                >
+                  Save on iPhone: tap Safari Share (&uarr;) then &ldquo;Add to Home Screen&rdquo;.
+                </p>
+              )}
+
+              {installStatusMessage && (
+                <p
+                  role="status"
+                  style={monoStyle}
+                  className="text-[11px] text-[#13382E] px-1"
+                >
+                  {installStatusMessage}
+                </p>
+              )}
+
               {isOffline ? (
                 <p
                   style={monoStyle}

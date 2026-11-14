@@ -1633,7 +1633,7 @@ export function StepItinerary({
         } as React.DialogHTMLAttributes<HTMLDialogElement>)}
         aria-labelledby="activity-action-sheet-title"
         onClose={handleActionSheetClose}
-        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t sm:border border-[#C9BFA8] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/60 backdrop:backdrop-blur-[2px] backdrop:overflow-hidden backdrop:overscroll-contain"
+        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t sm:border border-[#C9BFA8] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/60 sm:backdrop:backdrop-blur-[2px] backdrop:overflow-hidden backdrop:overscroll-contain"
       >
         {actionSheetTarget && (() => {
           const targetDay = TRIP_DAYS.find(
@@ -1814,7 +1814,7 @@ export function StepItinerary({
         } as React.DialogHTMLAttributes<HTMLDialogElement>)}
         aria-labelledby="activity-edit-sheet-title"
         onClose={handleEditSheetClose}
-        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-lg sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/70 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
+        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-lg sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/70 sm:backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
       >
         {isEditSheetOpen &&
           editingActivityId &&

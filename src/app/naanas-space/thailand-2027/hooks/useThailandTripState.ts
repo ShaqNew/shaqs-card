@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   TRIP_METADATA,
   TRIP_DAYS,
@@ -20,6 +20,15 @@ import {
   CountdownState,
 } from "../types";
 import { formatDayNumber } from "../utils/formatters";
+import {
+  mergeTripStates,
+  extractManagedWardrobeImageIds,
+  WARDROBE_IMAGE_API_PREFIX,
+} from "../utils/syncMerge";
+
+const PUT_DEBOUNCE_MS = 500;
+const ORPHAN_IMAGE_DELETE_DELAY_MS = 7500;
+const KEEPALIVE_MAX_BYTES = 60_000;
 
 export function useThailandTripState() {
   const [tripState, setTripState] = useState<PersistedTripState>(
@@ -29,6 +38,18 @@ export function useThailandTripState() {
     "local"
   );
   const [activeActor, setActiveActor] = useState<"Shaq" | "Naana">("Naana");
+  const [isOffline, setIsOffline] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
+  const [needsActorSelection, setNeedsActorSelection] = useState(false);
+
+  const latestStateRef = useRef<PersistedTripState>(DEFAULT_PERSISTED_STATE);
+  const activeActorRef = useRef<"Shaq" | "Naana">(activeActor);
+  const pendingPutStateRef = useRef<PersistedTripState | null>(null);
+  const pendingPutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasUnsyncedLocalRef = useRef(false);
+  const lastSyncedUpdatedAtRef = useRef<number | null>(null);
+  const isFlushingRef = useRef(false);
+  const imageCleanupTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [countdown, setCountdown] = useState<CountdownState>({
     days: 96,
@@ -37,58 +58,246 @@ export function useThailandTripState() {
     statusLabel: "Until Departure • London Gatwick",
   });
 
-  const handleSetActiveActor = (actor: "Shaq" | "Naana") => {
+  const handleSetActiveActor = useCallback((actor: "Shaq" | "Naana") => {
     setActiveActor(actor);
+    activeActorRef.current = actor;
+    setNeedsActorSelection(false);
     try {
       localStorage.setItem(ACTOR_STORAGE_KEY, actor);
     } catch {
       // Ignore storage errors
     }
-  };
+  }, []);
+
+  const dismissActorPrompt = useCallback(() => {
+    setNeedsActorSelection(false);
+  }, []);
+
+  const dismissStorageError = useCallback(() => {
+    setStorageError(null);
+  }, []);
+
+  const persistLocalState = useCallback((next: PersistedTripState): boolean => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      setStorageError(null);
+      return true;
+    } catch (err) {
+      const isQuotaError =
+        typeof DOMException !== "undefined" &&
+        err instanceof DOMException &&
+        (err.name === "QuotaExceededError" ||
+          err.name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+          err.code === 22 ||
+          err.code === 1014);
+      setStorageError(
+        isQuotaError
+          ? "Device offline storage limit reached — reconnect to Wi-Fi or remove offline-only photos so edits keep saving."
+          : "Unable to persist changes to browser local storage."
+      );
+      return false;
+    }
+  }, []);
+
+  const putStateToCloud = useCallback(
+    async (
+      stateToSend: PersistedTripState,
+      options?: { keepalive?: boolean }
+    ): Promise<boolean> => {
+      if (typeof fetch === "undefined") return false;
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        hasUnsyncedLocalRef.current = true;
+        pendingPutStateRef.current = pendingPutStateRef.current || stateToSend;
+        setSyncStatus("local");
+        return false;
+      }
+
+      try {
+        const body = JSON.stringify({ state: stateToSend });
+        const res = await fetch("/api/naanas-space/thailand-2027", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive:
+            Boolean(options?.keepalive) && body.length < KEEPALIVE_MAX_BYTES,
+        });
+        if (!res.ok) {
+          hasUnsyncedLocalRef.current = true;
+          pendingPutStateRef.current =
+            pendingPutStateRef.current || stateToSend;
+          setSyncStatus("local");
+          return false;
+        }
+
+        const data = await res.json();
+        if (data?.configured && data?.saved) {
+          const ackTs = data.updatedAt || stateToSend.updatedAt || Date.now();
+          lastSyncedUpdatedAtRef.current = Math.max(
+            lastSyncedUpdatedAtRef.current || 0,
+            ackTs
+          );
+          if (!pendingPutStateRef.current) {
+            hasUnsyncedLocalRef.current = false;
+            setSyncStatus("synced");
+          }
+          return true;
+        }
+
+        hasUnsyncedLocalRef.current = false;
+        setSyncStatus("local");
+        return false;
+      } catch {
+        hasUnsyncedLocalRef.current = true;
+        pendingPutStateRef.current = pendingPutStateRef.current || stateToSend;
+        setSyncStatus("local");
+        return false;
+      }
+    },
+    []
+  );
+
+  const flushPendingPut = useCallback(
+    async (options?: { keepalive?: boolean }) => {
+      if (pendingPutTimerRef.current) {
+        clearTimeout(pendingPutTimerRef.current);
+        pendingPutTimerRef.current = null;
+      }
+      const stateToSend = pendingPutStateRef.current;
+      if (!stateToSend || isFlushingRef.current) return;
+      pendingPutStateRef.current = null;
+      isFlushingRef.current = true;
+      try {
+        setSyncStatus("syncing");
+        await putStateToCloud(stateToSend, options);
+      } finally {
+        isFlushingRef.current = false;
+      }
+    },
+    [putStateToCloud]
+  );
+
+  const scheduleOrphanedImageCleanup = useCallback(
+    (beforeOutfits?: WardrobeOutfit[], afterOutfits?: WardrobeOutfit[]) => {
+      if (typeof fetch === "undefined") return;
+      const beforeIds = extractManagedWardrobeImageIds(beforeOutfits);
+      const afterIds = extractManagedWardrobeImageIds(afterOutfits);
+      const removedIds = Array.from(beforeIds).filter(
+        (id) => !afterIds.has(id)
+      );
+      if (removedIds.length === 0) return;
+
+      const timer = setTimeout(() => {
+        imageCleanupTimersRef.current = imageCleanupTimersRef.current.filter(
+          (t) => t !== timer
+        );
+        const stillReferenced = extractManagedWardrobeImageIds(
+          latestStateRef.current.customOutfits
+        );
+        for (const id of removedIds) {
+          if (!stillReferenced.has(id)) {
+            fetch(`${WARDROBE_IMAGE_API_PREFIX}${encodeURIComponent(id)}`, {
+              method: "DELETE",
+            }).catch(() => {});
+          }
+        }
+      }, ORPHAN_IMAGE_DELETE_DELAY_MS);
+      imageCleanupTimersRef.current.push(timer);
+    },
+    []
+  );
 
   const fetchFromCloud = useCallback(async () => {
     if (typeof fetch === "undefined") return;
+    if (typeof navigator !== "undefined" && navigator.onLine === false) {
+      setIsOffline(true);
+      setSyncStatus("local");
+      return;
+    }
+
     try {
       const res = await fetch("/api/naanas-space/thailand-2027", {
         cache: "no-store",
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        setSyncStatus("local");
+        return;
+      }
       const data = await res.json();
       if (!data?.configured) {
         setSyncStatus("local");
         return;
       }
+
       if (data.state) {
-        setTripState((prev) => {
-          const cloudUpdated = data.state.updatedAt || 0;
-          const localUpdated = prev.updatedAt || 0;
-          if (cloudUpdated >= localUpdated) {
-            const merged = { ...prev, ...data.state };
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
-            } catch {
-              // Ignore storage errors
-            }
-            return merged;
+        const local = latestStateRef.current;
+        const cloud: PersistedTripState = {
+          ...DEFAULT_PERSISTED_STATE,
+          ...data.state,
+        };
+        const cloudUpdated = cloud.updatedAt || 0;
+        const localUpdated = local.updatedAt || 0;
+        const hasPendingLocal =
+          hasUnsyncedLocalRef.current || Boolean(pendingPutStateRef.current);
+
+        if (localUpdated > cloudUpdated) {
+          const cloudAdvancedSinceSync =
+            lastSyncedUpdatedAtRef.current !== null &&
+            cloudUpdated > lastSyncedUpdatedAtRef.current;
+          const nextToPush = cloudAdvancedSinceSync
+            ? mergeTripStates(local, cloud)
+            : local;
+
+          if (cloudAdvancedSinceSync) {
+            latestStateRef.current = nextToPush;
+            setTripState(nextToPush);
+            persistLocalState(nextToPush);
           }
-          return prev;
-        });
-        setSyncStatus("synced");
+
+          pendingPutStateRef.current = null;
+          if (pendingPutTimerRef.current) {
+            clearTimeout(pendingPutTimerRef.current);
+            pendingPutTimerRef.current = null;
+          }
+          setSyncStatus("syncing");
+          await putStateToCloud(nextToPush);
+        } else if (
+          cloudUpdated > localUpdated ||
+          (localUpdated === 0 && !hasPendingLocal)
+        ) {
+          const nextState = hasPendingLocal
+            ? mergeTripStates(local, cloud)
+            : cloud;
+
+          latestStateRef.current = nextState;
+          setTripState(nextState);
+          persistLocalState(nextState);
+
+          if (hasPendingLocal) {
+            pendingPutStateRef.current = null;
+            if (pendingPutTimerRef.current) {
+              clearTimeout(pendingPutTimerRef.current);
+              pendingPutTimerRef.current = null;
+            }
+            setSyncStatus("syncing");
+            await putStateToCloud(nextState);
+          } else {
+            lastSyncedUpdatedAtRef.current = cloudUpdated;
+            hasUnsyncedLocalRef.current = false;
+            setSyncStatus("synced");
+          }
+        } else {
+          lastSyncedUpdatedAtRef.current = cloudUpdated;
+          hasUnsyncedLocalRef.current = false;
+          setSyncStatus("synced");
+        }
       } else {
-        setTripState((current) => {
-          fetch("/api/naanas-space/thailand-2027", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: current }),
-          }).catch(() => {});
-          return current;
-        });
-        setSyncStatus("synced");
+        setSyncStatus("syncing");
+        await putStateToCloud(latestStateRef.current);
       }
     } catch {
       setSyncStatus("local");
     }
-  }, []);
+  }, [persistLocalState, putStateToCloud]);
 
   const updateTripState = useCallback(
     (
@@ -99,86 +308,179 @@ export function useThailandTripState() {
         detail: string;
       }
     ) => {
-      setTripState((prev) => {
-        const now = Date.now();
-        const updatedBase = updater(prev);
-        const existingLogs = updatedBase.changeLog || prev.changeLog || [];
-        const nextLogs = logMeta
-          ? [
-              {
-                id: `log-${now}-${Math.random().toString(36).slice(2, 6)}`,
-                timestamp: now,
-                actor: activeActor,
-                section: logMeta.section,
-                action: logMeta.action,
-                detail: logMeta.detail,
-              },
-              ...existingLogs,
-            ].slice(0, 150)
-          : existingLogs;
+      const prev = latestStateRef.current;
+      const now = Math.max(Date.now(), (prev.updatedAt || 0) + 1);
+      const updatedBase = updater(prev);
+      const existingLogs = updatedBase.changeLog || prev.changeLog || [];
+      const nextLogs = logMeta
+        ? [
+            {
+              id: `log-${now}-${Math.random().toString(36).slice(2, 6)}`,
+              timestamp: now,
+              actor: activeActorRef.current,
+              section: logMeta.section,
+              action: logMeta.action,
+              detail: logMeta.detail,
+            },
+            ...existingLogs,
+          ].slice(0, 150)
+        : existingLogs;
 
-        const next: PersistedTripState = {
-          ...updatedBase,
-          changeLog: nextLogs,
-          updatedAt: now,
-        };
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        } catch {
-          // Ignore storage errors
+      const next: PersistedTripState = {
+        ...updatedBase,
+        changeLog: nextLogs,
+        updatedAt: now,
+      };
+
+      latestStateRef.current = next;
+      setTripState(next);
+      persistLocalState(next);
+
+      if (typeof fetch !== "undefined") {
+        hasUnsyncedLocalRef.current = true;
+        pendingPutStateRef.current = next;
+
+        if (typeof navigator !== "undefined" && navigator.onLine === false) {
+          setIsOffline(true);
+          setSyncStatus("local");
+          return;
         }
-        if (typeof fetch !== "undefined") {
-          setSyncStatus("syncing");
-          fetch("/api/naanas-space/thailand-2027", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ state: next }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data?.configured && data?.saved) {
-                setSyncStatus("synced");
-              } else {
-                setSyncStatus("local");
-              }
-            })
-            .catch(() => {
-              setSyncStatus("local");
-            });
+
+        setSyncStatus("syncing");
+        if (pendingPutTimerRef.current) {
+          clearTimeout(pendingPutTimerRef.current);
         }
-        return next;
-      });
+        pendingPutTimerRef.current = setTimeout(() => {
+          pendingPutTimerRef.current = null;
+          void flushPendingPut();
+        }, PUT_DEBOUNCE_MS);
+      }
     },
-    [activeActor]
+    [flushPendingPut, persistLocalState]
   );
 
-  // Load persisted state from localStorage + sync with Vercel KV
+  // Load persisted state from localStorage + sync with Vercel KV + listen for online/visibility/cross-tab changes
   useEffect(() => {
     try {
       const savedActor = localStorage.getItem(ACTOR_STORAGE_KEY);
       if (savedActor === "Shaq" || savedActor === "Naana") {
         setActiveActor(savedActor);
+        activeActorRef.current = savedActor;
+        setNeedsActorSelection(false);
+      } else {
+        setNeedsActorSelection(true);
       }
+
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        setTripState((prev) => ({
-          ...prev,
+        const hydrated: PersistedTripState = {
+          ...DEFAULT_PERSISTED_STATE,
           ...parsed,
-        }));
+        };
+        latestStateRef.current = hydrated;
+        setTripState(hydrated);
       }
     } catch {
       // Ignore storage errors
     }
 
-    fetchFromCloud();
+    if (typeof navigator !== "undefined") {
+      setIsOffline(navigator.onLine === false);
+    }
+
+    void fetchFromCloud();
 
     const handleFocus = () => {
-      fetchFromCloud();
+      void fetchFromCloud();
     };
+    const handleOnline = () => {
+      setIsOffline(false);
+      void flushPendingPut().then(() => fetchFromCloud());
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      setSyncStatus("local");
+    };
+    const handlePageHide = () => {
+      void flushPendingPut({ keepalive: true });
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        void flushPendingPut({ keepalive: true });
+      }
+    };
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === ACTOR_STORAGE_KEY) {
+        if (event.newValue === "Shaq" || event.newValue === "Naana") {
+          setActiveActor(event.newValue);
+          activeActorRef.current = event.newValue;
+          setNeedsActorSelection(false);
+        } else if (event.newValue === null) {
+          setActiveActor("Naana");
+          activeActorRef.current = "Naana";
+          setNeedsActorSelection(true);
+        }
+        return;
+      }
+
+      if (event.key === STORAGE_KEY) {
+        if (event.newValue === null) {
+          if (pendingPutTimerRef.current) {
+            clearTimeout(pendingPutTimerRef.current);
+            pendingPutTimerRef.current = null;
+          }
+          pendingPutStateRef.current = null;
+          hasUnsyncedLocalRef.current = false;
+          latestStateRef.current = DEFAULT_PERSISTED_STATE;
+          setTripState(DEFAULT_PERSISTED_STATE);
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(event.newValue);
+          const incoming: PersistedTripState = {
+            ...DEFAULT_PERSISTED_STATE,
+            ...parsed,
+          };
+          const nextState =
+            hasUnsyncedLocalRef.current && pendingPutStateRef.current
+              ? mergeTripStates(latestStateRef.current, incoming)
+              : incoming;
+          latestStateRef.current = nextState;
+          setTripState(nextState);
+        } catch {
+          // Ignore malformed cross-tab payload
+        }
+      }
+    };
+
     window.addEventListener("focus", handleFocus);
-    return () => window.removeEventListener("focus", handleFocus);
-  }, [fetchFromCloud]);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    const cleanupTimersRef = imageCleanupTimersRef;
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+
+      if (pendingPutTimerRef.current) {
+        clearTimeout(pendingPutTimerRef.current);
+        pendingPutTimerRef.current = null;
+      }
+      for (const timer of cleanupTimersRef.current) {
+        clearTimeout(timer);
+      }
+      cleanupTimersRef.current = [];
+    };
+  }, [fetchFromCloud, flushPendingPut]);
 
   // Update countdown timer
   useEffect(() => {
@@ -458,6 +760,7 @@ export function useThailandTripState() {
     outfitId: string,
     updates: Omit<WardrobeOutfit, "id">
   ) => {
+    const beforeCustom = latestStateRef.current.customOutfits;
     const existingDefault = DEFAULT_WARDROBE_OUTFITS.find(
       (d) => d.id === outfitId
     );
@@ -484,9 +787,14 @@ export function useThailandTripState() {
         detail: `${updatedOutfit.title} (${updatedOutfit.climateTag})`,
       }
     );
+    scheduleOrphanedImageCleanup(
+      beforeCustom,
+      latestStateRef.current.customOutfits
+    );
   };
 
   const removeCustomOutfit = (outfitId: string) => {
+    const beforeCustom = latestStateRef.current.customOutfits;
     const targetOutfit = allOutfits.find((o) => o.id === outfitId);
     const isDefaultLook = DEFAULT_WARDROBE_OUTFITS.some(
       (d) => d.id === outfitId
@@ -526,6 +834,10 @@ export function useThailandTripState() {
         action: "Removed Digital Wardrobe look",
         detail: targetOutfit ? targetOutfit.title : outfitId,
       }
+    );
+    scheduleOrphanedImageCleanup(
+      beforeCustom,
+      latestStateRef.current.customOutfits
     );
   };
 
@@ -782,7 +1094,13 @@ export function useThailandTripState() {
     tripState,
     updateTripState,
     syncStatus,
+    isOffline,
+    storageError,
+    dismissStorageError,
+    needsActorSelection,
+    dismissActorPrompt,
     fetchFromCloud,
+    flushPendingPut,
     activeActor,
     handleSetActiveActor,
     countdown,

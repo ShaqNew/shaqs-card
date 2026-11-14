@@ -51,7 +51,7 @@ export function ChangeLogDrawer({
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
       aria-labelledby="changelog-drawer-title"
       onClose={handleDialogClose}
-      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-y-0 sm:right-0 sm:left-auto sm:my-0 sm:h-dvh sm:max-h-dvh sm:max-w-xl sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t sm:border-t-0 sm:border-l border-[#C9BFA8] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/60 backdrop:backdrop-blur-[2px] backdrop:overflow-hidden backdrop:overscroll-contain"
+      className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-y-0 sm:right-0 sm:left-auto sm:my-0 sm:h-dvh sm:max-h-dvh sm:max-w-xl sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t sm:border-t-0 sm:border-l border-[#C9BFA8] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/60 sm:backdrop:backdrop-blur-[2px] backdrop:overflow-hidden backdrop:overscroll-contain"
     >
       {isOpen && (
         <div
