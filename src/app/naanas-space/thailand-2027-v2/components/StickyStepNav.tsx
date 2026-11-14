@@ -299,7 +299,7 @@ export function StickyStepNav({
                 type="button"
                 aria-current={isActive ? "page" : undefined}
                 onClick={() => onSelectTab(tab.id)}
-                className={`group flex-col items-center sm:items-start justify-center sm:justify-between text-center sm:text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative min-h-14 sm:min-h-0 px-1 py-1.5 sm:p-4 ${
+                className={`group flex-col items-center sm:items-start justify-center sm:justify-between text-center sm:text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative min-w-0 overflow-hidden min-h-14 sm:min-h-0 px-1 py-1.5 sm:p-4 ${
                   tab.showOnMobileBar ? "flex" : "hidden sm:flex"
                 } ${tab.mobileOrder} sm:order-none ${
                   isActive
@@ -329,25 +329,13 @@ export function StickyStepNav({
                 </span>
 
                 {/* Desktop Grid Label (sm+) */}
-                <div
-                  className={`hidden w-full ${
-                    isScrolled
-                      ? "sm:flex items-baseline justify-between gap-1.5"
-                      : "sm:block"
-                  }`}
-                >
-                  <div
-                    className={`flex items-center justify-between ${
-                      isScrolled
-                        ? "shrink-0 sm:w-full sm:mb-1"
-                        : "w-full mb-1"
-                    }`}
-                  >
+                <div className="hidden sm:block w-full min-w-0">
+                  <div className="flex items-center justify-between w-full mb-1">
                     <span
                       style={serifStyle}
                       className={`italic transition-all duration-300 ${
                         isScrolled
-                          ? "text-[11px] sm:text-sm"
+                          ? "text-xs sm:text-sm"
                           : "text-xs sm:text-sm"
                       } ${isActive ? "text-[#D8B979]" : "text-[#9E7B3B]"}`}
                     >
@@ -365,11 +353,7 @@ export function StickyStepNav({
                   </div>
                   <span
                     style={serifStyle}
-                    className={`font-semibold leading-tight tracking-tight block truncate transition-all duration-300 ${
-                      isScrolled
-                        ? "text-[13px] sm:text-xl flex-1 sm:flex-none"
-                        : "text-lg sm:text-xl"
-                    }`}
+                    className="font-semibold leading-tight tracking-tight block min-w-0 truncate transition-all duration-300 text-base sm:text-lg lg:text-xl"
                   >
                     {tab.label}
                   </span>

@@ -312,12 +312,13 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     unmount();
 
     render(<PolaroidOutfitCard outfit={DEFAULT_WARDROBE_OUTFITS[0]} />);
-    const expandPills = screen.getAllByText(/Expand/i);
-    const tileExpandPill = expandPills.find((el) =>
-      el.className.includes("pointer-events-none")
+    const expandCues = screen.getAllByTestId("polaroid-tile-expand-cue");
+    expect(expandCues.length).toBeGreaterThan(0);
+    expect(expandCues[0]).toHaveClass(
+      "opacity-100",
+      "sm:opacity-0",
+      "pointer-events-none"
     );
-    expect(tileExpandPill).toBeDefined();
-    expect(tileExpandPill).toHaveClass("opacity-100", "sm:opacity-0");
   });
 });
 
@@ -1151,7 +1152,7 @@ describe("Thailand 2027 v2 Phase 4 — Component-Level Mobile Polish", () => {
       });
       expect(changeLogDialog).not.toHaveAttribute("open");
 
-      // Open WardrobeDrawer -> 2-column grid + sticky footer + swipe-down close
+      // Open WardrobeDrawer -> 1-column full-width mobile grid + sticky footer + swipe-down close
       const assignAttireBtns = screen.getAllByRole("button", {
         name: /Assign daily attire for Day/i,
       });
@@ -1159,7 +1160,7 @@ describe("Thailand 2027 v2 Phase 4 — Component-Level Mobile Polish", () => {
       expect(wardrobeDialog).toHaveAttribute("open");
       expect(
         within(wardrobeDialog).getByTestId("wardrobe-drawer-grid")
-      ).toHaveClass("grid-cols-2");
+      ).toHaveClass("grid-cols-1", "sm:grid-cols-2");
       expect(
         within(wardrobeDialog).getByRole("button", {
           name: /\+ Create Custom Look/i,
@@ -1266,12 +1267,33 @@ describe("Thailand 2027 v2 Phase 4 — Component-Level Mobile Polish", () => {
     expect(stickySummary).toHaveTextContent(/THB/i);
   });
 
-  it("4.4 uses a 2-column mobile Polaroid grid and Hide packed checklist filter in StepPackingStudio", () => {
+  it("4.4 uses a 1-column mobile Polaroid grid with segmented view tabs, single-row filters, and Hide packed checklist filter in StepPackingStudio", () => {
     render(<ThailandTripDashboardV2 />);
     fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
 
+    const segmentedTabs = screen.getByTestId("packing-studio-segmented-tabs");
+    const wardrobeTab = within(segmentedTabs).getByRole("tab", {
+      name: /Digital Wardrobe/i,
+    });
+    const ledgerTab = within(segmentedTabs).getByRole("tab", {
+      name: /Packing Ledger/i,
+    });
+    expect(wardrobeTab).toHaveAttribute("aria-selected", "true");
+    expect(ledgerTab).toHaveAttribute("aria-selected", "false");
+    fireEvent.click(ledgerTab);
+    expect(ledgerTab).toHaveAttribute("aria-selected", "true");
+    expect(wardrobeTab).toHaveAttribute("aria-selected", "false");
+    fireEvent.click(wardrobeTab);
+
+    const codeFilterRow = screen.getByTestId("wardrobe-code-filter-row");
+    expect(codeFilterRow).toHaveClass("flex-nowrap", "overflow-x-auto");
+
     const polaroidGrid = screen.getByTestId("wardrobe-polaroid-grid");
-    expect(polaroidGrid).toHaveClass("grid-cols-2", "lg:grid-cols-3");
+    expect(polaroidGrid).toHaveClass(
+      "grid-cols-1",
+      "md:grid-cols-2",
+      "lg:grid-cols-3"
+    );
 
     // Verify checklist rows maintain >=44px mobile touch targets and filter works
     const linenCheckbox = screen.getByRole("checkbox", {

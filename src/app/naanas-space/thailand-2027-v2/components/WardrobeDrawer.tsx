@@ -290,7 +290,7 @@ export function WardrobeDrawer({
               </div>
 
               {isDrawerFiltersOpen && (
-                <div className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden items-center gap-1.5 pt-1 pb-1">
+                <div className="flex flex-nowrap overflow-x-auto sm:flex-wrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden items-center gap-1.5 pt-1 pb-1 min-w-0 max-w-full">
                   {[
                     { id: "all", label: "All Looks" },
                     { id: "temple", label: "Temple" },
@@ -346,11 +346,11 @@ export function WardrobeDrawer({
             </div>
           </div>
 
-          {/* Scrollable Wardrobe Polaroid Cards Grid (2-col on mobile) */}
+          {/* Scrollable Wardrobe Polaroid Cards Grid (1-col full-width on mobile matching HTML design) */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-6">
             <div
               data-testid="wardrobe-drawer-grid"
-              className="grid grid-cols-2 gap-3 sm:gap-5 items-start"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 items-start"
             >
               {filteredOutfits.map((outfit) => {
                 const candidateConflict = target.activity
@@ -358,7 +358,7 @@ export function WardrobeDrawer({
                   : null;
 
                 return (
-                  <div key={outfit.id} className="space-y-2 flex flex-col">
+                  <div key={outfit.id} className="min-w-0 space-y-2 flex flex-col">
                     {candidateConflict?.hasConflict && (
                       <div
                         style={monoStyle}

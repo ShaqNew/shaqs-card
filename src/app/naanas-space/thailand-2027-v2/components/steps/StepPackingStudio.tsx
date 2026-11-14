@@ -74,9 +74,13 @@ export function StepPackingStudio({
   >("all");
 
   // Collapsible section states (default expanded for desktop & test visibility)
+  const [mobileStudioTab, setMobileStudioTab] = useState<"wardrobe" | "ledger">(
+    "wardrobe"
+  );
+  const [isMobileClimateOpen, setIsMobileClimateOpen] = useState(false);
   const [isClimateDressOpen, setIsClimateDressOpen] = useState(true);
   const [isWardrobeOpen, setIsWardrobeOpen] = useState(true);
-  const [isWardrobeFiltersOpen, setIsWardrobeFiltersOpen] = useState(true);
+  const [isWardrobeFiltersOpen, setIsWardrobeFiltersOpen] = useState(false);
   const [collapsedOutfitCards, setCollapsedOutfitCards] = useState<
     Record<string, boolean>
   >({});
@@ -201,13 +205,84 @@ export function StepPackingStudio({
   };
 
   return (
-    <section className="space-y-8">
-      {/* Compact Mobile & Desktop Section Accordion Bar */}
-      <div className="bg-[#EFE7D8]/75 border border-[#1F1A16]/15 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+    <section className="min-w-0 max-w-full overflow-x-clip space-y-4 sm:space-y-8">
+      {/* Mobile Segmented Packing Studio Bar (<640px) matching HTML Design */}
+      <div className="sm:hidden space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setIsMobileClimateOpen((prev) => !prev)}
+            aria-expanded={isMobileClimateOpen}
+            style={monoStyle}
+            className={`min-h-11 px-3 py-1.5 rounded-lg text-[11px] uppercase tracking-[0.08em] border inline-flex items-center gap-1.5 cursor-pointer transition-colors ${
+              isMobileClimateOpen
+                ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
+            }`}
+          >
+            <span>Climate &amp; Dress</span>
+            <span aria-hidden="true">{isMobileClimateOpen ? "▲" : "▼"}</span>
+          </button>
+
+          {onOpenCreateLookModal && (
+            <button
+              type="button"
+              onClick={onOpenCreateLookModal}
+              style={monoStyle}
+              className="min-h-11 px-3.5 py-1.5 rounded-lg bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] font-semibold cursor-pointer shrink-0"
+            >
+              + Add Look
+            </button>
+          )}
+        </div>
+
+        <div
+          role="tablist"
+          aria-label="Packing Studio views"
+          data-testid="packing-studio-segmented-tabs"
+          className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-[#EFE7D8] border border-[#1F1A16]/15"
+        >
+          <button
+            type="button"
+            role="tab"
+            id="tab-mobile-wardrobe"
+            aria-selected={mobileStudioTab === "wardrobe"}
+            aria-controls="digital-wardrobe-section"
+            onClick={() => setMobileStudioTab("wardrobe")}
+            style={monoStyle}
+            className={`min-h-11 px-2 py-2 rounded-lg text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-all truncate border-b-2 ${
+              mobileStudioTab === "wardrobe"
+                ? "bg-[#FBF8F3] text-[#1F1A16] font-semibold shadow-sm border-b-[#13382E]"
+                : "bg-transparent text-[#5C5248] border-b-transparent hover:text-[#1F1A16]"
+            }`}
+          >
+            Digital Wardrobe ({allOutfits.length})
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-mobile-ledger"
+            aria-selected={mobileStudioTab === "ledger"}
+            aria-controls="trunk-ledger-section"
+            onClick={() => setMobileStudioTab("ledger")}
+            style={monoStyle}
+            className={`min-h-11 px-2 py-2 rounded-lg text-[11px] uppercase tracking-[0.06em] cursor-pointer transition-all truncate border-b-2 ${
+              mobileStudioTab === "ledger"
+                ? "bg-[#FBF8F3] text-[#1F1A16] font-semibold shadow-sm border-b-[#13382E]"
+                : "bg-transparent text-[#5C5248] border-b-transparent hover:text-[#1F1A16]"
+            }`}
+          >
+            Packing Ledger ({packingProgress.done}/{packingProgress.total})
+          </button>
+        </div>
+      </div>
+
+      {/* Desktop Section Accordion Bar (sm+) */}
+      <div className="hidden sm:flex bg-[#EFE7D8]/75 border border-[#1F1A16]/15 px-4 py-3 flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
             style={monoStyle}
-            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#5C5248] mr-1"
+            className="text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mr-1"
           >
             STUDIO SECTIONS:
           </span>
@@ -216,7 +291,7 @@ export function StepPackingStudio({
             onClick={() => setIsClimateDressOpen((prev) => !prev)}
             aria-expanded={isClimateDressOpen}
             style={monoStyle}
-            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
               isClimateDressOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -229,7 +304,7 @@ export function StepPackingStudio({
             onClick={() => setIsWardrobeOpen((prev) => !prev)}
             aria-expanded={isWardrobeOpen}
             style={monoStyle}
-            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
               isWardrobeOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -242,7 +317,7 @@ export function StepPackingStudio({
             onClick={() => setIsTrunkOpen((prev) => !prev)}
             aria-expanded={isTrunkOpen}
             style={monoStyle}
-            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
               isTrunkOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -257,14 +332,18 @@ export function StepPackingStudio({
           type="button"
           onClick={handleToggleAllSections}
           style={monoStyle}
-          className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border border-[#13382E]/35 bg-[#FBF8F3] cursor-pointer transition-colors"
+          className="px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border border-[#13382E]/35 bg-[#FBF8F3] cursor-pointer transition-colors"
         >
           {allSectionsOpen ? "Collapse All Sections" : "Expand All Sections"}
         </button>
       </div>
 
       {/* Section 1: Climate Monograph & Sartorial Etiquette */}
-      <div className="bg-[#FBF8F3] border border-[#1F1A16]/20">
+      <div
+        className={`bg-[#FBF8F3] border border-[#1F1A16]/20 rounded-xl sm:rounded-none ${
+          isMobileClimateOpen ? "block" : "hidden sm:block"
+        }`}
+      >
         <div className="px-6 py-4 flex flex-col items-start sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#1F1A16]/15 bg-[#EFE7D8]/40">
           <div>
             <span
@@ -293,9 +372,9 @@ export function StepPackingStudio({
         </div>
 
         {isClimateDressOpen && (
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 min-w-0">
             {/* Climate Monograph */}
-            <div className="lg:col-span-5 bg-[#F6F1E7]/60 border border-[#1F1A16]/15 p-5 space-y-4">
+            <div className="lg:col-span-5 min-w-0 bg-[#F6F1E7]/60 border border-[#1F1A16]/15 p-4 sm:p-5 space-y-4">
               <span
                 style={monoStyle}
                 className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
@@ -362,7 +441,7 @@ export function StepPackingStudio({
             </div>
 
             {/* Sartorial & Dress Code Lookbook */}
-            <div className="lg:col-span-7 bg-[#F6F1E7]/60 border border-[#1F1A16]/15 p-5 space-y-5">
+            <div className="lg:col-span-7 min-w-0 bg-[#F6F1E7]/60 border border-[#1F1A16]/15 p-4 sm:p-5 space-y-5">
               <div className="flex flex-wrap items-end justify-between gap-3 border-b border-[#1F1A16]/15 pb-4">
                 <div>
                   <span
@@ -522,13 +601,15 @@ export function StepPackingStudio({
       {/* Section 2: Digital Wardrobe & Polaroid Lookbook */}
       <div
         id="digital-wardrobe-section"
-        className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+        className={`scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 rounded-xl sm:rounded-none p-3.5 sm:p-8 space-y-4 sm:space-y-6 ${
+          mobileStudioTab === "wardrobe" ? "block" : "hidden sm:block"
+        }`}
       >
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
+        <div className="hidden sm:flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
           <div>
             <span
               style={monoStyle}
-              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
+              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
             >
               SARTORIAL CURATION &bull; PINTEREST &amp; BOUTIQUE COLLAGES
             </span>
@@ -538,7 +619,7 @@ export function StepPackingStudio({
             >
               Digital Wardrobe &amp; Outfit Lookbook ({allOutfits.length} Looks)
             </h3>
-            <p className="text-xs sm:text-sm text-[#5C5248] mt-1">
+            <p className="text-sm text-[#5C5248] mt-1">
               Polaroid garment collages built from lightweight retailer URLs and
               assigned across daily schedules and individual activities.
             </p>
@@ -550,7 +631,7 @@ export function StepPackingStudio({
                 type="button"
                 onClick={onOpenCreateLookModal}
                 style={monoStyle}
-                className="min-h-11 sm:min-h-0 px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
+                className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
               >
                 + Create Look
               </button>
@@ -561,7 +642,7 @@ export function StepPackingStudio({
               aria-expanded={isWardrobeOpen}
               aria-label="Toggle Digital Wardrobe section"
               style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-3 py-2 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+              className="px-3 py-2 text-[10px] uppercase tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
             >
               {isWardrobeOpen ? "Collapse ▲" : "Expand ▼"}
             </button>
@@ -589,69 +670,99 @@ export function StepPackingStudio({
 
         {isWardrobeOpen && (
           <>
-            {/* Collapsible Filter Section & Card Collapse Toolbar */}
-            <div className="bg-[#F6F1E7]/70 border border-[#1F1A16]/15 p-3 sm:p-4 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-2">
+            {/* Single-Row Scrollable Lookbook Dress-Code Pills + Collapsible Secondary Filters */}
+            <div className="space-y-2.5">
+              <div
+                data-testid="wardrobe-code-filter-row"
+                className="flex flex-nowrap overflow-x-auto sm:flex-wrap items-center gap-1.5 pb-1 -mx-0.5 px-0.5"
+              >
+                {[
+                  { id: "all", label: `All Looks (${allOutfits.length})` },
+                  { id: "daytime", label: "Daytime" },
+                  { id: "beach", label: "Beach" },
+                  { id: "transit", label: "Transit" },
+                  { id: "temple", label: "Temple" },
+                  { id: "rooftop", label: "Rooftop" },
+                ].map((c) => (
                   <button
+                    key={c.id}
                     type="button"
-                    onClick={() => setIsWardrobeFiltersOpen((prev) => !prev)}
-                    aria-expanded={isWardrobeFiltersOpen}
-                    aria-label="Toggle Digital Wardrobe filters"
+                    onClick={() =>
+                      setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
+                    }
                     style={monoStyle}
-                    className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer transition-colors ${
-                      isWardrobeFiltersOpen
-                        ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
-                        : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]/25 hover:bg-[#1F1A16] hover:text-[#F6F1E7]"
+                    className={`shrink-0 min-h-11 sm:min-h-0 px-3.5 sm:px-3 py-1.5 rounded-full text-[11px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
+                      wardrobeCodeFilter === c.id
+                        ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16] font-semibold"
+                        : "bg-[#EFE7D8]/70 text-[#5C5248] border-[#1F1A16]/15 hover:text-[#1F1A16]"
                     }`}
                   >
-                    Filters
-                    {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}{" "}
-                    {isWardrobeFiltersOpen ? "▲" : "▼"}
+                    {c.label}
                   </button>
+                ))}
+              </div>
 
-                  <span
-                    style={monoStyle}
-                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] text-[#5C5248]"
-                  >
-                    Showing {filteredOutfits.length} of {allOutfits.length}{" "}
-                    {allOutfits.length === 1 ? "Look" : "Looks"}
-                  </span>
-
-                  {activeFilterCount > 0 && (
+              <div className="bg-[#F6F1E7]/70 border border-[#1F1A16]/15 rounded-lg sm:rounded-none p-2.5 sm:p-3 space-y-2.5">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => {
-                        setWardrobeOwnerFilter("all");
-                        setWardrobeSourceFilter("all");
-                        setWardrobeCodeFilter("all");
-                      }}
+                      onClick={() => setIsWardrobeFiltersOpen((prev) => !prev)}
+                      aria-expanded={isWardrobeFiltersOpen}
+                      aria-label="Toggle Digital Wardrobe filters"
                       style={monoStyle}
-                      className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 text-[11px] sm:text-[9px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/35 bg-[#FBF8F3] hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer transition-colors"
+                      className={`min-h-11 sm:min-h-0 px-3 py-1.5 rounded-md sm:rounded-none text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer transition-colors ${
+                        isWardrobeFiltersOpen
+                          ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
+                          : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]/25 hover:bg-[#1F1A16] hover:text-[#F6F1E7]"
+                      }`}
                     >
-                      Reset Filters &#10005;
+                      Filters
+                      {activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}{" "}
+                      {isWardrobeFiltersOpen ? "▲" : "▼"}
+                    </button>
+
+                    <span
+                      style={monoStyle}
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.13em] text-[#5C5248]"
+                    >
+                      Showing {filteredOutfits.length} of {allOutfits.length}{" "}
+                      {allOutfits.length === 1 ? "Look" : "Looks"}
+                    </span>
+
+                    {activeFilterCount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setWardrobeOwnerFilter("all");
+                          setWardrobeSourceFilter("all");
+                          setWardrobeCodeFilter("all");
+                        }}
+                        style={monoStyle}
+                        className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 text-[11px] sm:text-[9px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/35 bg-[#FBF8F3] hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer transition-colors"
+                      >
+                        Reset Filters &#10005;
+                      </button>
+                    )}
+                  </div>
+
+                  {filteredOutfits.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleToggleAllOutfitCards}
+                      aria-label="Toggle collapse all outfit cards"
+                      style={monoStyle}
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 rounded-md sm:rounded-none text-[11px] sm:text-[10px] uppercase tracking-[0.08em] sm:tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#FBF8F3] cursor-pointer transition-colors"
+                    >
+                      {allOutfitCardsCollapsed
+                        ? "Expand All Cards ▼"
+                        : "Collapse All Cards ▲"}
                     </button>
                   )}
                 </div>
 
-                {filteredOutfits.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleToggleAllOutfitCards}
-                    aria-label="Toggle collapse all outfit cards"
-                    style={monoStyle}
-                    className="min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#FBF8F3] cursor-pointer transition-colors"
-                  >
-                    {allOutfitCardsCollapsed
-                      ? "Expand All Cards ▼"
-                      : "Collapse All Cards ▲"}
-                  </button>
-                )}
-              </div>
-
-              {isWardrobeFiltersOpen && (
-                <div className="pt-2 border-t border-[#1F1A16]/12 flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-2">
+                {isWardrobeFiltersOpen && (
+                  <div className="pt-2 border-t border-[#1F1A16]/12 flex flex-wrap items-center justify-between gap-2.5">
                     <div className="flex flex-wrap items-center gap-1.5">
                       {[
                         { id: "all", label: "All Looks" },
@@ -680,7 +791,7 @@ export function StepPackingStudio({
                     </div>
 
                     {/* Owned vs Inspiration Filter Pills */}
-                    <div className="flex flex-wrap items-center gap-1.5 pl-2 border-l border-[#1F1A16]/15">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       {[
                         { id: "all", label: "All Sources" },
                         {
@@ -720,41 +831,14 @@ export function StepPackingStudio({
                       ))}
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {[
-                      { id: "all", label: "All Codes" },
-                      { id: "temple", label: "Temple" },
-                      { id: "rooftop", label: "Rooftop" },
-                      { id: "daytime", label: "Daytime" },
-                      { id: "beach", label: "Beach" },
-                      { id: "transit", label: "Transit" },
-                    ].map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() =>
-                          setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
-                        }
-                        style={monoStyle}
-                        className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
-                          wardrobeCodeFilter === c.id
-                            ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
-                            : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
-                        }`}
-                      >
-                        {c.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Polaroid Wardrobe Grid */}
+            {/* Polaroid Wardrobe Grid (1-column full-width on mobile matching HTML design) */}
             <div
               data-testid="wardrobe-polaroid-grid"
-              className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 items-start"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 items-start"
             >
               {filteredOutfits.map((outfit) => {
                 const assignedDays = TRIP_DAYS.filter((d) => {
@@ -803,7 +887,9 @@ export function StepPackingStudio({
       {/* Section 3: The Packing Ledger (Categorised Packing List) */}
       <div
         id="trunk-ledger-section"
-        className="scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-6"
+        className={`scroll-mt-36 bg-[#FBF8F3] border border-[#1F1A16]/20 rounded-xl sm:rounded-none p-3.5 sm:p-8 space-y-5 sm:space-y-6 ${
+          mobileStudioTab === "ledger" ? "block" : "hidden sm:block"
+        }`}
       >
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-4 border-b border-[#1F1A16]/15">
           <div>
