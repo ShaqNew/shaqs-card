@@ -1,6 +1,6 @@
 # Thailand 2027 — PR #4 Purpose & Code Review Findings (`38f9d33`)
 
-**Pull Request:** [ShaqNew/shaqs-card#4](https://github.com/ShaqNew/shaqs-card/pull/4) (`docs/thailand-2027-mobile-ux-plan` &rarr; `main`, `OPEN`)  
+**Pull Request:** [ShaqNew/shaqs-card#4](https://github.com/ShaqNew/shaqs-card/pull/4) (`docs/thailand-2027-mobile-ux-plan` &rarr; `main`, `MERGED`)  
 **Companion Docs:** [`thailand_2027_mobile_ux_plan.md`](./thailand_2027_mobile_ux_plan.md) · [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_plan.html`](./thailand_2027_mobile_ux_plan.html) · [`../thailand_2027_context_handoff.md`](../thailand_2027_context_handoff.md) · [`../README.md`](../README.md)  
 **Target Routes:** `/naanas-space/thailand-2027` (`v1` desktop preserved untouched) &harr; `/naanas-space/thailand-2027-v2` (`v2` mobile-first companion) · **Audience:** Shaq & Naana  
 **Reviewed Snapshot:** `4771ed16f5478a05f86dd6c3df7aa22290e3856e..38f9d33d411e13d219bc7ce33ccf88b40fc43a7f` (3 commits, 45 changed files)

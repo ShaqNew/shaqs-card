@@ -1,6 +1,6 @@
 # Thailand 2027 — PR #5 Purpose & Code Review Findings (`d2fa996`)
 
-**Pull Request:** [ShaqNew/shaqs-card#5](https://github.com/ShaqNew/shaqs-card/pull/5) (`feat/thailand-2027-v2-phase-2` &rarr; `main`, `OPEN`)  
+**Pull Request:** [ShaqNew/shaqs-card#5](https://github.com/ShaqNew/shaqs-card/pull/5) (`feat/thailand-2027-v2-phase-2` &rarr; `main`, `MERGED`)  
 **Reviewed By:** Hydrogen  
 **Companion Docs:** [`thailand_2027_mobile_ux_plan.md`](./thailand_2027_mobile_ux_plan.md) · [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_pr4_review.md`](./thailand_2027_mobile_ux_pr4_review.md) · [`../thailand_2027_context_handoff.md`](../thailand_2027_context_handoff.md) · [`../README.md`](../README.md)  
 **Target Routes:** `/naanas-space/thailand-2027` (`v1` desktop preserved untouched) &harr; `/naanas-space/thailand-2027-v2` (`v2` mobile-first companion) · **Audience:** Shaq & Naana  

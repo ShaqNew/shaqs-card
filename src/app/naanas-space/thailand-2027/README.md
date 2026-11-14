@@ -28,7 +28,7 @@ For future reference, ongoing roadmap tracking, and architectural decisions, con
 This document serves as the living specification for enhancements, including:
 - **Agreed Architectural Decisions:** PWA offline caching, Open-Meteo live weather API, Leaflet map route previews, Google Calendar/.ics sync, and S3/Vault PDF attachments.
 - **Implementation Roadmap:** Prioritised feature tiers (Tier 1: Food safety guide, outfit suggestions, notes; Tier 2: Calendar & timezone UI; Tier 3: PWA, Weather, and Dossier).
-- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development), universal calendar integration (`utils/calendar.ts`, Option A: 1-tap Google Calendar links + universal RFC 5545 `.ics` export for master trip, single day, and individual movements), and **Outfit Suggestions & Digital Wardrobe** (Tier 1 — #2: polaroid split-grid garment collages, `/api/link-preview` OpenGraph `og:image` scraper, `CreateLookModal`, Step I `ATTIRE` slot + activity hanger overrides via `WardrobeDrawer`, and contextual dress-code conflict warnings).
+- **Completed & In-Progress Milestones:** Day counter zero-padding fix (`c42d5eb`), modular component architecture refactoring (`383a0e6`), culinary & food safety advisory (Tier 1 — #1, initial scaffold live & in active development), universal calendar integration (`utils/calendar.ts`, Option A: 1-tap Google Calendar links + universal RFC 5545 `.ics` export for master trip, single day, and individual movements), **Outfit Suggestions & Digital Wardrobe** (Tier 1 — #2: polaroid split-grid garment collages, `/api/link-preview` OpenGraph `og:image` scraper, `CreateLookModal`, Step I `ATTIRE` slot + activity hanger overrides via `WardrobeDrawer`, and contextual dress-code conflict warnings), **Mobile `v2` Companion Phases 1–3 (`/naanas-space/thailand-2027-v2`, Merged via PRs #4–#6)** introducing mobile ergonomics & bundled `next/font/local` fonts, a 5-slot bottom bar + `<dialog>` `QuickPocketDesk` & `More` sheets, Companion / Today Mode with Live Dual Clock (`GMT`/`ICT`), upgraded `<dialog>` `DriverCardModal` (Night Mode, Wake Lock, Share Address), and 1-tap SOS dials, and **Phase 4 (`feat/thailand-2027-v2-phase-4`, implemented & verified, pending PR/merge)** delivering responsive `<dialog>` bottom sheets with swipe-to-dismiss (`ChangeLogDrawer`, `WardrobeDrawer`, `CreateLookModal`, `PolaroidLightboxModal`, `OutfitActionsSheetModal`, itinerary `⋯` / edit sheets), collapsed top-3 suggestions, stacked `FINANCIAL_MATRIX` mobile cards + sticky surplus bar, single-column Digital Wardrobe Polaroid cards (`2×2` tiles, corner `⤢` cues, weather strip below collage, segmented Wardrobe/Ledger switch, local photo picker `accept="image/*"`, `⋯` look action sheet, `Hide packed` filter), swipeable PNR cipher strip + collapsible flight details, subtle Web Vibration haptics (`utils/haptics.ts`), and a 6-second floating Undo Snackbar (**Phase 5 PWA & offline sync next**).
 
 ---
 
@@ -98,21 +98,24 @@ src/
         │   │   └── useThailandTripState.ts # Shared LocalStorage + KV sync, countdown, & change log mutations
         │   ├── components/         # Shared chrome, masthead, modals, & drawers (v1)
         │   │   └── steps/          # Step I through Step VI views (v1)
-        │   ├── mobile-ux-plan/     # Mobile UX improvement specs, open decisions & v2 drawbacks
+        │   ├── mobile-ux-plan/     # Mobile UX specs, decisions, drawbacks & PR #4–#6 reviews
         │   ├── thailand_2027_context_handoff.md # Deep context & booking numbers
         │   └── README.md           # This document
         └── thailand-2027-v2/       # Mobile-first v2 route sharing types, hooks, utils & Redis state with v1
+            ├── fonts/              # Bundled .woff2 fonts for next/font/local
+            ├── hooks/              # Re-exported shared hook + useBottomSheetDialog.ts
+            ├── utils/              # Re-exported shared utils + companion.ts & haptics.ts
             ├── layout.tsx, page.tsx, styles.tsx, components/
-            └── types.ts, hooks/, utils/ # Barrel re-exports from ../thailand-2027/
+            └── types.ts            # Re-exported from ../thailand-2027/types.ts
 ```
 
 ### State Management
-Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and synced to `/api/naanas-space/thailand-2027` (600ms debouncing scheduled in Phase 5.4; persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
+Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and synced to `/api/naanas-space/thailand-2027` (500ms debouncing scheduled in Phase 5.2; persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
 
 ### Testing
-Run the dedicated test suites verifying `v1`, `v2`, cross-route shared persistence, interactive checklists, currency conversion, Thai driver modal, and the Change Log:
+Run the dedicated test suites (`8` suites, `129` tests covering `v1`, `v2`, cross-route shared persistence, interactive checklists, currency conversion, mobile `<dialog>` bottom sheets, Companion Mode, Dual Clock, Thai driver modal, SOS speed-dials, Digital Wardrobe single-column Polaroid cards & `⋯` sheet, stacked budget cards, Undo Snackbar, and the Change Log):
 ```bash
-npm test -- src/app/naanas-space/__tests__/thailand-2027.test.tsx src/app/naanas-space/__tests__/thailand-2027-v2.test.tsx
+npx jest src/app/naanas-space
 ```
 
 ---
@@ -122,6 +125,8 @@ npm test -- src/app/naanas-space/__tests__/thailand-2027.test.tsx src/app/naanas
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md) — Phased Mobile UX Improvement Plan (Android / Google Pixel primary, targeting `/naanas-space/thailand-2027-v2`).
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md) — Consolidated open architecture & product decisions (`D0`–`D6`) with Argon A reviews.
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md) — Trade-offs, backwards-compatible schema rules, cross-tab `storage` sync, and sunset options for the dual `v1`/`v2` route architecture.
-- [`./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md) — PR #4 code review findings (`38f9d33`) and verification/resolution log.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md) — PR #4 (`Merged`) code review findings (`38f9d33`) and Phase 1 verification/resolution log.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_pr5_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr5_review.md) — PR #5 (`Merged`) code review findings (`d2fa996`) and Phase 2 verification/resolution log.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_pr6_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr6_review.md) — PR #6 (`Merged`) code review findings (`81ef127` &rarr; `7610056`) and Phase 3 verification/resolution log.
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html) — Visual before/after mobile UX specification & verification showcase.
 - [Google Doc: App Improvements](https://docs.google.com/document/d/1ZoF7kau7Z_qgr3rgokyNEgt8E3CMI68BsIy8ypowYIQ/edit) — Master enhancements roadmap & technical decisions.
