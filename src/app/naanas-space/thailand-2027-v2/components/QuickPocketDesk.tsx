@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { HOTEL_BOOKINGS } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle } from "../styles";
 import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
+import { DualTimezoneClock } from "../utils/companion";
 
 interface QuickPocketDeskProps {
   exchangeRate: number;
@@ -18,6 +19,7 @@ interface QuickPocketDeskProps {
   onSetQuickThbPreset?: (thbAmount: number) => void;
   onJumpToBudget?: () => void;
   copiedText?: string | null;
+  dualClock?: DualTimezoneClock;
 }
 
 export function QuickPocketDesk({
@@ -35,6 +37,7 @@ export function QuickPocketDesk({
   onSetQuickThbPreset,
   onJumpToBudget,
   copiedText,
+  dualClock,
 }: QuickPocketDeskProps) {
   const [internalOpen, setInternalOpen] = useState(false);
 
@@ -104,6 +107,16 @@ export function QuickPocketDesk({
             CLOSE &#10005;
           </button>
         </div>
+
+        {dualClock && (
+          <div
+            data-testid="pocket-dual-clock"
+            style={monoStyle}
+            className="bg-[#13382E]/8 border border-[#13382E]/25 px-2.5 py-1.5 text-[11px] sm:text-[10px] tracking-[0.05em] sm:tracking-[0.12em] text-[#13382E] font-semibold text-center"
+          >
+            {dualClock.fullLabel}
+          </div>
+        )}
 
         {/* Instant Mini Currency Converter */}
         <div className="space-y-2">
@@ -306,6 +319,13 @@ export function QuickPocketDesk({
               className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
             >
               Pavilions Tel
+            </a>
+            <a
+              href="tel:+6623058333"
+              style={monoStyle}
+              className="col-span-2 min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
+            >
+              British Embassy Bangkok (+66 2 305 8333)
             </a>
           </div>
         </div>

@@ -656,15 +656,33 @@ export function StickyStepNav({
               <div className="grid grid-cols-2 gap-2">
                 <a
                   href="tel:1155"
-                  className="min-h-11 px-3 py-2 bg-[#A8442A] text-[#FBF8F3] text-xs font-semibold flex items-center justify-center gap-1.5"
+                  className="min-h-11 px-3 py-2 bg-[#A8442A] text-[#FBF8F3] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
                 >
                   <span>1155 Tourist Police</span>
                 </a>
                 <a
                   href="tel:1669"
-                  className="min-h-11 px-3 py-2 bg-[#13382E] text-[#F6F1E7] text-xs font-semibold flex items-center justify-center gap-1.5"
+                  className="min-h-11 px-3 py-2 bg-[#13382E] text-[#F6F1E7] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
                 >
                   <span>1669 Medical EMS</span>
+                </a>
+                <a
+                  href="tel:+6623058333"
+                  className="col-span-2 min-h-11 px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                >
+                  British Embassy Bangkok (+66 2 305 8333)
+                </a>
+                <a
+                  href="tel:+6622367777"
+                  className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                >
+                  Call Shangri-La
+                </a>
+                <a
+                  href="tel:+6676317600"
+                  className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                >
+                  Call Pavilions
                 </a>
                 {onOpenDriverModal && shangriLa && (
                   <button

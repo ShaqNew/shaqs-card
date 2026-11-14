@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TRIP_METADATA, TRIP_DAYS, WardrobeOutfit } from "@/lib/thailandTripData";
 import { ActiveTab, PhaseFilter, ChangeLogEntry } from "./types";
 import { monoStyle } from "./styles";
@@ -10,6 +10,11 @@ import {
   resolveDayOutfit,
   resolveActivityOutfit,
 } from "./utils/wardrobe";
+import {
+  detectActiveTripDay,
+  formatDualTimezoneClock,
+  isTravelTransitDay,
+} from "./utils/companion";
 import { TopEditorialBar } from "./components/TopEditorialBar";
 import { ChangeLogDrawer } from "./components/ChangeLogDrawer";
 import { DriverCardModal } from "./components/DriverCardModal";
@@ -34,6 +39,34 @@ export default function ThailandTripDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("itinerary");
   const [phaseFilter, setPhaseFilter] = useState<PhaseFilter>("all");
   const [selectedDayNum, setSelectedDayNum] = useState<number | null>(null);
+  const [now, setNow] = useState<Date>(() => new Date());
+  const detectedTripDayNum = useMemo(() => detectActiveTripDay(now), [now]);
+  const [isCompanionMode, setIsCompanionMode] = useState<boolean>(
+    () => detectActiveTripDay(new Date()) !== null
+  );
+  const didInitMobileCompanionRef = useRef(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (didInitMobileCompanionRef.current) return;
+    didInitMobileCompanionRef.current = true;
+    const activeDay = detectActiveTripDay(now);
+    if (
+      activeDay !== null &&
+      typeof window !== "undefined" &&
+      window.innerWidth < 640
+    ) {
+      setActiveTab("itinerary");
+      setPhaseFilter("all");
+      setSelectedDayNum(activeDay);
+    }
+  }, [now]);
 
   const [copiedText, setCopiedText] = useState<string | null>(null);
   const [driverModalHotelId, setDriverModalHotelId] = useState<string | null>(
@@ -123,6 +156,26 @@ export default function ThailandTripDashboard() {
     setSelectedDayNum(dayNum);
   };
 
+  const handleToggleCompanionMode = () => {
+    setIsCompanionMode((prev) => {
+      const next = !prev;
+      if (next) {
+        setActiveTab("itinerary");
+        setPhaseFilter("all");
+        if (selectedDayNum === null) {
+          setSelectedDayNum(detectedTripDayNum ?? 1);
+        }
+      }
+      return next;
+    });
+  };
+
+  const dualClock = useMemo(() => formatDualTimezoneClock(now), [now]);
+  const showDualClock =
+    isCompanionMode ||
+    detectedTripDayNum !== null ||
+    isTravelTransitDay(selectedDayNum);
+
   const plannedTotalThb = tripState.plannedExpenses.reduce(
     (sum, exp) => sum + exp.amountThb,
     0
@@ -142,6 +195,8 @@ export default function ThailandTripDashboard() {
         onOpenChangeLog={() => setIsChangeLogOpen(true)}
         syncStatus={syncStatus}
         onSyncFromCloud={fetchFromCloud}
+        dualClock={dualClock}
+        showDualClock={showDualClock}
       />
 
       <ChangeLogDrawer
@@ -160,7 +215,11 @@ export default function ThailandTripDashboard() {
           role="status"
           aria-live="polite"
           className={`${
-            isPocketDeskOpen ? "hidden sm:flex" : "flex"
+            driverModalHotelId
+              ? "hidden"
+              : isPocketDeskOpen
+              ? "hidden sm:flex"
+              : "flex"
           } fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl`}
         >
           <span
@@ -177,6 +236,7 @@ export default function ThailandTripDashboard() {
         hotelId={driverModalHotelId}
         onClose={() => setDriverModalHotelId(null)}
         onCopy={handleCopy}
+        copiedText={copiedText}
       />
 
       <CreateLookModal
@@ -253,6 +313,7 @@ export default function ThailandTripDashboard() {
         onOpenChange={setIsPocketDeskOpen}
         onJumpToBudget={() => setActiveTab("budget")}
         copiedText={copiedText}
+        dualClock={dualClock}
       />
 
       <div
@@ -306,6 +367,12 @@ export default function ThailandTripDashboard() {
             onOpenWardrobeDrawer={(dayNumber, activity) =>
               setWardrobeDrawerTarget({ dayNumber, activity })
             }
+            isCompanionMode={isCompanionMode}
+            onToggleCompanionMode={handleToggleCompanionMode}
+            detectedTripDayNum={detectedTripDayNum}
+            now={now}
+            onOpenDriverModal={(hotelId) => setDriverModalHotelId(hotelId)}
+            onCopy={handleCopy}
           />
         )}
 

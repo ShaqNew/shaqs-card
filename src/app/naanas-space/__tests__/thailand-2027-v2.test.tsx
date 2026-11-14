@@ -7,8 +7,15 @@ import ThailandDossierLayout, {
   viewport as v2Viewport,
 } from "../thailand-2027-v2/layout";
 import { CreateLookModal } from "../thailand-2027-v2/components/CreateLookModal";
+import { DriverCardModal } from "../thailand-2027-v2/components/DriverCardModal";
 import { PolaroidOutfitCard } from "../thailand-2027-v2/components/PolaroidOutfitCard";
-import { DEFAULT_WARDROBE_OUTFITS } from "@/lib/thailandTripData";
+import {
+  detectActiveTripDay,
+  formatDualTimezoneClock,
+  resolveDayCompanionStatus,
+  resolveHotelIdForDay,
+} from "../thailand-2027-v2/utils/companion";
+import { DEFAULT_WARDROBE_OUTFITS, TRIP_DAYS } from "@/lib/thailandTripData";
 import {
   STORAGE_KEY as V1_STORAGE_KEY,
   ACTOR_STORAGE_KEY as V1_ACTOR_KEY,
@@ -604,6 +611,328 @@ describe("Thailand 2027 v2 Phase 2 Navigation & Layout Restructure", () => {
     } finally {
       Element.prototype.scrollIntoView = origScrollIntoView;
       jest.useRealTimers();
+    }
+  });
+});
+
+describe("Thailand 2027 v2 Phase 3 Companion Mode, Driver Card & SOS", () => {
+  const origInnerWidth = window.innerWidth;
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: 1024,
+    });
+    HTMLDialogElement.prototype.show = function show() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.showModal = function showModal() {
+      this.setAttribute("open", "");
+    };
+    HTMLDialogElement.prototype.close = function close() {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    };
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+    Object.defineProperty(window, "innerWidth", {
+      writable: true,
+      configurable: true,
+      value: origInnerWidth,
+    });
+  });
+
+  it("detects active trip day with GMT on D00 and ICT on D01–D10 and formats Live Dual Timezone Clock", () => {
+    // 4 Feb 2027 afternoon & evening in GMT stays on D00 even after Bangkok passes midnight
+    expect(detectActiveTripDay(new Date("2027-02-04T12:00:00Z"))).toBe(0);
+    expect(detectActiveTripDay(new Date("2027-02-04T18:30:00Z"))).toBe(0);
+
+    // 5–14 Feb in ICT (UTC+7) maps to Days 1..10
+    expect(detectActiveTripDay(new Date("2027-02-05T11:30:00Z"))).toBe(1);
+    expect(detectActiveTripDay(new Date("2027-02-09T09:00:00Z"))).toBe(5);
+    expect(detectActiveTripDay(new Date("2027-02-14T07:00:00Z"))).toBe(10);
+
+    // Outside trip dates returns null
+    expect(detectActiveTripDay(new Date("2027-02-03T12:00:00Z"))).toBeNull();
+    expect(detectActiveTripDay(new Date("2027-02-15T12:00:00Z"))).toBeNull();
+
+    const clock = formatDualTimezoneClock(new Date("2027-02-05T09:30:00Z"));
+    expect(clock.londonTime).toBe("09:30");
+    expect(clock.bangkokTime).toBe("16:30");
+    expect(clock.fullLabel).toBe(
+      "London (GMT) 09:30 | Bangkok/Phuket (ICT) 16:30"
+    );
+
+    expect(resolveHotelIdForDay(0)).toBe("shangri-la-bangkok");
+    expect(resolveHotelIdForDay(3)).toBe("shangri-la-bangkok");
+    expect(resolveHotelIdForDay(4)).toBe("pavilions-phuket");
+    expect(resolveHotelIdForDay(10)).toBe("pavilions-phuket");
+
+    const d1Status = resolveDayCompanionStatus(
+      TRIP_DAYS[1].defaultActivities,
+      [],
+      1,
+      new Date("2027-02-05T11:30:00Z")
+    );
+    expect(d1Status.upNextActivity?.id).toBe("d1-shangrila-checkin");
+    expect(d1Status.countdownLabel).toBe("in 1h");
+  });
+
+  it("toggles Companion / Today View manually with Up Next card, NOW marker, Tonight's outfit chip, Maps/Driver/Grab actions, and live Dual Clock", () => {
+    const writeText = jest.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    jest.useFakeTimers().setSystemTime(new Date("2026-11-14T10:00:00Z"));
+
+    render(<ThailandTripDashboardV2 />);
+
+    // Pre-trip: Companion Mode is off and desktop spread is unchanged
+    expect(screen.queryByTestId("top-bar-dual-clock")).toBeNull();
+    const toggleBtn = screen.getByTestId("companion-mode-toggle");
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute("aria-pressed", "true");
+
+    // Live Dual Clock appears in TopEditorialBar and UP NEXT card renders on D01
+    expect(screen.getByTestId("top-bar-dual-clock")).toHaveTextContent(
+      /London \(GMT\) 10:00 \| Bangkok\/Phuket \(ICT\) 17:00/i
+    );
+    const upNextCard = screen.getByTestId("up-next-card-d1");
+    expect(upNextCard).toHaveTextContent(/UP NEXT/i);
+    expect(upNextCard).toHaveTextContent(/Tonight's outfit:/i);
+    expect(screen.getByTestId("now-timeline-marker-d1")).toBeInTheDocument();
+
+    // Quick Grab script copy action & Driver card modal launch
+    fireEvent.click(screen.getByRole("button", { name: /Grab script/i }));
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("โรงแรมแชงกรี-ลา")
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^Driver card$/i }));
+    const driverDialog = document.querySelector(
+      "dialog[aria-labelledby='driver-card-hotel-title']"
+    ) as HTMLDialogElement;
+    expect(driverDialog).toHaveAttribute("open");
+    fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+    expect(driverDialog).not.toHaveAttribute("open");
+  });
+
+  it("auto-defaults to Today on mobile (<640px) during 4–14 Feb 2027 while keeping Desktop Full Spread (6.2.5) and dims past uncompleted items", () => {
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-05T11:30:00Z"));
+
+    // 1. Desktop (>= 640px) preserves Full Spread while activating Today companion indicators on D01
+    window.innerWidth = 1024;
+    const desktopRender = render(<ThailandTripDashboardV2 />);
+    expect(document.getElementById("day-card-0")).toBeInTheDocument();
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+    expect(document.getElementById("day-card-10")).toBeInTheDocument();
+
+    expect(screen.getByTestId("top-bar-dual-clock")).toHaveTextContent(
+      /London \(GMT\) 11:30 \| Bangkok\/Phuket \(ICT\) 18:30/i
+    );
+    expect(screen.getByTestId("up-next-card-d1")).toHaveTextContent(
+      /Check-in at Shangri-La Bangkok/i
+    );
+    expect(screen.getByTestId("up-next-card-d1")).toHaveTextContent(/in 1h/i);
+    expect(screen.getByTestId("now-timeline-marker-d1")).toHaveTextContent(
+      /NOW .* 18:30 ICT/i
+    );
+
+    // Past item prompt marks activity done when tapped
+    const pastPromptBtns = screen.getAllByRole("button", {
+      name: /Past scheduled time/i,
+    });
+    expect(pastPromptBtns.length).toBeGreaterThanOrEqual(1);
+    const initialCount = pastPromptBtns.length;
+    fireEvent.click(pastPromptBtns[0]);
+    expect(
+      screen.getAllByRole("button", { name: /Past scheduled time/i }).length
+    ).toBe(initialCount - 1);
+    desktopRender.unmount();
+
+    // 2. Mobile (< 640px) opens directly on Today's Day Card (D01)
+    window.innerWidth = 375;
+    render(<ThailandTripDashboardV2 />);
+    expect(document.getElementById("day-card-1")).toBeInTheDocument();
+    expect(document.getElementById("day-card-0")).toBeNull();
+    expect(screen.getByTestId("single-day-pagination")).toBeInTheDocument();
+  });
+
+  it("upgrades DriverCardModal to native showModal <dialog>, text-4xl/text-2xl Thai text, Night Contrast, Wake Lock, Share fallback, and bottom Done", async () => {
+    const showModalSpy = jest.fn(function showModal(this: HTMLDialogElement) {
+      this.setAttribute("open", "");
+    });
+    const closeSpy = jest.fn(function close(this: HTMLDialogElement) {
+      this.removeAttribute("open");
+      this.dispatchEvent(new Event("close"));
+    });
+    HTMLDialogElement.prototype.showModal = showModalSpy;
+    HTMLDialogElement.prototype.close = closeSpy;
+
+    const releaseMock = jest.fn().mockResolvedValue(undefined);
+    const requestWakeLockMock = jest
+      .fn()
+      .mockResolvedValue({ release: releaseMock });
+    const shareMock = jest.fn().mockResolvedValue(undefined);
+    const origWakeLock = (navigator as Navigator & { wakeLock?: unknown }).wakeLock;
+    const origShare = (navigator as Navigator & { share?: unknown }).share;
+
+    Object.defineProperty(navigator, "wakeLock", {
+      configurable: true,
+      writable: true,
+      value: { request: requestWakeLockMock },
+    });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      writable: true,
+      value: shareMock,
+    });
+
+    try {
+      const onClose = jest.fn();
+      const onCopy = jest.fn();
+
+      const invokerBtn = document.createElement("button");
+      invokerBtn.textContent = "Launch Driver Card";
+      document.body.appendChild(invokerBtn);
+      invokerBtn.focus();
+
+      const { rerender } = render(
+        <DriverCardModal
+          hotelId="pavilions-phuket"
+          onClose={onClose}
+          onCopy={onCopy}
+        />
+      );
+
+      await act(async () => {});
+
+      const dialog = document.querySelector(
+        "dialog[aria-labelledby='driver-card-hotel-title']"
+      ) as HTMLDialogElement;
+      expect(dialog).toHaveAttribute("open");
+      expect(showModalSpy).toHaveBeenCalledTimes(1);
+      expect(requestWakeLockMock).toHaveBeenCalledWith("screen");
+      expect(dialog).toHaveClass("inset-0", "w-full", "h-dvh");
+      expect(dialog.querySelector(".landscape\\:flex-row")).not.toBeNull();
+
+      expect(screen.getByTestId("driver-thai-name")).toHaveClass("text-4xl");
+      expect(screen.getByTestId("driver-thai-address")).toHaveClass("text-2xl");
+
+      const callHotelLink = screen.getByRole("link", {
+        name: /Call Hotel \(\+66 76 317 600\)/i,
+      });
+      expect(callHotelLink).toHaveAttribute("href", "tel:+6676317600");
+
+      // Night contrast mode toggle
+      const nightToggle = screen.getByTestId("driver-night-mode-toggle");
+      expect(nightToggle).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(nightToggle);
+      expect(nightToggle).toHaveAttribute("aria-pressed", "true");
+      expect(dialog).toHaveClass("bg-black");
+
+      // Native navigator.share call
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Share Address/i }));
+      });
+      expect(shareMock).toHaveBeenCalledTimes(1);
+
+      // Clipboard fallback when navigator.share is unavailable
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        writable: true,
+        value: undefined,
+      });
+      await act(async () => {
+        fireEvent.click(screen.getByRole("button", { name: /Share Address/i }));
+      });
+      expect(onCopy).toHaveBeenCalledWith(
+        expect.stringContaining("เดอะ พาวิลเลี่ยนส์ ภูเก็ต"),
+        expect.stringContaining("Pavilions Phuket Thai Address")
+      );
+
+      // Bottom Done button triggers onClose
+      fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
+      expect(onClose).toHaveBeenCalledTimes(1);
+
+      // Transitioning hotelId -> null closes dialog, releases Wake Lock, and restores focus
+      rerender(
+        <DriverCardModal hotelId={null} onClose={onClose} onCopy={onCopy} />
+      );
+      expect(closeSpy).toHaveBeenCalled();
+      expect(releaseMock).toHaveBeenCalledTimes(1);
+      expect(document.activeElement).toBe(invokerBtn);
+
+      // Wake Lock Battery Saver rejection handles silently without throwing
+      requestWakeLockMock.mockRejectedValueOnce(new Error("Battery Saver"));
+      rerender(
+        <DriverCardModal
+          hotelId="shangri-la-bangkok"
+          onClose={onClose}
+          onCopy={onCopy}
+        />
+      );
+      await act(async () => {});
+      expect(dialog).toHaveAttribute("open");
+      invokerBtn.remove();
+    } finally {
+      Object.defineProperty(navigator, "wakeLock", {
+        configurable: true,
+        writable: true,
+        value: origWakeLock,
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        writable: true,
+        value: origShare,
+      });
+    }
+  });
+
+  it("exposes complete SOS contacts (1155, 1669, British Embassy, hotels) and Dual Clock inside Pocket Desk and More sheet", () => {
+    jest.useFakeTimers().setSystemTime(new Date("2027-02-05T09:30:00Z"));
+    render(<ThailandTripDashboardV2 />);
+
+    // 1. QuickPocketDesk SOS + Live Dual Clock
+    fireEvent.click(
+      screen.getByRole("button", { name: /Open Quick Pocket Desk/i })
+    );
+    const pocketDialog = document.querySelector(
+      "dialog[aria-labelledby='pocket-desk-title']"
+    ) as HTMLDialogElement;
+    expect(screen.getByTestId("pocket-dual-clock")).toHaveTextContent(
+      "London (GMT) 09:30 | Bangkok/Phuket (ICT) 16:30"
+    );
+    for (const href of [
+      "tel:1155",
+      "tel:1669",
+      "tel:+6623058333",
+      "tel:+6622367777",
+      "tel:+6676317600",
+    ]) {
+      expect(pocketDialog.querySelector(`a[href="${href}"]`)).toBeInTheDocument();
+    }
+    fireEvent.click(screen.getByRole("button", { name: /CLOSE/i }));
+
+    // 2. More Sheet SOS links
+    fireEvent.click(
+      screen.getByRole("button", { name: /More steps and tools/i })
+    );
+    const moreDialog = document.querySelector(
+      "dialog[aria-labelledby='more-sheet-title']"
+    ) as HTMLDialogElement;
+    for (const href of [
+      "tel:1155",
+      "tel:1669",
+      "tel:+6623058333",
+      "tel:+6622367777",
+      "tel:+6676317600",
+    ]) {
+      expect(moreDialog.querySelector(`a[href="${href}"]`)).toBeInTheDocument();
     }
   });
 });
