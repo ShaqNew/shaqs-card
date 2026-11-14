@@ -1080,14 +1080,16 @@
     <!-- HERO SECTION -->
     <section class="hero" aria-labelledby="plan-title">
       <div>
-        <span class="eyebrow">Verified Mobile Redesign Spec</span>
+        <span class="eyebrow">Verified Mobile Redesign Spec · Android / Pixel First</span>
         <h1 id="plan-title" class="serif">Thailand 2027 Mobile UI/UX Improvement Plan</h1>
         <p class="hero-lead">
-          Audited against all 23 modules in <code>/naanas-space/thailand-2027</code> and validated with real
-          <code>390×844</code> mobile captures. Transforms the current desktop-first dashboard into a thumb-friendly,
-          sunlight-legible travel companion for <strong>Shaq &amp; Naana</strong> (4–14 Feb 2027).
+          Audited against all 23 modules in <code>/naanas-space/thailand-2027</code> with baseline captures at
+          <code>390×844</code>. Built in <strong><code>/naanas-space/thailand-2027-v2</code></strong> (leaving <code>/naanas-space/thailand-2027</code> untouched as the classic <code>v1</code> desktop layout while sharing the same live <code>useThailandTripState</code>, <code>localStorage</code>, and Upstash Redis state <code>naanas_space_thailand_2027_v1</code>). Designed <strong>Android-first</strong> (<strong>Google Pixel</strong> <code>412×915</code> /
+          <code>448×998</code> &amp; Chrome on Android primary; iOS Safari <code>390×844</code> nice-to-have) to create a thumb-friendly, sunlight-legible travel companion for <strong>Shaq &amp; Naana</strong> (4–14 Feb 2027).
         </p>
         <div class="meta-chips">
+          <span class="meta-chip">Target Route: <span class="mono">/naanas-space/thailand-2027-v2</span> (v1 desktop untouched · shared live state)</span>
+          <span class="meta-chip">Device Priority: Google Pixel / Android Chrome (iOS nice-to-have)</span>
           <span class="meta-chip">4–14 Feb 2027 · Celebrating Naana’s Birthday</span>
           <span class="meta-chip">Shangri-La Bangkok · Ref <span class="mono">12891938794</span></span>
           <span class="meta-chip">The Pavilions Phuket · Ref <span class="mono">78165SH099776</span></span>
@@ -1623,14 +1625,14 @@
             <tr>
               <th scope="row">A7 · Desktop-sized modals/drawers on phone</th>
               <td data-label="Severity"><span class="badge badge-p1">Medium</span></td>
-              <td data-label="Location"><code>WardrobeDrawer</code>, <code>ChangeLogDrawer</code>, <code>CreateLookModal</code>, <code>DriverCardModal</code></td>
-              <td data-label="Verified Details"><strong>Verified:</strong> Drawers use top-right <code>Close ✕</code> + slide-over frames; <code>DriverCardModal</code> uses centered <code>max-w-xl</code>. Convert drawers/modals to bottom sheets (<code>85–92dvh</code>) &amp; Driver Card to full-screen <code>100dvh</code>.</td>
+              <td data-label="Location"><code>WardrobeDrawer</code>, <code>ChangeLogDrawer</code>, <code>CreateLookModal</code>, <code>DriverCardModal</code>, <code>QuickPocketDesk</code></td>
+              <td data-label="Verified Details"><strong>Verified:</strong> Drawers use top-right <code>Close ✕</code> + slide-over frames; <code>DriverCardModal</code> uses centered <code>max-w-xl</code>. Convert all overlays to native <code>&lt;dialog&gt;</code> (<code>showModal()</code>) bottom sheets (<code>85–88dvh</code>) &amp; full-screen <code>100dvh</code> Driver Card so Pixel Back-gesture (<code>CloseWatcher</code>) closes them cleanly.</td>
             </tr>
             <tr>
               <th scope="row">A8 · No native mobile sheet gestures</th>
               <td data-label="Severity"><span class="badge badge-p2">Medium</span></td>
               <td data-label="Location"><code>GarmentLightboxModal</code>, sheets</td>
-              <td data-label="Verified Details"><strong>Verified:</strong> Lightbox supports keyboard ArrowLeft/Right only. Add touch swipe left/right between tiles + pull-down/backdrop light-dismiss.</td>
+              <td data-label="Verified Details"><strong>Verified:</strong> Lightbox supports keyboard ArrowLeft/Right only. Add next/prev garment controls + backdrop/<code>CloseWatcher</code> Back-gesture dismiss (avoid page/row edge swipes that fight Pixel system Back).</td>
             </tr>
             <tr>
               <th scope="row">A9 · No compact active-trip “Today” lens</th>
@@ -1660,7 +1662,7 @@
               <th scope="row">A13 · Unbounded eager bundle + remote images</th>
               <td data-label="Severity"><span class="badge badge-p2">Low-Medium</span></td>
               <td data-label="Location"><code>page.tsx</code>, <code>PolaroidOutfitCard.tsx</code></td>
-              <td data-label="Verified Details"><strong>Verified:</strong> All steps &amp; modals are statically imported in <code>page.tsx</code>. Use <code>next/dynamic</code> for drawers/modals; check <code>remotePatterns</code>/<code>unoptimized</code> before <code>next/image</code>.</td>
+              <td data-label="Verified Details"><strong>Verified:</strong> All steps &amp; modals are statically imported in <code>page.tsx</code>. Use <code>next/dynamic</code> for drawers/modals, and keep standard <code>&lt;img loading="lazy" decoding="async"&gt;</code> instead of <code>next/image</code> (avoids runtime hostname crashes on scraped URLs).</td>
             </tr>
           </tbody>
         </table>
@@ -1699,8 +1701,13 @@
         </article>
         <article class="principle-card">
           <div class="principle-num mono">PRINCIPLE 05</div>
-          <h3>Zero Desktop Regression</h3>
-          <p>Use Tailwind responsive prefixes (<code>md:</code> / <code>lg:</code>) cleanly so desktop users retain the broad two-column luxury dossier and full financial ledger table.</p>
+          <h3>Zero Desktop Regression (v1 + v2 Shared State)</h3>
+          <p>Leave <code>/naanas-space/thailand-2027</code> untouched as the classic desktop layout and build <code>/naanas-space/thailand-2027-v2</code> sharing <code>useThailandTripState</code>, <code>localStorage</code> &amp; Redis (<code>naanas_space_thailand_2027_v1</code>), while keeping additive schema compatibility, cross-tab <code>storage</code> sync (<code>thailand_2027_mobile_ux_v2_drawbacks.md</code>), and responsive <code>sm:</code>/<code>md:</code>/<code>lg:</code> rules on a single DOM tree inside <code>v2</code>.</p>
+        </article>
+        <article class="principle-card">
+          <div class="principle-num mono">PRINCIPLE 06</div>
+          <h3>Android / Google Pixel First (iOS Nice-to-Have)</h3>
+          <p>Optimise for Chrome on Google Pixel (Gboard, Android edge-swipe Back gestures via native <code>&lt;dialog&gt;</code>, <code>beforeinstallprompt</code> WebAPK install, and a single responsive DOM tree) while preserving desktop and iOS Safari compatibility.</p>
         </article>
       </div>
     </section>
@@ -1780,38 +1787,38 @@
           <summary>Phase 1 · Mobile Navigation, Chrome &amp; Typography Foundations (P0)</summary>
           <div class="phase-body">
             <div class="spec-item">
-              <h4>1.1 Bottom Tab Bar + Slim Scrubber</h4>
-              <p>Keep top <code>StickyStepNav</code> 6-tab grid at <code>md+</code>. On <code>&lt;768px</code>, replace with a 5-slot thumb bar (<code>Plan</code>, <code>Vault</code>, center <code>฿ Pocket</code> trigger, <code>Pack</code>, <code>More</code> sheet containing Prep/Guide/Budget) + single thin sticky horizontal date scrubber with scroll fade masks.</p>
+              <h4>1.1 Route Scaffold &amp; Bottom Tab Bar + Slim Scrubber</h4>
+              <p>Start by scaffolding <code>src/app/naanas-space/thailand-2027-v2/</code> wired to the shared <code>useThailandTripState.ts</code>, <code>types.ts</code>, and <code>/api/naanas-space/thailand-2027</code> (leaving <code>/naanas-space/thailand-2027</code> untouched) with a <code>v1 / v2</code> switcher link. Keep top <code>StickyStepNav</code> 6-tab grid at <code>sm+</code> (<code>640px+</code>). On <code>&lt;640px</code> (<code>&lt; sm</code>), restyle the <strong>same single DOM tree</strong> as a 5-slot thumb bar (<code>Plan</code>, <code>Vault</code>, center <code>฿ Pocket</code> trigger, <code>Pack</code>, <code>More</code> sheet containing Prep/Guide/Budget) + slim sticky date scrubber with <code>← Prev / Next →</code> day buttons (no body edge swipes).</p>
             </div>
             <div class="spec-item">
               <h4>1.2 Single-Row Top Editorial Bar</h4>
-              <p>Prevent multi-line wrapping on 375–430px by showing compact <code>← Space</code>, segmented <code>S | N</code> pill, compact <code>Sync</code> status dot + icon, and moving Change Log count into <code>More</code> or top drawer.</p>
+              <p>Prevent multi-line wrapping on 360–448px by restyling the single <code>TopEditorialBar</code> into compact <code>← Space</code>, segmented <code>S | N</code> pill, compact <code>Sync</code> status dot + icon, and moving Change Log count into <code>More</code> or top drawer.</p>
             </div>
             <div class="spec-item">
               <h4>1.3 Collapsible Mobile Masthead</h4>
-              <p>Merge H1 + concise route summary + compact <code>82d 18h</code> countdown chip into one card with <code>Trip Overview ▾</code> accordion (<code>&lt;md</code>), cutting above-fold hero height by &gt;55%.</p>
+              <p>Merge H1 + concise route summary + compact <code>82d 18h</code> countdown chip into one card with <code>Trip Overview ▾</code> accordion (<code>&lt;sm</code>), cutting above-fold hero height by &gt;55% while keeping <code>&lt;EditorialMasthead /&gt;</code> and <code>#masthead-chronometer</code> mounted in the DOM.</p>
             </div>
             <div class="spec-item">
-              <h4>1.4–1.6 Safe Toast, Font Bundling &amp; Floor</h4>
-              <p>Move copy/sync toasts to top-center pill (<code>top-3</code>, <code>env(safe-area-inset-top)</code>); replace <code>@import</code> external Google/CDNFonts strings with bundled <code>next/font/google</code> + offline fallback stack in P1 alongside Offline PWA support; purge all 172 sub-11px classes and set <code>text-base</code> on inputs.</p>
+              <h4>1.4–1.6 Safe Toast, Font Bundling &amp; Input Floor</h4>
+              <p>Move copy/sync toasts to top-center pill (<code>top-3</code>, <code>env(safe-area-inset-top)</code>); replace <code>@import</code> external Google/CDNFonts strings with <code>next/font/google</code> + local <code>DS-Digital</code> preserving <code>--font-editorial-*</code> variables; purge all 172 sub-11px classes; use <code>text-base sm:text-sm</code>, <code>inputMode="decimal"</code> without <code>pattern="[0-9]*"</code>, and <code>type="text"</code> on times.</p>
             </div>
           </div>
         </details>
 
         <details class="phase-box">
-          <summary>Phase 2 · Modals, Bottom Sheets &amp; Touch Gestures (P1)</summary>
+          <summary>Phase 2 · Modals, Bottom Sheets &amp; Touch Ergonomics (P1)</summary>
           <div class="phase-body">
             <div class="spec-item">
-              <h4>2.1 Slide-Over Drawers → 92dvh Bottom Sheets</h4>
-              <p>Convert <code>WardrobeDrawer</code> and <code>ChangeLogDrawer</code> below <code>sm</code> into rounded top-corner sheets (<code>max-h-[92dvh]</code>, drag bar handle, sticky bottom <code>Done</code>/<code>Apply</code> action bar) while keeping <code>sm:max-w-*</code> slide-overs on desktop.</p>
+              <h4>2.1 Slide-Over Drawers → 88dvh Native &lt;dialog&gt; Sheets</h4>
+              <p>Convert <code>WardrobeDrawer</code> and <code>ChangeLogDrawer</code> to a single responsive native <code>&lt;dialog&gt;</code> (<code>showModal()</code>) styled as a rounded bottom sheet below <code>sm</code> (<code>max-h-[88dvh]</code> so Pixel Gboard doesn’t cover sticky <code>Done</code>/<code>Apply</code> footers, with Pixel Back-gesture <code>CloseWatcher</code> dismissal) while keeping <code>sm:max-w-*</code> slide-overs on desktop.</p>
             </div>
             <div class="spec-item">
               <h4>2.2 QuickPocketDesk Bottom Sheet &amp; Bugfixes</h4>
-              <p>Eliminate floating <code>w-80 bottom-5 left-5</code> box; open <code>85dvh</code> sheet from Bottom Nav’s center button with Baht presets, non-overflowing wrapped PNR/Ref copy chips, fixed <code>≈</code> symbol, and 1-tap <code>1155</code>/<code>1669</code> dial triggers.</p>
+              <p>Eliminate floating <code>w-80 bottom-5 left-5</code> box via a single responsive <code>QuickPocketDesk</code> <code>&lt;dialog&gt;</code> (<code>85dvh</code> sheet on mobile); add Baht presets (<code>100/200/500/1000</code>), non-overflowing wrapped PNR/Ref copy chips, fixed <code>≈</code> symbol, and 1-tap <code>1155</code>/<code>1669</code> dial triggers.</p>
             </div>
             <div class="spec-item">
               <h4>2.3 Touch Lightbox &amp; Dialog Ergonomics</h4>
-              <p>Make <code>PolaroidCollageTile</code> inspect/expand chips always visible on coarse pointers; add swipe-left/right navigation inside <code>GarmentLightboxModal</code>, <code>closedby="any"</code> / drag-down dismiss, and stop unconditional <code>autoFocus</code> on mobile form modals so soft keyboards do not cover headers.</p>
+              <p>Make <code>PolaroidCollageTile</code> inspect/expand chips always visible on coarse pointers; add next/prev garment controls inside <code>GarmentLightboxModal</code>, <code>closedby="any"</code> / <code>CloseWatcher</code> Back-gesture dismiss, and stop unconditional <code>autoFocus</code> on mobile form modals so soft keyboards do not cover headers.</p>
             </div>
           </div>
         </details>
@@ -1821,15 +1828,15 @@
           <div class="phase-body">
             <div class="spec-item">
               <h4>3.1 Auto-Focus Today / Active Day</h4>
-              <p>Default to Today’s date card when Feb 4–14, 2027 (fixed to <code>Asia/Bangkok</code> + <code>Europe/London</code> instead of UTC <code>toISOString()</code>) or show <code>Next Up</code> countdown pre-trip, placing primary Maps/Taxi/Check-in buttons up top.</p>
+              <p>Default to Today’s date card when Feb 4–14, 2027 (<code>Europe/London</code> GMT on D00, <code>Asia/Bangkok</code> UTC+7 on D01–D10 instead of UTC <code>toISOString()</code>) or show <code>Next Up</code> countdown pre-trip, placing primary Maps/Taxi/Check-in buttons up top.</p>
             </div>
             <div class="spec-item">
               <h4>3.2 Emergency &amp; Concierge Speed-Dial</h4>
               <p>Ensure one-tap <code>tel:1155</code> (Tourist Police), <code>tel:1669</code> (EMS), <code>tel:+6623058333</code> (British Embassy), plus Shangri-La &amp; Pavilions reception numbers are accessible directly from Pocket/More without scrolling Step V.</p>
             </div>
             <div class="spec-item">
-              <h4>3.3 Full-Screen Taxi Driver Card</h4>
-              <p>Upgrade <code>DriverCardModal</code> on mobile to full-bleed <code>100dvh</code> pure-white card with <code>navigator.wakeLock.request("screen")</code> badge, large <code>lang="th"</code> typography, full-width single-line Copy/Maps/Call buttons, and bottom thumb <code>Done</code>.</p>
+              <h4>3.3 Full-Screen Native &lt;dialog&gt; Taxi Driver Card</h4>
+              <p>Convert <code>DriverCardModal</code> from <code>&lt;div&gt;</code> to native <code>&lt;dialog&gt;</code> (<code>showModal()</code>) for Pixel Back-gesture dismissal; render full-bleed <code>100dvh</code> pure-white card with responsive <code>landscape:</code> layout (no forced CSS rotation), <code>try/catch</code> around <code>navigator.wakeLock.request("screen")</code>, large <code>lang="th"</code> script, Share/Copy/Maps/Call actions, and bottom thumb <code>Done</code>.</p>
             </div>
           </div>
         </details>
@@ -1839,29 +1846,29 @@
           <div class="phase-body">
             <div class="spec-item">
               <h4>4.1–4.2 Itinerary Cards &amp; Collapsed Suggestions</h4>
-              <p>Clean vertical card stacks with 44×44 checkbox hitboxes, single <code>⋯</code> overflow action menu per activity row, and collapsible <code>4 Suggestions ▾</code> pill per day so scheduled plans stay visible above the fold.</p>
+              <p>Clean vertical card stacks with 44×44 checkbox hitboxes, single <code>⋯</code> overflow action menu per activity row (avoiding row swipe-left collisions with Pixel gesture nav), and collapsible <code>4 Suggestions ▾</code> pill per day so scheduled plans stay visible above the fold.</p>
             </div>
             <div class="spec-item">
               <h4>4.3 Financial Matrix → Stacked Cards</h4>
-              <p>Transform <code>FINANCIAL_MATRIX</code> <code>&lt;table&gt;</code> into stacked mobile cards (<code>md:table</code> preserved for desktop) paired with sticky bottom surplus strip (<code>+£72.65</code>) and instant <code>+ Add Expense</code> CTA.</p>
+              <p>Restyle the single <code>FINANCIAL_MATRIX</code> <code>&lt;table&gt;</code> into stacked mobile cards (<code>block md:table</code> — preserving desktop layout without duplicating the list) paired with sticky bottom surplus strip (<code>+£72.65</code>) and instant <code>+ Add Expense</code> CTA.</p>
             </div>
             <div class="spec-item">
               <h4>4.4 Wardrobe Upload &amp; Collage Layout</h4>
-              <p>Keep existing Packing Ledger <code>&lt;label&gt;</code> row tap, category accordions, and <code>Unpacked Only</code> filter; upgrade <code>CreateLookModal</code> with real device photo upload (<code>&lt;input type="file" accept="image/*" capture="environment"&gt;</code> / client compression) and decouple Polaroid header badges from tile photos.</p>
+              <p>Keep existing Packing Ledger <code>&lt;label&gt;</code> row tap, category accordions, and <code>Unpacked Only</code> filter; upgrade <code>CreateLookModal</code> with real device photo upload (<code>&lt;input type="file" accept="image/*"&gt;</code> — omitting <code>capture="environment"</code> so Pixel’s Photo Picker / Google Photos library stays accessible alongside Camera) and decouple Polaroid header badges from tile photos.</p>
             </div>
           </div>
         </details>
 
         <details class="phase-box">
-          <summary>Phase 5 · Performance, Offline Resilience &amp; Viewport Meta (P1 / P3)</summary>
+          <summary>Phase 5 · PWA, Offline Sync &amp; Performance Guardrails (P1 / P3)</summary>
           <div class="phase-body">
             <div class="spec-item">
-              <h4>5.1 Viewport Export &amp; Debounced Sync</h4>
-              <p>Add explicit Next <code>viewport</code> export (<code>viewportFit: "cover"</code> for notch/home-indicator safe areas) and debounce <code>PUT</code> cloud sync writes (<code>500–800ms</code> + flush on <code>visibilitychange</code>) in <code>useThailandTripState.ts</code>.</p>
+              <h4>5.1 WebAPK PWA &amp; Dirty-State Sync</h4>
+              <p>Add <code>manifest.webmanifest</code> scoped to <code>/naanas-space/thailand-2027-v2</code> (<code>start_url</code>) + <code>beforeinstallprompt</code> 1-tap Install button for Google Pixel WebAPK (with iOS A2HS tip + actor prompt fallback), explicit <code>viewportFit: "cover"</code>, <code>500ms</code> <code>PUT</code> debounce, dirty-state sync (<code>localUpdated &gt; cloudUpdated</code>), cross-tab <code>storage</code> event listener (<code>STORAGE_KEY</code> / <code>ACTOR_STORAGE_KEY</code>), and additive-only schema evolution in shared <code>useThailandTripState.ts</code> (per <code>thailand_2027_mobile_ux_v2_drawbacks.md</code>, keeping <code>v1</code> and <code>v2</code> in lockstep).</p>
             </div>
             <div class="spec-item">
-              <h4>5.2–5.3 Offline Cache, Splitting &amp; Reduced Motion</h4>
-              <p>Bundle offline read fallback (service worker / indexed JSON shell so Taxi cards &amp; PNRs work with dead cellular in transit), <code>next/dynamic</code> code-split modals/non-active steps, keep <code>-72px</code>/<code>-8px</code> compact scroll hysteresis, and respect <code>prefers-reduced-motion</code>.</p>
+              <h4>5.2–5.3 Custom SW, Image Safety &amp; Hysteresis</h4>
+              <p>Use lightweight custom <code>public/thailand-2027-sw.js</code> (avoiding <code>next-pwa</code>/Serwist on Next 15.4 Turbopack); keep standard <code>&lt;img loading="lazy" decoding="async"&gt;</code> instead of <code>next/image</code> for external scraped URLs; <code>next/dynamic</code> split modals; keep <code>-72px</code>/<code>-8px</code> scroll hysteresis; skip <code>content-visibility: auto</code> on day cards.</p>
             </div>
           </div>
         </details>
@@ -1896,26 +1903,27 @@
             </tr>
           </thead>
           <tbody id="roadmap-tbody">
-            <tr data-prio="P0"><th scope="row">1.1 Mobile Bottom Nav + Slim Date Scrubber</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>StickyStepNav.tsx</code></td><td data-label="Outcome">Cuts sticky chrome &amp; places primary tabs in thumb zone</td></tr>
-            <tr data-prio="P0"><th scope="row">1.2 Single-Row TopEditorialBar</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>TopEditorialBar.tsx</code></td><td data-label="Outcome">Eliminates 3-line header wrapping on 390px screens</td></tr>
-            <tr data-prio="P0"><th scope="row">1.3 Collapsible Mobile Masthead</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>EditorialMasthead.tsx</code></td><td data-label="Outcome">Frees >55% of first screen for active trip cards</td></tr>
+            <tr data-prio="P0"><th scope="row">1.0 Scaffold /thailand-2027-v2 + Shared State</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>src/app/naanas-space/thailand-2027-v2/</code>, <code>useThailandTripState.ts</code></td><td data-label="Outcome">Preserves live <code>v1</code> desktop route untouched while sharing static data, <code>localStorage</code> &amp; Redis</td></tr>
+            <tr data-prio="P0"><th scope="row">1.1 Mobile Bottom Nav + Slim Date Scrubber</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>StickyStepNav.tsx</code></td><td data-label="Outcome">Single responsive DOM tree; cuts sticky chrome &amp; puts tabs in thumb zone</td></tr>
+            <tr data-prio="P0"><th scope="row">1.2 Single-Row TopEditorialBar</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>TopEditorialBar.tsx</code></td><td data-label="Outcome">Eliminates 3-line header wrapping on 360–448px screens</td></tr>
+            <tr data-prio="P0"><th scope="row">1.3 Collapsible Mobile Masthead</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>EditorialMasthead.tsx</code></td><td data-label="Outcome">Frees &gt;55% of first screen while keeping <code>#masthead-chronometer</code> mounted</td></tr>
             <tr data-prio="P0"><th scope="row">1.4 Safe-Area Top Toast Positioning</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>page.tsx</code>, <code>layout.tsx</code></td><td data-label="Outcome">Stops toast / floating button collisions + adds <code>viewportFit: cover</code></td></tr>
-            <tr data-prio="P0"><th scope="row">1.5 Sub-16px Input &amp; Micro-Font Purge</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope">All inputs &amp; labels (172 classes)</td><td data-label="Outcome">Stops iOS Safari focus-zoom + fixes outdoor legibility</td></tr>
-            <tr data-prio="P0"><th scope="row">2.2 QuickPocketDesk Sheet + Entity/Overflow Fix</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>QuickPocketDesk.tsx</code></td><td data-label="Outcome">Replaces w-80 box, fixes <code>&amp;APPROX;</code> &amp; PNR chip clip</td></tr>
+            <tr data-prio="P0"><th scope="row">1.5 Sub-16px Input &amp; Micro-Font Purge</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope">All inputs &amp; labels (172 classes)</td><td data-label="Outcome">Fixes decimal/time keyboards, prevents iOS zoom &amp; improves outdoor legibility</td></tr>
+            <tr data-prio="P0"><th scope="row">2.2 QuickPocketDesk Sheet + Entity/Overflow Fix</th><td data-label="Priority"><span class="badge badge-p0">P0</span></td><td data-label="Scope"><code>QuickPocketDesk.tsx</code></td><td data-label="Outcome">Single native <code>&lt;dialog&gt;</code> sheet, fixes <code>&amp;APPROX;</code> &amp; PNR chip clip</td></tr>
 
-            <tr data-prio="P1"><th scope="row">1.6 Self-Hosted / Bundled Typography</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>thailand-2027/layout.tsx</code></td><td data-label="Outcome">Removes CDN dependency before offline caching (moved to P1)</td></tr>
-            <tr data-prio="P1"><th scope="row">2.1 Bottom Sheet Drawers</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>WardrobeDrawer</code>, <code>ChangeLogDrawer</code></td><td data-label="Outcome">92dvh touch-friendly bottom sheets + bottom Done bar</td></tr>
-            <tr data-prio="P1"><th scope="row">2.3 Swipeable Lightbox &amp; Always-Visible Tile Cues</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>PolaroidOutfitCard.tsx</code></td><td data-label="Outcome">Fixes <code>opacity-0</code> hover traps + adds touch swipe</td></tr>
-            <tr data-prio="P1"><th scope="row">3.1 Auto-Focus Today + ICT Timezone Fix</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>StepItinerary.tsx</code>, <code>page.tsx</code></td><td data-label="Outcome">Surfaces Next Up hero + replaces UTC date slice</td></tr>
-            <tr data-prio="P1"><th scope="row">3.2–3.3 Full-Screen Taxi Card &amp; Wake Lock</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>DriverCardModal.tsx</code>, SOS strip</td><td data-label="Outcome">Full-bleed daylight Thai placard + 1-tap SOS dials</td></tr>
-            <tr data-prio="P1"><th scope="row">5.2 Offline Fallback (Driver Cards, PNRs, Plan)</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope">Service Worker / Local Seed</td><td data-label="Outcome">Works seamlessly on flights, ferries &amp; dead cellular zones</td></tr>
+            <tr data-prio="P1"><th scope="row">1.6 Self-Hosted / Bundled Typography</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>thailand-2027-v2/layout.tsx</code></td><td data-label="Outcome">Removes CDN dependency before offline caching preserving <code>--font-editorial-*</code> vars</td></tr>
+            <tr data-prio="P1"><th scope="row">2.1 Bottom Sheet Drawers</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>WardrobeDrawer</code>, <code>ChangeLogDrawer</code></td><td data-label="Outcome"><code>88dvh</code> native <code>&lt;dialog&gt;</code> sheets + <code>CloseWatcher</code> Back dismiss + bottom Done bar</td></tr>
+            <tr data-prio="P1"><th scope="row">2.3 Lightbox Navigation &amp; Always-Visible Tile Cues</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>PolaroidOutfitCard.tsx</code></td><td data-label="Outcome">Fixes <code>opacity-0</code> hover traps + adds prev/next buttons &amp; <code>CloseWatcher</code> dismiss</td></tr>
+            <tr data-prio="P1"><th scope="row">3.1 Auto-Focus Today + ICT Timezone Fix</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>StepItinerary.tsx</code>, <code>page.tsx</code></td><td data-label="Outcome">Surfaces Next Up hero + replaces UTC date slice (GMT D00 / ICT D01–D10)</td></tr>
+            <tr data-prio="P1"><th scope="row">3.2–3.3 Full-Screen Taxi Card &amp; Wake Lock</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>DriverCardModal.tsx</code>, SOS strip</td><td data-label="Outcome">Native <code>&lt;dialog&gt;</code> daylight Thai placard, <code>landscape:</code> classes &amp; <code>try/catch</code> Wake Lock</td></tr>
+            <tr data-prio="P1"><th scope="row">5.2 Offline Fallback &amp; WebAPK PWA</th><td data-label="Priority"><span class="badge badge-p1">P1</span></td><td data-label="Scope"><code>thailand-2027-sw.js</code>, <code>manifest</code></td><td data-label="Outcome">Custom SW + <code>beforeinstallprompt</code> WebAPK install + offline reliability</td></tr>
 
-            <tr data-prio="P2"><th scope="row">4.1–4.2 Itinerary Overflow Menu &amp; Ideas Pill</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>StepItinerary.tsx</code></td><td data-label="Outcome">44px targets + collapses 4 Day 02 suggestions into bar</td></tr>
-            <tr data-prio="P2"><th scope="row">4.3 Mobile Financial Ledger Cards + Sticky Bar</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>StepBudgetAndLedger.tsx</code></td><td data-label="Outcome">Eliminates horizontal table overflow + shows buffer always</td></tr>
-            <tr data-prio="P2"><th scope="row">4.4 Wardrobe Camera/File Upload &amp; Clean Header</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>CreateLookModal.tsx</code>, <code>PolaroidOutfitCard.tsx</code></td><td data-label="Outcome">Separates pills from garment images + real phone uploads</td></tr>
+            <tr data-prio="P2"><th scope="row">4.1–4.2 Itinerary Overflow Menu &amp; Ideas Pill</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>StepItinerary.tsx</code></td><td data-label="Outcome">44px targets + <code>⋯</code> menu (no Pixel edge-swipe clashes) + collapsed Day 02 ideas</td></tr>
+            <tr data-prio="P2"><th scope="row">4.3 Mobile Financial Ledger Cards + Sticky Bar</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>StepBudgetAndLedger.tsx</code></td><td data-label="Outcome">Restyles single <code>FINANCIAL_MATRIX</code> table as stacked cards + buffer bar</td></tr>
+            <tr data-prio="P2"><th scope="row">4.4 Wardrobe Camera/File Upload &amp; Clean Header</th><td data-label="Priority"><span class="badge badge-p2">P2</span></td><td data-label="Scope"><code>CreateLookModal.tsx</code>, <code>PolaroidOutfitCard.tsx</code></td><td data-label="Outcome">Separates pills from images + <code>accept="image/*"</code> (keeps Pixel Photo Picker)</td></tr>
 
-            <tr data-prio="P3"><th scope="row">5.1 Debounced Cloud Sync + Visibility Flush</th><td data-label="Priority"><span class="badge badge-p3">P3</span></td><td data-label="Scope"><code>useThailandTripState.ts</code></td><td data-label="Outcome">Cuts redundant PUT bursts while typing currency/notes</td></tr>
-            <tr data-prio="P3"><th scope="row">5.3 Code Splitting, Next Image &amp; Motion</th><td data-label="Priority"><span class="badge badge-p3">P3</span></td><td data-label="Scope"><code>page.tsx</code>, <code>StickyStepNav.tsx</code></td><td data-label="Outcome">Lazy loads heavy drawers, preserves hysteresis, obeys reduced motion</td></tr>
+            <tr data-prio="P3"><th scope="row">5.1 Debounced &amp; Dirty-State Cloud Sync</th><td data-label="Priority"><span class="badge badge-p3">P3</span></td><td data-label="Scope"><code>useThailandTripState.ts</code></td><td data-label="Outcome">500ms <code>PUT</code> debounce + pushes <code>localUpdated &gt; cloudUpdated</code> on reconnect</td></tr>
+            <tr data-prio="P3"><th scope="row">5.3 Code Splitting, Image Lazy-Load &amp; Motion</th><td data-label="Priority"><span class="badge badge-p3">P3</span></td><td data-label="Scope"><code>page.tsx</code>, <code>StickyStepNav.tsx</code></td><td data-label="Outcome">Lazy loads heavy drawers, keeps <code>&lt;img loading="lazy"&gt;</code> (no <code>next/image</code> crash), preserves hysteresis</td></tr>
           </tbody>
         </table>
       </div>
@@ -1925,31 +1933,31 @@
     <section id="questions" aria-labelledby="questions-heading">
       <div class="section-head">
         <div>
-          <div class="section-kicker">QA Matrix &amp; Decisions Needed Before Coding</div>
+          <div class="section-kicker">QA Matrix · Decisions Tracked in thailand_2027_mobile_ux_open_decisions.md (D0–D6) &amp; Trade-Offs in thailand_2027_mobile_ux_v2_drawbacks.md</div>
           <h2 id="questions-heading" class="serif section-title">5. Testing Plan &amp; Open Decisions</h2>
         </div>
       </div>
 
       <div class="cards-grid">
         <article class="principle-card">
-          <div class="principle-num mono">DECISION 01</div>
+          <div class="principle-num mono">DECISION 01 · ARGON A: AGREE (OPT 1)</div>
           <h3>Active-Trip Focus Mode</h3>
-          <p>Should <code>Step I</code> auto-collapse other days into a compact switcher on mobile (Feb 4–14, 2027 in ICT) with a single <code>"Show Full Spread"</code> toggle?</p>
+          <p>Auto-default <code>selectedDayNum</code> to Today (4–14 Feb 2027, GMT for D00 / ICT for D01–D10) and collapse the masthead while keeping <code>#masthead-chronometer</code> mounted and <code>Full Spread</code> 1 tap away on the Date Ruler.</p>
         </article>
         <article class="principle-card">
-          <div class="principle-num mono">DECISION 02</div>
+          <div class="principle-num mono">DECISION 02 · ARGON A: POCKET-FIRST</div>
           <h3>Tab Reduction Strategy</h3>
-          <p>Is moving Steps III, V, and VI into a structured <code>More</code> tab sheet (or keeping Step V SOS quick-pinned) preferred over a 6-item horizontal scrollable strip?</p>
+          <p>Recommend a static, non-shifting 5-slot bar (<code>Plan · Vault · ฿ Pocket · Pack · More</code>) using a single DOM tree—tucking completed <code>Prep</code>, <code>Guide</code>, and <code>Budget</code> in <code>More</code> while keeping THB + Taxi + SOS 1 tap away.</p>
         </article>
         <article class="principle-card">
-          <div class="principle-num mono">DECISION 03</div>
+          <div class="principle-num mono">DECISION 03 · ARGON A: PER-PHOTO REDIS</div>
           <h3>Wardrobe Photo Storage</h3>
-          <p>For <code>CreateLookModal</code> mobile uploads: compress client-side as base64 data URLs inside existing JSON state (zero infra) or add lightweight Blob storage?</p>
+          <p><strong>Reject</strong> inline base64 in <code>PersistedTripState</code> (bloats <code>localStorage</code> &amp; un-debounced <code>PUT</code>s). Prefer <strong>Option B</strong>: per-photo Upstash Redis keys with immutable HTTP caching + 500ms <code>PUT</code> debounce.</p>
         </article>
         <article class="principle-card">
-          <div class="principle-num mono">DECISION 04</div>
+          <div class="principle-num mono">DECISION 04 · ARGON A: DIRTY-STATE SYNC</div>
           <h3>Offline Taxi Mode Scope</h3>
-          <p>Confirm whether read-only offline availability for itinerary, PNRs, SOS, and Thai Driver Cards satisfies field reliability without offline edit conflict queues.</p>
+          <p>Skip a heavy operation-replay queue and read-only lockouts; fix <code>fetchFromCloud()</code> in <code>useThailandTripState.ts</code> to push <code>localUpdated &gt; cloudUpdated</code> on <code>focus</code>/<code>online</code> (~25 lines). See D5 &amp; D6 in <code>open_decisions.md</code>.</p>
         </article>
       </div>
 
@@ -1957,9 +1965,9 @@
         <div class="diff-box target">
           <h4>Verification &amp; Automated Regression Targets</h4>
           <ul class="diff-list">
-            <li><strong>Viewport checks:</strong> <code>375×667</code> (SE), <code>390×844</code> (iPhone), <code>430×932</code> (Pro Max) + <code>1440×900</code> desktop parity — zero horizontal overflow (<code>scrollWidth &lt;= clientWidth</code>) across all 6 Steps.</li>
-            <li><strong>Existing Jest suites:</strong> Keep <code>thailand-2027.test.tsx</code>, <code>StickyStepNav.test.tsx</code>, and <code>PolaroidOutfitCard.test.tsx</code> green (39 tests passing at baseline) plus new responsive/bottom-nav assertions.</li>
-            <li><strong>Accessibility &amp; touch gates:</strong> 100% <code>&gt;=16px</code> inputs on mobile, <code>&gt;=44×44px</code> critical targets, native <code>&lt;dialog&gt;</code> focus trapping, and Wake Lock fallback verification.</li>
+            <li><strong>Primary Viewports (Google Pixel / Android First + Desktop):</strong> <code>412×915</code> (Pixel 7 / 8 / 9), <code>448×998</code> (Pixel 8 / 9 Pro), <code>360×800</code> (compact Android), and <code>1280×800</code> / <code>1440×900</code> desktop parity — zero horizontal overflow (<code>scrollWidth &lt;= clientWidth</code>). Secondary iOS checks: <code>390×844</code>, <code>430×932</code>.</li>
+            <li><strong>Existing Jest suites:</strong> Keep <code>src/app/naanas-space/thailand-2027/__tests__/</code> (<code>v1</code>) untouched and green while adding <code>v2</code> (<code>thailand-2027-v2</code>) regression coverage for <code>StickyStepNav.test.tsx</code> (including <code>-72px</code>/<code>-8px</code> hysteresis), <code>PolaroidOutfitCard.test.tsx</code>, single responsive DOM tree assertions, and shared <code>useThailandTripState.ts</code> tests for <code>localUpdated &gt; cloudUpdated</code> sync and <code>500ms</code> <code>PUT</code> debounce across both routes.</li>
+            <li><strong>Accessibility, Pixel &amp; PWA gates:</strong> <code>100% &gt;=16px</code> inputs, <code>&gt;=44×44px</code> critical targets, native <code>&lt;dialog&gt;</code> focus trapping &amp; Pixel <code>CloseWatcher</code> Back-gesture dismissal, <code>beforeinstallprompt</code> WebAPK install, and Wake Lock fallback verification.</li>
           </ul>
         </div>
       </div>

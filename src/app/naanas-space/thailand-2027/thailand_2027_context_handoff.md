@@ -7,7 +7,7 @@
 
 ## 1. Purpose of the Webpage
 
-- **Route**: `/naanas-space/thailand-2027` (linked from the hub at `/naanas-space`)
+- **Routes**: `/naanas-space/thailand-2027` (`v1` classic desktop preserved untouched) and `/naanas-space/thailand-2027-v2` (`v2` mobile-first companion sharing the exact same static data, `localStorage`, and Upstash Redis state; both linked from the hub at `/naanas-space`)
 - **Travellers**: **Shaq Newell** & **Naana Binfoh**
 - **Occasion**: Celebrating Naana's Birthday
 - **Dates**: **Thursday, 4 February 2027 – Sunday, 14 February 2027** (8 nights on the ground in Thailand: 3 nights in Bangkok + 5 nights in Phuket, plus outbound/return international transit via Sharjah)
@@ -104,8 +104,10 @@ All static trip data is defined in `src/lib/thailandTripData.ts`:
 | `src/app/naanas-space/thailand-2027/components/steps/` | Individual step views (`StepItinerary.tsx`, `StepBookingsVault.tsx`, `StepPrepAndApps.tsx`, `StepPackingStudio.tsx`, `StepGuideAndSos.tsx`, `StepBudgetAndLedger.tsx`). |
 | `src/lib/thailandTripData.ts` | Typed static dataset (`TRIP_METADATA`, `FLIGHT_BOOKINGS`, `HOTEL_BOOKINGS`, `FINANCIAL_MATRIX`, `TRIP_DAYS` `D00`–`D10`, `PREP_CHECKLIST`, `ESSENTIAL_APPS`, `DEFAULT_PACKING_ITEMS`, `DEFAULT_PLANNED_EXPENSES`, `EMERGENCY_CONTACTS`). |
 | `src/app/api/naanas-space/thailand-2027/route.ts` | Next.js App Router `GET` / `PUT` endpoint persisting shared trip state to Vercel KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) under key `naanas_space_thailand_2027_v1`. |
-| `src/app/naanas-space/page.tsx` | *Naana's Space* hub page featuring the hero link card to `/naanas-space/thailand-2027`. |
-| `src/app/naanas-space/__tests__/thailand-2027.test.tsx` | Jest + React Testing Library test suite covering all 6 steps, interactive checklists, currency conversion, Quick Pocket Desk, Thai driver modal, and the Folio Change Log. |
+| `src/app/naanas-space/page.tsx` | *Naana's Space* hub page featuring launch links to `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`). |
+| `src/app/naanas-space/thailand-2027-v2/` | Mobile-first `v2` route copy sharing `types.ts`, `utils/*`, and `useThailandTripState.ts` via barrel re-exports from `../thailand-2027/` (keeping `v1` desktop untouched). |
+| `src/app/naanas-space/thailand-2027/mobile-ux-plan/` | Mobile UX planning suite: [`thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md), [`thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md), [`thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md), and [`thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html). |
+| `src/app/naanas-space/__tests__/thailand-2027.test.tsx` & `thailand-2027-v2.test.tsx` | Jest + React Testing Library test suites covering `v1`, `v2`, cross-route shared persistence, all 6 steps, interactive checklists, currency conversion, Quick Pocket Desk, Thai driver modal, and the Folio Change Log. |
 
 ### Cloud & Local Persistence Schema (`PersistedTripState`)
 State is stored locally in `localStorage` (`naanas_space_thailand_2027_v1`) and debounced-synced (600ms) to `/api/naanas-space/thailand-2027`:

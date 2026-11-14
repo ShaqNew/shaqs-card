@@ -1,6 +1,6 @@
 # Thailand 2027 Trip Planner & Dossier
 
-> **Route:** `/naanas-space/thailand-2027` (accessible from the *Naana's Space* hub at `/naanas-space`)  
+> **Routes:** `/naanas-space/thailand-2027` (`v1` classic desktop) & `/naanas-space/thailand-2027-v2` (`v2` mobile-first companion sharing live state) — accessible from *Naana's Space* (`/naanas-space`)  
 > **Travellers:** Shaq Newell & Naana Binfoh  
 > **Occasion:** Celebrating Naana's Birthday  
 > **Trip Dates:** Thursday, 4 February 2027 – Sunday, 14 February 2027 (8 nights in Thailand: 3 nights in Bangkok + 5 nights in Phuket)
@@ -85,32 +85,42 @@ src/
     ├── api/naanas-space/thailand-2027/
     │   └── route.ts                # App Router GET / PUT endpoint syncing state to Vercel KV / Upstash
     └── naanas-space/
-        └── thailand-2027/
-            ├── layout.tsx          # Font declarations & layout wrapper
-            ├── page.tsx            # Main dashboard orchestrator
-            ├── types.ts            # TypeScript interfaces & state schemas
-            ├── styles.tsx          # Shared font styles, badges, & SVG arrows
-            ├── utils/
-            │   └── formatters.ts   # formatDayNumber() & parseActivitySortMinutes()
-            ├── hooks/
-            │   └── useThailandTripState.ts # LocalStorage + KV sync, countdown, & change log mutations
-            ├── components/         # Shared chrome, masthead, modals, & drawers
-            │   └── steps/          # Step I through Step VI views
-            ├── thailand_2027_context_handoff.md # Deep context & booking numbers
-            └── README.md           # This document
+        ├── thailand-2027/
+        │   ├── layout.tsx          # Font declarations & layout wrapper (v1 classic)
+        │   ├── page.tsx            # Main dashboard orchestrator (v1 classic)
+        │   ├── types.ts            # Shared TypeScript interfaces & storage keys
+        │   ├── styles.tsx          # Shared font styles, badges, & SVG arrows
+        │   ├── utils/
+        │   │   ├── calendar.ts     # Google Calendar & .ics helpers
+        │   │   ├── formatters.ts   # formatDayNumber() & parseActivitySortMinutes()
+        │   │   └── wardrobe.ts     # Outfit resolution & garment dress-code helpers
+        │   ├── hooks/
+        │   │   └── useThailandTripState.ts # Shared LocalStorage + KV sync, countdown, & change log mutations
+        │   ├── components/         # Shared chrome, masthead, modals, & drawers (v1)
+        │   │   └── steps/          # Step I through Step VI views (v1)
+        │   ├── mobile-ux-plan/     # Mobile UX improvement specs, open decisions & v2 drawbacks
+        │   ├── thailand_2027_context_handoff.md # Deep context & booking numbers
+        │   └── README.md           # This document
+        └── thailand-2027-v2/       # Mobile-first v2 route sharing types, hooks, utils & Redis state with v1
+            ├── layout.tsx, page.tsx, styles.tsx, components/
+            └── types.ts, hooks/, utils/ # Barrel re-exports from ../thailand-2027/
 ```
 
 ### State Management
-Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and debounced-synced (600ms) to `/api/naanas-space/thailand-2027` (persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`).
+Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and debounced-synced (600ms) to `/api/naanas-space/thailand-2027` (persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
 
 ### Testing
-Run the dedicated test suite verifying all 6 steps, interactive checklists, currency conversion, Thai driver modal, and the Change Log:
+Run the dedicated test suites verifying `v1`, `v2`, cross-route shared persistence, interactive checklists, currency conversion, Thai driver modal, and the Change Log:
 ```bash
-npm test -- src/app/naanas-space/__tests__/thailand-2027.test.tsx
+npm test -- src/app/naanas-space/__tests__/thailand-2027.test.tsx src/app/naanas-space/__tests__/thailand-2027-v2.test.tsx
 ```
 
 ---
 
 ## 6. Related Documentation
 - [`thailand_2027_context_handoff.md`](./thailand_2027_context_handoff.md) — Comprehensive context document for feeding into new agent sessions.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md) — Phased Mobile UX Improvement Plan (Android / Google Pixel primary, targeting `/naanas-space/thailand-2027-v2`).
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md) — Consolidated open architecture & product decisions (`D0`–`D6`) with Argon A reviews.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md) — Trade-offs, backwards-compatible schema rules, cross-tab `storage` sync, and sunset options for the dual `v1`/`v2` route architecture.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html) — Visual before/after mobile UX specification & verification showcase.
 - [Google Doc: App Improvements](https://docs.google.com/document/d/1ZoF7kau7Z_qgr3rgokyNEgt8E3CMI68BsIy8ypowYIQ/edit) — Master enhancements roadmap & technical decisions.
