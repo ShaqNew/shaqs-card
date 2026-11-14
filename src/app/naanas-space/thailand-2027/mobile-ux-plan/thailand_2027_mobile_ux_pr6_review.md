@@ -1,6 +1,6 @@
 # Thailand 2027 — PR #6 Purpose & Code Review Findings (`81ef127`)
 
-**Pull Request:** [ShaqNew/shaqs-card#6](https://github.com/ShaqNew/shaqs-card/pull/6) (`feat/thailand-2027-v2-phase-3` &rarr; `main`, `OPEN`)  
+**Pull Request:** [ShaqNew/shaqs-card#6](https://github.com/ShaqNew/shaqs-card/pull/6) (`feat/thailand-2027-v2-phase-3` &rarr; `main`, `MERGED` via merge commit on `2026-11-14`)  
 **Reviewed By:** Hydrogen  
 **Companion Docs:** [`thailand_2027_mobile_ux_plan.md`](./thailand_2027_mobile_ux_plan.md) · [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_pr4_review.md`](./thailand_2027_mobile_ux_pr4_review.md) · [`thailand_2027_mobile_ux_pr5_review.md`](./thailand_2027_mobile_ux_pr5_review.md) · [`../thailand_2027_context_handoff.md`](../thailand_2027_context_handoff.md) · [`../README.md`](../README.md)  
 **Target Routes:** `/naanas-space/thailand-2027` (`v1` desktop preserved untouched) &harr; `/naanas-space/thailand-2027-v2` (`v2` mobile-first companion) · **Audience:** Shaq & Naana  
@@ -168,3 +168,20 @@ All 14 findings and the Low Severity items identified above were verified agains
 11. **Dual Clock Bar Scoping (#12) (`page.tsx`):** Scoped `showDualClock` to `isHydrated && (isTravelTransitDay(detectedTripDayNum) || (isCompanionMode && detectedTripDayNum === null))`.
 12. **Redundant `aria-modal` & Low-Severity Fixes (#13 & Low):** Removed `aria-modal="true"` and dead `lastHotelRef` in `DriverCardModal.tsx`; wired `QuickPocketDesk.tsx` and `StickyStepNav.tsx` SOS links from `EMERGENCY_CONTACTS` and `HOTEL_BOOKINGS`; wrapped `TopEditorialBar.tsx` Dual Clock tokens with `flex-wrap`/`whitespace-nowrap` and explicit spaces around `|`; labeled daytime/travel items `"Today's outfit:"` and evening (`>= 17:00` or `romance`/`dining`) `"Tonight's outfit:"` in `StepItinerary.tsx`.
 13. **Expanded Regression Tests (#14) (`thailand-2027-v2.test.tsx`):** Added unit and UI integration coverage for `D10`/`D01` timeline sorting/windows, `D04` hotel/Grab split, `D03` vs `D04` transit Dual Clock gating, non-today browsing (`D05` on `5 Feb`), pre-trip preview toggle-on/toggle-off restore, `More` sheet taxi card -> `DriverCardModal` focus handoff, and `visibilitychange` Wake Lock re-acquisition.
+
+### Post-Fix Re-verification & Merge Status (`7610056`) — Hydrogen
+
+Independently re-checked commit `7610056` against `feat/thailand-2027-v2-phase-3` and GitHub PR #6:
+
+- **Findings 1–14 & Low Severity:** All resolutions verified in code (`parseActivityTimelineWindow` GMT/GST/ICT + `(13 Feb)` layover + `Lands`/`Duration` parsing, strict `isLiveTripDay` scoping, pure `handleToggleCompanionMode` + `preCompanionDayRef` + midnight rollover + `lastClosedOpener` handoff, leg-aware `resolveHotelIdForDay` / `resolveCompanionGrabTarget`, `isTravelTransitDay` `[0, 1, 4, 9, 10]`, `lg:` `DriverCardModal` bounds + `useBottomSheetDialog` reuse without `aria-modal`, real `"shangri-la-bangkok"` / `"pavilions-phuket"` `More` sheet triggers, `SSR_ANCHOR_DATE` hydration guard + London `2027-02-14` `D10` window, Wake Lock `visibilitychange`/sentinel re-acquisition, minute-aligned clock sync, Dual Clock transit gating, data-driven SOS links, narrow Dual Clock wrapping, and `"Today's outfit:"` daytime label).
+- **Jest (`npx jest src/app/naanas-space`):** **8/8 suites passed (119/119 tests passed)** in `9.792 s` (`/naanas-space/thailand-2027` `v1` untouched and passing).
+- **ESLint (`npx eslint` across all 9 modified `.ts`/`.tsx` files):** Exited `0` with **0 errors, 0 warnings**.
+- **TypeScript (`npx tsc --noEmit`):** **0 errors in application source files** (reported test errors remain pre-existing missing `@types/jest` / jest-dom declarations plus local `.next/types/cache-life.d 2.ts`).
+- **GitHub PR #6 (`gh pr checks 6` & merge):** `2/2` checks passing (`Vercel`, `Vercel Preview Comments`); **merged into `main`** via merge commit (`gh pr merge 6 --merge`).
+- **Non-blocking follow-up notes:** In `resolveCompanionGrabTarget`, `D09` `d9-flight-g9715` (`category: "flight"`) still falls back to `"Copy Hotel Grab"` (Pavilions) and `D01` `d1-bkk-arrival` (`category: "transit"`) targets the BKK airport door rather than Shangri-La; `parseActivityTimelineWindow` matches `/\(\s*1[0-9]\s*Feb\s*\)/i` assuming `10–19 Feb` parentheticals inside `time` denote a previous-day departure.
+
+— *Hydrogen*
+
+---
+
+*Signed off by Hydrogen · PR #6 (`81ef127` &rarr; `7610056`, Merged) · 2026-11-14*

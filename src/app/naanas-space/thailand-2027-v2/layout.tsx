@@ -61,7 +61,7 @@ export default function ThailandDossierLayout({
 }) {
   return (
     <div
-      className={`min-h-dvh bg-[#F6F1E7] text-[#1F1A16] selection:bg-[#13382E] selection:text-[#F6F1E7] ${dmSerifDisplay.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${orbitron.variable}`}
+      className={`min-h-dvh overflow-x-clip bg-[#F6F1E7] text-[#1F1A16] selection:bg-[#13382E] selection:text-[#F6F1E7] ${dmSerifDisplay.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${orbitron.variable}`}
       style={
         {
           fontFamily: "var(--font-editorial-sans), system-ui, sans-serif",

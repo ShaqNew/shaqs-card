@@ -1,5 +1,11 @@
 import React from "react";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  act,
+  within,
+} from "@testing-library/react";
 import NaanasSpaceHub from "../page";
 import ThailandTripDashboardV1 from "../thailand-2027/page";
 import ThailandTripDashboardV2 from "../thailand-2027-v2/page";
@@ -261,7 +267,7 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     );
 
     const dialog = document.querySelector("dialog");
-    expect(dialog).toHaveClass("max-h-[90dvh]");
+    expect(dialog).toHaveClass("max-h-[88dvh]", "sm:max-h-[90dvh]");
 
     const titleInput = screen.getByLabelText(/LOOK TITLE/i);
     const ownerSelect = screen.getByLabelText(/CURATED FOR/i);
@@ -306,12 +312,13 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     unmount();
 
     render(<PolaroidOutfitCard outfit={DEFAULT_WARDROBE_OUTFITS[0]} />);
-    const expandPills = screen.getAllByText(/Expand/i);
-    const tileExpandPill = expandPills.find((el) =>
-      el.className.includes("pointer-events-none")
+    const expandCues = screen.getAllByTestId("polaroid-tile-expand-cue");
+    expect(expandCues.length).toBeGreaterThan(0);
+    expect(expandCues[0]).toHaveClass(
+      "opacity-100",
+      "sm:opacity-0",
+      "pointer-events-none"
     );
-    expect(tileExpandPill).toBeDefined();
-    expect(tileExpandPill).toHaveClass("opacity-100", "sm:opacity-0");
   });
 });
 
@@ -1086,5 +1093,321 @@ describe("Thailand 2027 v2 Phase 3 Companion Mode, Driver Card & SOS", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Done$/i }));
     expect(driverDialog).not.toHaveAttribute("open");
     expect(document.activeElement).toBe(moreTriggerBtn);
+  });
+});
+
+describe("Thailand 2027 v2 Phase 4 — Component-Level Mobile Polish", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    jest.useRealTimers();
+  });
+
+  it("4.1 mounts ChangeLogDrawer and WardrobeDrawer as native <dialog> bottom sheets with sticky footers, scrollable filters, and swipe-down dismissal", () => {
+    const origMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: jest.fn(),
+      removeListener: jest.fn(),
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      dispatchEvent: jest.fn(),
+    })) as unknown as typeof window.matchMedia;
+
+    try {
+      render(<ThailandTripDashboardV2 />);
+
+      const changeLogDialog = document.querySelector(
+        "dialog[aria-labelledby='changelog-drawer-title']"
+      ) as HTMLDialogElement;
+      const wardrobeDialog = document.querySelector(
+        "dialog[aria-labelledby='wardrobe-drawer-title']"
+      ) as HTMLDialogElement;
+
+      // Permanently mounted native <dialog> elements without redundant role/aria-modal
+      for (const dlg of [changeLogDialog, wardrobeDialog]) {
+        expect(dlg).toBeInTheDocument();
+        expect(dlg).toHaveAttribute("closedby", "any");
+        expect(dlg).toHaveClass("max-h-[88dvh]");
+        expect(dlg).not.toHaveAttribute("role");
+        expect(dlg).not.toHaveAttribute("aria-modal");
+      }
+
+      // Open ChangeLogDrawer -> filter strip & sticky Done footer + mobile swipe-down close
+      fireEvent.click(screen.getByRole("button", { name: /CHANGE LOG/i }));
+      expect(changeLogDialog).toHaveAttribute("open");
+      expect(
+        within(changeLogDialog).getByTestId("changelog-filter-row")
+      ).toHaveClass("overflow-x-auto");
+      expect(
+        within(changeLogDialog).getByRole("button", { name: /^Done$/i })
+      ).toBeInTheDocument();
+
+      fireEvent.touchStart(changeLogDialog, {
+        touches: [{ clientY: 100, clientX: 100 }],
+      });
+      fireEvent.touchEnd(changeLogDialog, {
+        changedTouches: [{ clientY: 220, clientX: 104 }],
+      });
+      expect(changeLogDialog).not.toHaveAttribute("open");
+
+      // Open WardrobeDrawer -> 1-column full-width mobile grid + sticky footer + swipe-down close
+      const assignAttireBtns = screen.getAllByRole("button", {
+        name: /Assign daily attire for Day/i,
+      });
+      fireEvent.click(assignAttireBtns[0]);
+      expect(wardrobeDialog).toHaveAttribute("open");
+      expect(
+        within(wardrobeDialog).getByTestId("wardrobe-drawer-grid")
+      ).toHaveClass("grid-cols-1", "sm:grid-cols-2");
+      expect(
+        within(wardrobeDialog).getByRole("button", {
+          name: /\+ Create Custom Look/i,
+        })
+      ).toBeInTheDocument();
+      expect(
+        within(wardrobeDialog).getByRole("button", { name: /^Done$/i })
+      ).toBeInTheDocument();
+
+      fireEvent.touchStart(wardrobeDialog, {
+        touches: [{ clientY: 90, clientX: 80 }],
+      });
+      fireEvent.touchEnd(wardrobeDialog, {
+        changedTouches: [{ clientY: 210, clientX: 85 }],
+      });
+      expect(wardrobeDialog).not.toHaveAttribute("open");
+    } finally {
+      window.matchMedia = origMatchMedia;
+    }
+  });
+
+  it("4.2 collapses day suggestions to top 3, shows ✓ Inscribed badge, and routes mobile overflow actions through <dialog> sheets", () => {
+    render(<ThailandTripDashboardV2 />);
+
+    // Collapse / expand concierge suggestions (> 3 items)
+    const toggleBtn = screen.getAllByTestId(/^toggle-suggestions-day-/)[0];
+    expect(toggleBtn).toHaveTextContent(/^Show all \(\d+\)$/i);
+    expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveTextContent("Show top 3");
+    expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggleBtn);
+    expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+
+    // Inscribing a suggestion renders the compact ✓ Inscribed indicator
+    const inscribeBtns = screen.getAllByRole("button", {
+      name: /^Inscribe suggestion /i,
+    });
+    const firstSuggestionBtn = inscribeBtns[0];
+    fireEvent.click(firstSuggestionBtn);
+    expect(screen.getByText(/✓ Inscribed/i)).toBeInTheDocument();
+
+    // Add a custom activity -> open mobile overflow action sheet -> open edit sheet -> save changes
+    fireEvent.click(
+      screen.getAllByRole("button", {
+        name: /INSCRIBE BESPOKE RESERVATION OR NOTE/i,
+      })[0]
+    );
+    const titleInput = screen.getByPlaceholderText(
+      /Reservation, excursion, or birthday note/i
+    );
+    fireEvent.change(titleInput, {
+      target: { value: "Sunset Cocktail Table" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Save to Day \d+$/i })
+    );
+    expect(screen.getByText("Sunset Cocktail Table")).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "More actions for Sunset Cocktail Table",
+      })
+    );
+    const actionSheet = document.querySelector(
+      "dialog[aria-labelledby='activity-action-sheet-title']"
+    ) as HTMLDialogElement;
+    expect(actionSheet).toHaveAttribute("open");
+    expect(
+      within(actionSheet).getByRole("button", { name: /Remove/i })
+    ).toBeInTheDocument();
+
+    fireEvent.click(within(actionSheet).getByRole("button", { name: /Edit/i }));
+    expect(actionSheet).not.toHaveAttribute("open");
+
+    const editSheet = document.querySelector(
+      "dialog[aria-labelledby='activity-edit-sheet-title']"
+    ) as HTMLDialogElement;
+    expect(editSheet).toHaveAttribute("open");
+    const editTitleInput = within(editSheet).getByDisplayValue(
+      "Sunset Cocktail Table"
+    );
+    fireEvent.change(editTitleInput, {
+      target: { value: "Rooftop Sunset Cocktail" },
+    });
+    fireEvent.click(
+      within(editSheet).getByRole("button", { name: /Save Changes/i })
+    );
+    expect(editSheet).not.toHaveAttribute("open");
+    expect(screen.getByText("Rooftop Sunset Cocktail")).toBeInTheDocument();
+  });
+
+  it("4.3 renders Budget Ledger semantic table as responsive mobile cards plus sticky bottom summary bar", () => {
+    render(<ThailandTripDashboardV2 />);
+    fireEvent.click(screen.getByRole("button", { name: /Budget & THB/i }));
+
+    const table = screen.getByTestId("financial-matrix-table");
+    expect(table).toHaveClass("block", "md:table");
+    const thead = table.querySelector("thead");
+    expect(thead).toHaveClass("hidden", "md:table-header-group");
+
+    const stickySummary = screen.getByTestId("budget-sticky-summary");
+    expect(stickySummary).toBeInTheDocument();
+    expect(stickySummary).toHaveTextContent(/THB/i);
+  });
+
+  it("4.4 uses a 1-column mobile Polaroid grid with segmented view tabs, single-row filters, and Hide packed checklist filter in StepPackingStudio", () => {
+    render(<ThailandTripDashboardV2 />);
+    fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
+
+    const segmentedTabs = screen.getByTestId("packing-studio-segmented-tabs");
+    const wardrobeTab = within(segmentedTabs).getByRole("tab", {
+      name: /Digital Wardrobe/i,
+    });
+    const ledgerTab = within(segmentedTabs).getByRole("tab", {
+      name: /Packing Ledger/i,
+    });
+    expect(wardrobeTab).toHaveAttribute("aria-selected", "true");
+    expect(ledgerTab).toHaveAttribute("aria-selected", "false");
+    fireEvent.click(ledgerTab);
+    expect(ledgerTab).toHaveAttribute("aria-selected", "true");
+    expect(wardrobeTab).toHaveAttribute("aria-selected", "false");
+    fireEvent.click(wardrobeTab);
+
+    const codeFilterRow = screen.getByTestId("wardrobe-code-filter-row");
+    expect(codeFilterRow).toHaveClass("flex-nowrap", "overflow-x-auto");
+
+    const polaroidGrid = screen.getByTestId("wardrobe-polaroid-grid");
+    expect(polaroidGrid).toHaveClass(
+      "grid-cols-1",
+      "md:grid-cols-2",
+      "lg:grid-cols-3"
+    );
+
+    // Verify checklist rows maintain >=44px mobile touch targets and filter works
+    const linenCheckbox = screen.getByRole("checkbox", {
+      name: /Ultra-breathable linen/i,
+    });
+    const rowLabel = linenCheckbox.closest("label");
+    expect(rowLabel).toHaveClass("min-h-11");
+
+    fireEvent.click(linenCheckbox);
+    expect(linenCheckbox).toBeChecked();
+
+    const hidePackedBtn = screen.getByRole("button", { name: /Hide packed/i });
+    expect(hidePackedBtn).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(hidePackedBtn);
+
+    expect(hidePackedBtn).toHaveAttribute("aria-pressed", "true");
+    expect(hidePackedBtn).toHaveTextContent("Showing Unpacked");
+    expect(
+      screen.queryByRole("checkbox", { name: /Ultra-breathable linen/i })
+    ).not.toBeInTheDocument();
+
+    // Toggling back restores checked item
+    fireEvent.click(hidePackedBtn);
+    expect(
+      screen.getByRole("checkbox", { name: /Ultra-breathable linen/i })
+    ).toBeInTheDocument();
+  });
+
+  it("4.5 renders horizontally scrollable PNR cipher strip with inline ✓ Copied feedback and collapsible flight Details", () => {
+    render(<ThailandTripDashboardV2 />);
+    fireEvent.click(screen.getByRole("button", { name: /Bookings Vault/i }));
+
+    const cipherStrip = screen.getByTestId("pnr-cipher-strip");
+    expect(cipherStrip).toHaveClass("overflow-x-auto", "snap-x");
+
+    const outboundChip = within(cipherStrip).getByRole("button", {
+      name: /6I8SOP/i,
+    });
+    fireEvent.click(outboundChip);
+    expect(screen.getByTestId("pnr-copied-6I8SOP")).toHaveTextContent(
+      "✓ Copied"
+    );
+
+    const showDetailsBtn = screen.getAllByRole("button", {
+      name: /Show details for/i,
+    })[0];
+    expect(showDetailsBtn).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(showDetailsBtn);
+
+    expect(showDetailsBtn).toHaveAttribute("aria-expanded", "true");
+    expect(showDetailsBtn).toHaveAttribute(
+      "aria-label",
+      expect.stringMatching(/^Hide details for/i)
+    );
+    expect(showDetailsBtn).toHaveTextContent(/Hide Details/i);
+  });
+
+  it("4.6 triggers haptics on check-off/preset/delete actions and renders Undo snackbar that restores deleted items", () => {
+    const origVibrate = navigator.vibrate;
+    const vibrateMock = jest.fn(() => true);
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      writable: true,
+      value: vibrateMock,
+    });
+
+    try {
+      render(<ThailandTripDashboardV2 />);
+
+      // Check-off haptic (10ms)
+      fireEvent.click(screen.getByRole("button", { name: /Packing Studio/i }));
+      fireEvent.click(
+        screen.getByRole("checkbox", { name: /Ultra-breathable linen/i })
+      );
+      expect(vibrateMock).toHaveBeenCalledWith(10);
+
+      // THB quick preset haptic (6ms)
+      fireEvent.click(screen.getByRole("button", { name: /Budget & THB/i }));
+      fireEvent.click(
+        screen.getByRole("button", { name: /500 THB BKK Chauffeur/i })
+      );
+      expect(vibrateMock).toHaveBeenCalledWith(6);
+
+      // Add & delete planned expense -> destructive haptic [15, 30, 15] + Undo snackbar
+      fireEvent.change(
+        screen.getByPlaceholderText(/Experience or reservation/i),
+        { target: { value: "Moonlight Longtail Boat" } }
+      );
+      fireEvent.change(screen.getByPlaceholderText("Amount"), {
+        target: { value: "2500" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /\+ Inscribe/i }));
+      expect(screen.getByText("Moonlight Longtail Boat")).toBeInTheDocument();
+
+      fireEvent.click(
+        screen.getByRole("button", { name: "Delete Moonlight Longtail Boat" })
+      );
+      expect(vibrateMock).toHaveBeenCalledWith([15, 30, 15]);
+      expect(
+        screen.queryByText("Moonlight Longtail Boat")
+      ).not.toBeInTheDocument();
+
+      const snackbar = screen.getByTestId("undo-snackbar");
+      expect(snackbar).toHaveTextContent(/Moonlight Longtail Boat/i);
+      fireEvent.click(within(snackbar).getByRole("button", { name: /^Undo$/i }));
+
+      expect(screen.getByText("Moonlight Longtail Boat")).toBeInTheDocument();
+      expect(screen.queryByTestId("undo-snackbar")).not.toBeInTheDocument();
+    } finally {
+      Object.defineProperty(navigator, "vibrate", {
+        configurable: true,
+        writable: true,
+        value: origVibrate,
+      });
+    }
   });
 });

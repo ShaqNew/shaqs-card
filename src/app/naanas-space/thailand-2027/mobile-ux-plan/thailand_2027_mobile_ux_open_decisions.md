@@ -1,6 +1,6 @@
 # Thailand 2027 — Mobile UX Open Decisions & Technical Findings
 
-**Workspace Plan:** [`thailand_2027_mobile_ux_plan.md`](./thailand_2027_mobile_ux_plan.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_plan.html`](./thailand_2027_mobile_ux_plan.html)  
+**Workspace Plan:** [`thailand_2027_mobile_ux_plan.md`](./thailand_2027_mobile_ux_plan.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_pr4_review.md`](./thailand_2027_mobile_ux_pr4_review.md) · [`thailand_2027_mobile_ux_pr5_review.md`](./thailand_2027_mobile_ux_pr5_review.md) · [`thailand_2027_mobile_ux_pr6_review.md`](./thailand_2027_mobile_ux_pr6_review.md) · [`thailand_2027_mobile_ux_plan.html`](./thailand_2027_mobile_ux_plan.html)  
 **Roadmap Google Doc:** [Thailand 2027 Trip Planner - App Improvements](https://docs.google.com/document/d/1ZoF7kau7Z_qgr3rgokyNEgt8E3CMI68BsIy8ypowYIQ/edit?tab=t.0#heading=h.mqo40oc34uug)  
 **Target Route:** `/naanas-space/thailand-2027-v2` (live `/naanas-space/thailand-2027` v1 preserved untouched; shared data via `useThailandTripState` & `naanas_space_thailand_2027_v1`) · **Audience:** Shaq & Naana
 
@@ -13,13 +13,13 @@
 
 | ID | Topic | Scope | Status | Current Lean / Recommendation |
 |----|-------|-------|--------|-------------------------------|
-| D0 | Route & Desktop Preservation Strategy | `/naanas-space/thailand-2027-v2`, `useThailandTripState.ts` | **Decided** | **Option 1:** Build mobile overhaul in `/naanas-space/thailand-2027-v2`, leaving `/naanas-space/thailand-2027` untouched while sharing `@/lib/thailandTripData`, `localStorage`, and Redis (`naanas_space_thailand_2027_v1`) |
-| D1 | Bottom Tab Allocation & Tab Reduction | `StickyStepNav.tsx`, Mobile Bottom Bar | Open | Clarify exact 4 bottom tabs vs `More` sheet (+ optional SOS pin) |
-| D2 | Companion ("On-the-Trip") Mode Trigger | `page.tsx`, `StepItinerary.tsx`, `TRIP_METADATA` | Open | Auto-enable 4–14 Feb 2027 with 1-tap `"Show Full Spread"` toggle |
-| D3 | Wardrobe Photo Upload Storage | `CreateLookModal.tsx`, `useThailandTripState.ts`, `route.ts` | Open (Findings Recorded) | **Avoid** base64 in trip JSON; use Vercel Blob or per-photo Redis keys |
-| D4 | Offline Mode Scope (Read-Only vs Edit Queue) | Service Worker, `useThailandTripState.ts` | Open | Read-only offline assets + clear sync guard vs full offline queue |
-| D5 | Home-Screen PWA Installation | `manifest.webmanifest`, `public/thailand-2027-sw.js` | Open (Docs Approved) | Route-scoped PWA confirmed feasible; verify both phones accept A2HS |
-| D6 | Extra On-the-Ground Features | `DriverCardModal.tsx`, `StepGuideAndSos.tsx`, Step VI | Open | Tipping helper / LINE contact cards / shared photo log |
+| D0 | Route & Desktop Preservation Strategy | `/naanas-space/thailand-2027-v2`, `useThailandTripState.ts` | **Decided & Implemented (`PR #4`)** | **Option 1:** Built mobile overhaul in `/naanas-space/thailand-2027-v2`, leaving `/naanas-space/thailand-2027` untouched while sharing `@/lib/thailandTripData`, `localStorage`, and Redis (`naanas_space_thailand_2027_v1`) |
+| D1 | Bottom Tab Allocation & Tab Reduction | `StickyStepNav.tsx`, Mobile Bottom Bar | **Implemented (`PR #5`, pending user sign-off)** | Static 5-slot bar **`Plan` · `Vault` · `Pocket` (`฿`) · `Pack` · `More`**, with Prep, Guide & SOS, Budget, Change Log, and Hotel Taxi Cards in `More`, plus SOS speed-dials in both `Pocket` and `More` |
+| D2 | Companion ("On-the-Trip") Mode Trigger | `page.tsx`, `StepItinerary.tsx`, `companion.ts` | **Implemented (`PR #6`, pending user sign-off)** | Auto-activates on mobile (`< 640px`) during `4–14 Feb 2027` (`GMT` on `D00`, `ICT` on `D01–D10`) with Desktop Full Spread preserved (`Guardrail 6.2.5`), manual `Companion / Today View` toggle (`Preview mode` pre-trip), `UP NEXT` + `NOW`, and Live Dual Clock on transit days (`D00`, `D01`, `D04`, `D09`, `D10`) |
+| D3 | Wardrobe Photo Upload Storage | `CreateLookModal.tsx`, `useThailandTripState.ts`, `route.ts` | **Open — Interim Client Base64 in Phase 4 (Migrate in Phase 5)** | Phase 4.4 (`CreateLookModal.tsx`) currently downscales local uploads client-side (`readAndDownscalePhoto`, `720px` WebP `0.85`) into `garment.imageUrl` inside `PersistedTripState`; migrate to per-photo Redis keys (**Option B**) or Vercel Blob (**Option A**) alongside Phase 5.2's `500ms` debounce |
+| D4 | Offline Mode Scope (Read-Only vs Edit Queue) | Service Worker, `useThailandTripState.ts` | Open (Phase 5.2) | Lightweight dirty-state `localUpdated > cloudUpdated` push + Set-Union merge + 500ms `PUT` debounce + custom SW |
+| D5 | Home-Screen PWA Installation | `manifest.webmanifest`, `public/thailand-2027-sw.js` | Open (Docs Approved — Phase 5.1) | Route-scoped PWA confirmed feasible; verify both phones accept A2HS |
+| D6 | Extra On-the-Ground Features | `DriverCardModal.tsx`, `QuickPocketDesk.tsx`, `StepGuideAndSos.tsx`, Step VI | **Partially Implemented (`PR #5–#6`)** | `100 / 200 / 500 / 1000 THB` quick presets (`PR #5`) and Driver Card Night Mode / Wake Lock / `Call Hotel` / `Share Address` + `Pocket`/`More` SOS (`PR #6`) shipped; tipping cheat-sheet, `line.me`/`wa.me` links, and Shared Google Photos album link remain open |
 
 ---
 
@@ -56,7 +56,7 @@
   - **Disagree** with hiding `QuickPocketDesk` inside `More`: once the floating bottom-left button is removed to fix corner collisions, putting it inside `More` turns THB conversion and Thai taxi cards from 1 tap into 2–3 taps.
   - **Recommendation:** Use a **static, non-shifting 5-slot bar** before and during the trip: **`Plan` (I) · `Vault` (II) · `฿ Pocket` (Sheet) · `Pack` (IV) · `More` (⋯)**. Move `Prep & Apps` (III), `Field Guide & SOS` (V), and `Budget & THB` (VI) into `More`, and embed 1-tap SOS speed-dials (`1155`, `1669`, hotel reception) + a `"Log Expense →"` shortcut directly inside the `฿ Pocket` bottom sheet.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana._
+- **Decision:** **Implemented in Phase 2 (`PR #5`, pending final user sign-off)** following Argon A's static 5-slot recommendation (`Plan`, `Vault`, `Pocket`, `Pack`, `More`), with `QuickPocketDesk` and `More` both surfacing 1-tap SOS dials (`1155`, `1669`, British Embassy, hotel receptions).
 
 ---
 
@@ -74,7 +74,7 @@
   - **Agree** with Option 1 (auto-activating between 4–14 Feb 2027 with a 1-tap override) and handling the `GMT` (`D00` on 4 Feb) vs `Asia/Bangkok` `UTC+7` (`D01`–`D10` on 5–14 Feb) timezone transition.
   - **Refinement:** Rather than making Companion Mode a separate locked view, simply default `selectedDayNum` on initial load to today's active trip day (`0`–`10`) instead of `null` (`Full Spread`), collapse the masthead by default, and pin the `"Up Next"` card at the top of today's day card. Since `StickyStepNav.tsx` already pins the `Full Spread | D00 | D01 ...` ruler on Step I, switching back to `Full Spread` or any other day is already a native 1-tap action without needing a separate mode toggle UI.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana._
+- **Decision:** **Implemented in Phase 3 (`PR #6`, pending final user sign-off)** — auto-activates on `< 640px` during `4–14 Feb 2027` (`GMT` on `D00`, `ICT` on `D01–D10`) while preserving Desktop Full Spread (`Guardrail 6.2.5`), paired with a manual `Companion / Today View` toggle (`Preview mode` pre-trip), Live Dual Timezone Clock on transit days (`D00`, `D01`, `D04`, `D09`, `D10`), `UP NEXT` card, and `NOW` marker.
 
 ---
 
@@ -119,7 +119,7 @@
   - **Prefer Option B (Separate Upstash Redis Key per Photo) over Option A (Vercel Blob):** Upstash Redis is already configured in `route.ts`, whereas `@vercel/blob` is not installed or provisioned. For a 2-person trip (~15–30 compressed WebP photos at ~60–80 KB each = ~1.5–2.5 MB total), storing each photo under `naanas_space_thailand_2027_img_<id>` served via a `GET` route with `Cache-Control: public, max-age=31536000, immutable` requires zero new vendors/tokens, keeps `naanas_space_thailand_2027_v1` under 30 KB, and lets the browser and Service Worker cache images permanently.
   - **Additional Code Fix:** Add the missing **500ms debounce** to the `PUT` request in `useThailandTripState.ts` (keeping `localStorage.setItem` immediate) so rapid checklist taps do not race each other in Upstash.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana (Option A vs Option B recommended)._
+- **Decision:** _Pending confirmation from Shaq & Naana (Option A vs Option B recommended for Phase 5)._ **Interim Phase 4 status (`feat/thailand-2027-v2-phase-4`):** `CreateLookModal.tsx` implemented local photo selection (`accept="image/*"` without `capture="environment"`) using client-side `readAndDownscalePhoto()` (`720px` max edge, WebP `0.85` data URL stored inline in `garment.imageUrl` with `url: "#local-photo"`). Keep local photo counts modest until Decision 3 migrates `data:image/*` payloads out of `PersistedTripState` and Phase 5.2 adds `500ms` `PUT` debouncing.
 
 ---
 
@@ -139,7 +139,7 @@
   - **Critical Bug Found in `useThailandTripState.ts` (`fetchFromCloud`):** Currently (lines 62–76), when an edit is made offline, `localStorage` gets `updatedAt = now` and `syncStatus = "local"`. When back online and the window focuses, `fetchFromCloud()` checks `if (cloudUpdated >= localUpdated)`. Because `localUpdated > cloudUpdated`, it keeps local state in memory and sets `setSyncStatus("synced")` **without ever `PUT`-ing the newer local state to Redis**—meaning the next online edit from the other phone silently overwrites those offline changes.
   - **Recommendation:** Add an `else if (localUpdated > cloudUpdated)` branch in `fetchFromCloud()` (plus a `window` `online` listener) that pushes the newer local state (or union-merges ID arrays) to `PUT /api/naanas-space/thailand-2027`. This delivers reliable offline editing in ~25 lines of code without an operation queue.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana._
+- **Decision:** _Pending confirmation from Shaq & Naana (scheduled for Phase 5.2)._
 
 ---
 
@@ -155,7 +155,7 @@
   - **Android / Google Pixel Priority:** Since this project prioritises Android devices—specifically Google Pixels—Chrome on Android supports the native `beforeinstallprompt` 1-tap **"Install App"** flow (creating a WebAPK that shares Chrome's origin `localStorage`, avoiding any isolated storage partition).
   - **iOS Standalone Nice-to-Have Fallback:** On iOS Safari, installing to the Home Screen requires a manual "Add to Home Screen" tip and creates an isolated `localStorage` partition separate from Safari tabs. While `PersistedTripState` will hydrate from Upstash Redis automatically, `thailand_2027_active_actor_v1` (`activeActor`) is local-only and defaults to `"Naana"`. Prompting `"Using this phone as: [Shaq] [Naana]"` when `ACTOR_STORAGE_KEY` is null remains a lightweight fallback so iOS standalone users aren't silently logged under the wrong name.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana._
+- **Decision:** _Pending confirmation from Shaq & Naana (scheduled for Phase 5.1)._
 
 ---
 
@@ -167,12 +167,12 @@
   2. **LINE Contact / Concierge Cards** (1-tap hotel/driver/tour LINE IDs or `https://line.me/ti/p/...` deep links — very common in Thailand alongside WhatsApp)
   3. **Shared Photo / Memory Log** (note: interacts directly with **Decision 3** photo storage capacity)
 - **What Already Exists:**
-  - `DriverCardModal.tsx` already displays large Thai hotel names, Thai addresses, Thai direction notes, click-to-call reception links, Grab copy button, and Google Maps link (with UX Phase 3.2 upgrading size, Wake Lock, and `navigator.share`).
-  - `StepGuideAndSos.tsx` already covers BKK arrival protocol, river transit, food safety guidelines (in active expansion), emergency `tel:` dispatch (`1155`, `1669`, etc.), and international hospitals.
+  - `DriverCardModal.tsx` already displays large Thai hotel names, Thai addresses, Thai direction notes, click-to-call reception links, Grab copy button, and Google Maps link (with Phase 3.2 in `PR #6` adding full-screen `<dialog>`, High-Contrast Night Mode, Screen Wake Lock with background re-acquisition, `Call Hotel`, and `Share Address`).
+  - `StepGuideAndSos.tsx` already covers BKK arrival protocol, river transit, food safety guidelines (in active expansion), emergency `tel:` dispatch (`1155`, `1669`, etc.), and international hospitals (`PR #6` also exposes 1-tap SOS dials inside both `QuickPocketDesk` and `More`).
   - Google Doc already tracks **Tier 1 #3: Shared Notes / Message Board** and **Tier 2 #6: Expense & Folio Tracker**.
 - **Argon A Review (Agree on #1, Modify #2, Disagree on #3):**
   1. **Tipping / Currency Quick Reference (`100 / 200 / 500 / 1000 THB` presets):** **Agree.** Adding 4 quick-tap THB preset chips to `QuickPocketDesk.tsx` plus a compact Thai tipping cheat-sheet in Step V/VI is high-value, zero-bloat, and avoids numeric keypad typing on the move.
   2. **LINE Contact / Concierge Cards:** **Modify (Keep lightweight).** Don't build a standalone module; simply support `line.me` / `wa.me` URLs inside `bookingNotes` or activity `serviceLinks` as 1-tap action chips.
   3. **Shared Photo / Memory Log:** **Disagree (Skip).** Google Photos is already part of the workflow (`CreateLookModal.tsx`) and handles original-quality photos, video, and auto-backup natively. Building an in-app photo log duplicates Google Photos poorly and re-introduces Decision 3 storage bloat; add a single `"Shared Google Photos Album ↗"` link chip in the masthead or `More` sheet instead.
   — *Argon A*
-- **Decision:** _Pending confirmation from Shaq & Naana._
+- **Decision:** **Partially implemented (`PR #5–#6`)** — `100 / 200 / 500 / 1000 THB` presets (`QuickPocketDesk.tsx`), upgraded `<dialog>` `DriverCardModal`, and `Pocket`/`More` SOS dials are shipped; Thai tipping cheat-sheet, `line.me`/`wa.me` links, and Shared Google Photos album link remain open for follow-up.

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FLIGHT_BOOKINGS, HOTEL_BOOKINGS } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle, ExternalArrow } from "../../styles";
 
@@ -15,6 +15,37 @@ export function StepBookingsVault({
   onCopy,
   onOpenDriverModal,
 }: StepBookingsVaultProps) {
+  const [copiedPnrCode, setCopiedPnrCode] = useState<string | null>(null);
+  const [expandedFlightIds, setExpandedFlightIds] = useState<string[]>([]);
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) {
+        clearTimeout(copiedTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleCopyCipher = (code: string, label?: string) => {
+    onCopy(code, label);
+    setCopiedPnrCode(code);
+    if (copiedTimeoutRef.current) {
+      clearTimeout(copiedTimeoutRef.current);
+    }
+    copiedTimeoutRef.current = setTimeout(() => {
+      setCopiedPnrCode((prev) => (prev === code ? null : prev));
+    }, 2200);
+  };
+
+  const toggleFlightDetails = (flightId: string) => {
+    setExpandedFlightIds((prev) =>
+      prev.includes(flightId)
+        ? prev.filter((id) => id !== flightId)
+        : [...prev, flightId]
+    );
+  };
+
   return (
     <section className="space-y-12">
       {/* Master Reference Ledger Strip */}
@@ -39,7 +70,10 @@ export function StepBookingsVault({
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 divide-y sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 border border-[#1F1A16]/15 bg-[#F6F1E7]/60">
+        <div
+          data-testid="pnr-cipher-strip"
+          className="flex flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-5 divide-y-0 divide-x sm:divide-y-0 sm:divide-x divide-[#1F1A16]/15 border border-[#1F1A16]/15 bg-[#F6F1E7]/60 pb-1 sm:pb-0"
+        >
           {[
             {
               label: "Outbound Aviation",
@@ -66,36 +100,46 @@ export function StepBookingsVault({
               code: "6LDREI",
               sub: "Air Arabia • HKT → LGW",
             },
-          ].map((ref) => (
-            <button
-              key={ref.code}
-              type="button"
-              onClick={() => onCopy(ref.code, `${ref.label} (${ref.code})`)}
-              className="min-h-11 sm:min-h-0 p-4 text-left hover:bg-[#EFE7D8] transition-colors group cursor-pointer flex flex-col justify-between"
-            >
-              <span
-                style={monoStyle}
-                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71]"
+          ].map((ref) => {
+            const isCopied = copiedPnrCode === ref.code;
+            return (
+              <button
+                key={ref.code}
+                type="button"
+                onClick={() =>
+                  handleCopyCipher(ref.code, `${ref.label} (${ref.code})`)
+                }
+                className="min-h-11 sm:min-h-0 shrink-0 min-w-[210px] sm:min-w-0 snap-start p-4 text-left hover:bg-[#EFE7D8] transition-colors group cursor-pointer flex flex-col justify-between"
               >
-                {ref.label}
-              </span>
-              <div className="flex items-baseline justify-between w-full my-1.5 gap-2">
                 <span
                   style={monoStyle}
-                  className="text-lg font-bold text-[#13382E] group-hover:text-[#A8442A]"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71]"
                 >
-                  {ref.code}
+                  {ref.label}
                 </span>
-                <span
-                  style={monoStyle}
-                  className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] group-hover:text-[#1F1A16]"
-                >
-                  [COPY]
-                </span>
-              </div>
-              <span className="text-xs text-[#5C5248]">{ref.sub}</span>
-            </button>
-          ))}
+                <div className="flex items-baseline justify-between w-full my-1.5 gap-2">
+                  <span
+                    style={monoStyle}
+                    className="text-lg font-bold text-[#13382E] group-hover:text-[#A8442A]"
+                  >
+                    {ref.code}
+                  </span>
+                  <span
+                    style={monoStyle}
+                    data-testid={isCopied ? `pnr-copied-${ref.code}` : undefined}
+                    className={`text-[11px] sm:text-[10px] uppercase tracking-wider ${
+                      isCopied
+                        ? "text-[#13382E] font-semibold"
+                        : "text-[#8A7E71] group-hover:text-[#1F1A16]"
+                    }`}
+                  >
+                    {isCopied ? "✓ Copied" : "[COPY]"}
+                  </span>
+                </div>
+                <span className="text-xs text-[#5C5248]">{ref.sub}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -113,7 +157,12 @@ export function StepBookingsVault({
           </h3>
         </div>
 
-        {FLIGHT_BOOKINGS.map((flight) => (
+        {FLIGHT_BOOKINGS.map((flight) => {
+          const isExpanded = expandedFlightIds.includes(flight.id);
+          const flightLabel =
+            flight.segments.map((s) => s.flightNumber).join(" / ") ||
+            flight.direction;
+          return (
           <div
             key={flight.id}
             className="relative bg-[#FBF8F3] border border-[#1F1A16]/25 shadow-[0_4px_20px_rgba(31,26,22,0.05)] overflow-hidden"
@@ -143,7 +192,11 @@ export function StepBookingsVault({
                       </span>
                     </h4>
                   </div>
-                  <div className="text-right">
+                  <div
+                    className={`${
+                      isExpanded ? "block" : "hidden sm:block"
+                    } text-left sm:text-right`}
+                  >
                     <span
                       style={monoStyle}
                       className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71] block"
@@ -266,7 +319,9 @@ export function StepBookingsVault({
                           </div>
                           <div
                             style={monoStyle}
-                            className="text-[11px] text-[#5C5248] mt-0.5"
+                            className={`${
+                              isExpanded ? "block" : "hidden sm:block"
+                            } text-[11px] text-[#5C5248] mt-0.5`}
                           >
                             {pax.checkedBag} &bull; {pax.cabinBag}
                           </div>
@@ -282,17 +337,37 @@ export function StepBookingsVault({
                   </div>
                 )}
 
+                <div className="sm:hidden pt-1">
+                  <button
+                    type="button"
+                    onClick={() => toggleFlightDetails(flight.id)}
+                    aria-expanded={isExpanded}
+                    aria-label={`${isExpanded ? "Hide" : "Show"} details for ${flightLabel}`}
+                    style={monoStyle}
+                    className="w-full min-h-11 px-4 py-2.5 border border-[#1F1A16]/25 bg-[#F6F1E7] text-[#1F1A16] text-[11px] uppercase tracking-[0.14em] font-semibold flex items-center justify-between cursor-pointer"
+                  >
+                    <span>{isExpanded ? "Hide Details" : "Details"}</span>
+                    <span aria-hidden="true">{isExpanded ? "−" : "+"}</span>
+                  </button>
+                </div>
+
                 {/* Included Perks */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {flight.farePerks.map((perk) => (
-                    <span
-                      key={perk}
-                      style={monoStyle}
-                      className="text-[11px] px-3 py-1 bg-[#EFE7D8] text-[#4A4036] border border-[#1F1A16]/15"
-                    >
-                      &#10003; {perk}
-                    </span>
-                  ))}
+                <div
+                  className={`${
+                    isExpanded ? "block" : "hidden sm:block"
+                  } pt-1`}
+                >
+                  <div className="flex flex-wrap gap-2">
+                    {flight.farePerks.map((perk) => (
+                      <span
+                        key={perk}
+                        style={monoStyle}
+                        className="text-[11px] px-3 py-1 bg-[#EFE7D8] text-[#4A4036] border border-[#1F1A16]/15"
+                      >
+                        &#10003; {perk}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -313,7 +388,7 @@ export function StepBookingsVault({
                   </div>
                   <button
                     type="button"
-                    onClick={() => onCopy(flight.pnr, `PNR ${flight.pnr}`)}
+                    onClick={() => handleCopyCipher(flight.pnr, `PNR ${flight.pnr}`)}
                     style={monoStyle}
                     className="min-h-11 sm:min-h-0 w-full py-2.5 bg-[#1F1A16] hover:bg-[#A8442A] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.18em] transition-colors cursor-pointer"
                   >
@@ -331,23 +406,32 @@ export function StepBookingsVault({
                   >
                     Manage Airline Portal <ExternalArrow />
                   </a>
-                  {flight.extraLinks.map((lnk) => (
-                    <a
-                      key={lnk.url}
-                      href={lnk.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={monoStyle}
-                      className="min-h-11 sm:min-h-0 flex items-center justify-center w-full text-center py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
+                  {flight.extraLinks.length > 0 && (
+                    <div
+                      className={
+                        isExpanded ? "block space-y-2" : "hidden sm:block space-y-2"
+                      }
                     >
-                      {lnk.label} <ExternalArrow />
-                    </a>
-                  ))}
+                      {flight.extraLinks.map((lnk) => (
+                        <a
+                          key={lnk.url}
+                          href={lnk.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={monoStyle}
+                          className="min-h-11 sm:min-h-0 flex items-center justify-center w-full text-center py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
+                        >
+                          {lnk.label} <ExternalArrow />
+                        </a>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Luxury Hotel Stationery Dossiers */}

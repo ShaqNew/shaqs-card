@@ -2,8 +2,13 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TRIP_METADATA, TRIP_DAYS, WardrobeOutfit } from "@/lib/thailandTripData";
-import { ActiveTab, PhaseFilter, ChangeLogEntry } from "./types";
+import { ActiveTab, PhaseFilter, ChangeLogEntry, PersistedTripState } from "./types";
 import { monoStyle } from "./styles";
+import {
+  triggerCheckHaptic,
+  triggerDestructiveHaptic,
+  triggerPresetHaptic,
+} from "./utils/haptics";
 import { useThailandTripState } from "./hooks/useThailandTripState";
 import {
   isInspirationOutfit,
@@ -120,6 +125,11 @@ export default function ThailandTripDashboard() {
   }, [isHydrated, detectedTripDayNum]);
 
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [undoState, setUndoState] = useState<{
+    message: string;
+    snapshot: PersistedTripState;
+  } | null>(null);
+  const undoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [driverModalHotelId, setDriverModalHotelId] = useState<string | null>(
     null
   );
@@ -132,6 +142,14 @@ export default function ThailandTripDashboard() {
   const [wardrobeDrawerTarget, setWardrobeDrawerTarget] =
     useState<WardrobeDrawerTarget | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (undoTimeoutRef.current) {
+        clearTimeout(undoTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Shared currency converter state (used in QuickPocketDesk & StepBudgetAndLedger)
   const [thbInput, setThbInput] = useState<string>("1000");
   const [gbpInput, setGbpInput] = useState<string>(
@@ -140,6 +158,7 @@ export default function ThailandTripDashboard() {
 
   const {
     tripState,
+    updateTripState,
     syncStatus,
     fetchFromCloud,
     activeActor,
@@ -238,8 +257,123 @@ export default function ThailandTripDashboard() {
   );
 
   const setQuickThbPreset = (thbAmount: number) => {
+    triggerPresetHaptic();
     setThbInput(thbAmount.toString());
     setGbpInput((thbAmount / tripState.exchangeRate).toFixed(2));
+  };
+
+  const showUndoSnackbar = (
+    message: string,
+    snapshot: PersistedTripState
+  ) => {
+    setUndoState({ message, snapshot });
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+    }
+    undoTimeoutRef.current = setTimeout(() => {
+      setUndoState(null);
+    }, 6000);
+  };
+
+  const handleUndo = () => {
+    if (!undoState) return;
+    const { snapshot } = undoState;
+    setUndoState(null);
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+    updateTripState(() => snapshot);
+  };
+
+  const handleTogglePrepItem = (itemId: string) => {
+    triggerCheckHaptic();
+    togglePrepItem(itemId);
+  };
+
+  const handleToggleAppInstalled = (appId: string) => {
+    triggerCheckHaptic();
+    toggleAppInstalled(appId);
+  };
+
+  const handleTogglePackingItem = (itemId: string) => {
+    triggerCheckHaptic();
+    togglePackingItem(itemId);
+  };
+
+  const handleToggleActivityCompleted = (activityId: string) => {
+    triggerCheckHaptic();
+    toggleActivityCompleted(activityId);
+  };
+
+  const handleToggleExpenseBooked = (expenseId: string) => {
+    triggerCheckHaptic();
+    toggleExpenseBooked(expenseId);
+  };
+
+  const handleRemoveCustomActivity = (
+    dayNumber: number,
+    activityId: string
+  ) => {
+    const snapshot = tripState;
+    const activity = (tripState.customActivitiesByDay[dayNumber] || []).find(
+      (a) => a.id === activityId
+    );
+    triggerDestructiveHaptic();
+    removeCustomActivity(dayNumber, activityId);
+    showUndoSnackbar(
+      activity ? `Removed "${activity.title}"` : "Activity removed",
+      snapshot
+    );
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    const snapshot = tripState;
+    const exp = tripState.plannedExpenses.find((e) => e.id === expenseId);
+    triggerDestructiveHaptic();
+    deleteExpense(expenseId);
+    showUndoSnackbar(
+      exp ? `Deleted "${exp.title}"` : "Expense deleted",
+      snapshot
+    );
+  };
+
+  const handleRemoveCustomPackingItem = (itemId: string) => {
+    const snapshot = tripState;
+    const item = (tripState.customPackingItems || []).find(
+      (i) => i.id === itemId
+    );
+    triggerDestructiveHaptic();
+    removeCustomPackingItem(itemId);
+    showUndoSnackbar(
+      item ? `Removed "${item.label}"` : "Packing item removed",
+      snapshot
+    );
+  };
+
+  const handleRemoveCustomOutfit = (outfitId: string) => {
+    const snapshot = tripState;
+    const outfit = allOutfits.find((o) => o.id === outfitId);
+    triggerDestructiveHaptic();
+    removeCustomOutfit(outfitId);
+    showUndoSnackbar(
+      outfit ? `Removed "${outfit.title}"` : "Lookbook outfit removed",
+      snapshot
+    );
+  };
+
+  const handleDeleteChangeLogEntry = (entryId: string) => {
+    const snapshot = tripState;
+    triggerDestructiveHaptic();
+    deleteChangeLogEntry(entryId);
+    showUndoSnackbar("Removed changelog entry", snapshot);
+  };
+
+  const handleClearAllChangeLogs = () => {
+    const snapshot = tripState;
+    triggerDestructiveHaptic();
+    clearAllChangeLogs();
+    showUndoSnackbar("Cleared change log history", snapshot);
   };
 
   return (
@@ -261,8 +395,8 @@ export default function ThailandTripDashboard() {
         changeLog={tripState.changeLog || []}
         activeActor={activeActor}
         onSetActiveActor={handleSetActiveActor}
-        onDeleteEntry={deleteChangeLogEntry}
-        onClearAll={clearAllChangeLogs}
+        onDeleteEntry={handleDeleteChangeLogEntry}
+        onClearAll={handleClearAllChangeLogs}
       />
 
       {/* Floating Editorial Copy Stamp Notification */}
@@ -285,6 +419,46 @@ export default function ThailandTripDashboard() {
             COPIED TO FOLIO
           </span>
           <span className="text-sm font-medium">{copiedText}</span>
+        </div>
+      )}
+
+      {/* Floating Undo Snackbar */}
+      {undoState && (
+        <div
+          data-testid="undo-snackbar"
+          role="status"
+          aria-live="polite"
+          className={`${
+            copiedText
+              ? "bottom-[calc(9.5rem+env(safe-area-inset-bottom))] sm:bottom-20"
+              : "bottom-[calc(5rem+env(safe-area-inset-bottom))] sm:bottom-6"
+          } fixed inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto flex items-center gap-3 px-4 py-2.5 bg-[#1F1A16] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl`}
+        >
+          <span className="text-xs sm:text-sm font-medium">
+            {undoState.message}
+          </span>
+          <button
+            type="button"
+            onClick={handleUndo}
+            style={monoStyle}
+            className="min-h-11 px-3 py-1.5 bg-[#9E7B3B] hover:bg-[#D8B979] text-[#1F1A16] text-[11px] font-semibold uppercase tracking-[0.14em] transition-colors cursor-pointer shrink-0"
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setUndoState(null);
+              if (undoTimeoutRef.current) {
+                clearTimeout(undoTimeoutRef.current);
+                undoTimeoutRef.current = null;
+              }
+            }}
+            aria-label="Dismiss undo notification"
+            className="min-h-11 min-w-11 flex items-center justify-center text-[#F6F1E7]/70 hover:text-[#F6F1E7] text-sm cursor-pointer shrink-0"
+          >
+            &times;
+          </button>
         </div>
       )}
 
@@ -330,7 +504,7 @@ export default function ThailandTripDashboard() {
         }
         onAssignDayOutfit={assignDayOutfit}
         onAssignActivityOutfit={assignActivityOutfit}
-        onRemoveCustomOutfit={removeCustomOutfit}
+        onRemoveCustomOutfit={handleRemoveCustomOutfit}
         onEditOutfit={(outfit) => {
           setEditingOutfit(outfit);
           setIsCreateLookModalOpen(true);
@@ -408,9 +582,9 @@ export default function ThailandTripDashboard() {
             onSetPhaseFilter={setPhaseFilter}
             selectedDayNum={selectedDayNum}
             onSelectDayNum={setSelectedDayNum}
-            onToggleActivityCompleted={toggleActivityCompleted}
+            onToggleActivityCompleted={handleToggleActivityCompleted}
             onAddCustomActivity={addCustomActivity}
-            onRemoveCustomActivity={removeCustomActivity}
+            onRemoveCustomActivity={handleRemoveCustomActivity}
             onUpdateCustomActivity={updateCustomActivity}
             allOutfits={allOutfits}
             onOpenWardrobeDrawer={(dayNumber, activity) =>
@@ -439,8 +613,8 @@ export default function ThailandTripDashboard() {
             completedPrepIds={tripState.completedPrepIds}
             installedAppIds={tripState.installedAppIds}
             appsProgress={appsProgress}
-            onTogglePrepItem={togglePrepItem}
-            onToggleAppInstalled={toggleAppInstalled}
+            onTogglePrepItem={handleTogglePrepItem}
+            onToggleAppInstalled={handleToggleAppInstalled}
           />
         )}
 
@@ -449,14 +623,14 @@ export default function ThailandTripDashboard() {
             allPackingItems={allPackingItems}
             packedItemIds={tripState.packedItemIds}
             packingProgress={packingProgress}
-            onTogglePackingItem={togglePackingItem}
+            onTogglePackingItem={handleTogglePackingItem}
             onAddCustomPackingItem={addCustomPackingItem}
-            onRemoveCustomPackingItem={removeCustomPackingItem}
+            onRemoveCustomPackingItem={handleRemoveCustomPackingItem}
             onPackOutfitGarments={addOutfitGarmentsToPacking}
             allOutfits={allOutfits}
             dayOutfitByDay={tripState.dayOutfitByDay}
             onAssignDayOutfit={assignDayOutfit}
-            onRemoveCustomOutfit={removeCustomOutfit}
+            onRemoveCustomOutfit={handleRemoveCustomOutfit}
             onEditOutfit={(outfit) => {
               setEditingOutfit(outfit);
               setIsCreateLookModalOpen(true);
@@ -486,8 +660,8 @@ export default function ThailandTripDashboard() {
             onSetQuickThbPreset={setQuickThbPreset}
             plannedExpenses={tripState.plannedExpenses}
             onAddPlannedExpense={addPlannedExpense}
-            onToggleExpenseBooked={toggleExpenseBooked}
-            onDeleteExpense={deleteExpense}
+            onToggleExpenseBooked={handleToggleExpenseBooked}
+            onDeleteExpense={handleDeleteExpense}
           />
         )}
       </div>

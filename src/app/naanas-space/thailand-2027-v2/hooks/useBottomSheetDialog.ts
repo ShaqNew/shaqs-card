@@ -9,6 +9,8 @@ interface UseBottomSheetDialogOptions {
    * "modal": always uses top-layer showModal() across all viewports.
    */
   desktopMode: "non-modal" | "close" | "modal";
+  /** Enables pointer light-dismiss outside dialog bounds when closedby="any" is unsupported. */
+  lightDismiss?: boolean;
 }
 
 const DESKTOP_MEDIA_QUERY = "(min-width: 640px)";
@@ -39,6 +41,7 @@ export function useBottomSheetDialog({
   open,
   onClose,
   desktopMode,
+  lightDismiss = true,
 }: UseBottomSheetDialogOptions) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const onCloseRef = useRef(onClose);
@@ -156,15 +159,36 @@ export function useBottomSheetDialog({
 
     const cleanups: Array<() => void> = [];
 
-    if (!isModalRef.current) {
+    const closeViaUserGesture = () => {
+      if (dialog.open && typeof dialog.close === "function") {
+        dialog.close();
+      } else {
+        invokeClose(dialog);
+        onCloseRef.current();
+      }
+    };
+
+    if (!isModalRef.current || typeof dialog.showModal !== "function") {
       const onKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Escape") {
-          onCloseRef.current();
+          const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
+          if (
+            openDialogs.length > 0 &&
+            openDialogs[openDialogs.length - 1] !== dialog
+          ) {
+            return;
+          }
+          e.stopPropagation();
+          closeViaUserGesture();
         }
       };
-      document.addEventListener("keydown", onKeyDown);
-      cleanups.push(() => document.removeEventListener("keydown", onKeyDown));
-    } else if (
+      window.addEventListener("keydown", onKeyDown);
+      cleanups.push(() => window.removeEventListener("keydown", onKeyDown));
+    }
+
+    if (
+      isModalRef.current &&
+      lightDismiss &&
       typeof HTMLDialogElement !== "undefined" &&
       !("closedBy" in HTMLDialogElement.prototype)
     ) {
@@ -184,11 +208,7 @@ export function useBottomSheetDialog({
       };
       const onPointerUp = (e: PointerEvent) => {
         if (pressedOutside && outside(e)) {
-          if (typeof dialog.close === "function") {
-            dialog.close();
-          } else {
-            onCloseRef.current();
-          }
+          closeViaUserGesture();
         }
       };
       dialog.addEventListener("pointerdown", onPointerDown);
@@ -199,22 +219,72 @@ export function useBottomSheetDialog({
       });
     }
 
+    // Mobile swipe-down dismissal when started on drag handle or scrolled to top
+    let swipeStartY = 0;
+    let swipeStartX = 0;
+    let swipeEligible = false;
+
+    const isScrolledToTopChain = (target: EventTarget | null): boolean => {
+      if (target instanceof Element && target.closest("[data-sheet-drag-handle='true']")) {
+        return true;
+      }
+      if (target instanceof Element) {
+        let node: Element | null = target;
+        while (node && node !== dialog) {
+          if (node instanceof HTMLElement && node.scrollTop > 0) {
+            return false;
+          }
+          node = node.parentElement;
+        }
+      }
+      return dialog.scrollTop <= 0;
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) {
+        swipeEligible = false;
+        return;
+      }
+      const openDialogs = Array.from(document.querySelectorAll("dialog[open]"));
+      if (
+        openDialogs.length > 0 &&
+        openDialogs[openDialogs.length - 1] !== dialog
+      ) {
+        swipeEligible = false;
+        return;
+      }
+      const touch = e.touches[0];
+      swipeStartY = touch.clientY;
+      swipeStartX = touch.clientX;
+      swipeEligible = isScrolledToTopChain(e.target);
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!swipeEligible || matchesDesktopViewport()) {
+        swipeEligible = false;
+        return;
+      }
+      swipeEligible = false;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+      const deltaY = touch.clientY - swipeStartY;
+      const deltaX = touch.clientX - swipeStartX;
+      if (deltaY > 72 && deltaY > Math.abs(deltaX) * 1.4) {
+        closeViaUserGesture();
+      }
+    };
+
+    dialog.addEventListener("touchstart", onTouchStart, { passive: true });
+    dialog.addEventListener("touchend", onTouchEnd, { passive: true });
+    cleanups.push(() => {
+      dialog.removeEventListener("touchstart", onTouchStart);
+      dialog.removeEventListener("touchend", onTouchEnd);
+    });
+
     return () => {
       cleanups.forEach((fn) => fn());
     };
-  }, [open, viewportChangeCount, desktopMode]);
-
-  // Lock background document scroll when running as a dedicated full modal
-  useEffect(() => {
-    if (!open || desktopMode !== "modal" || typeof document === "undefined") {
-      return;
-    }
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [open, desktopMode]);
+  }, [open, viewportChangeCount, desktopMode, lightDismiss]);
 
   const handleDialogClose = () => {
     if (suppressCloseCountRef.current > 0) {

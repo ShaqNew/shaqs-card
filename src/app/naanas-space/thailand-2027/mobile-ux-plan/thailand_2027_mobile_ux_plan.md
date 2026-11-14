@@ -2,7 +2,7 @@
 
 **Target Route:** `/naanas-space/thailand-2027-v2` (preserving `/naanas-space/thailand-2027` v1 desktop layout untouched; both routes share the same live data & state) · **Audience:** Shaq & Naana · **Main use case:** phones, both before the trip (planning) and in Thailand (4–14 Feb 2027)  
 **Device Priority:** Android-first (**Google Pixel** / Chrome on Android primary); iOS Safari compatibility is nice-to-have.  
-**Companion Docs:** [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_plan.html`](./thailand_2027_mobile_ux_plan.html)
+**Companion Docs:** [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md) · [`thailand_2027_mobile_ux_v2_drawbacks.md`](./thailand_2027_mobile_ux_v2_drawbacks.md) · [`thailand_2027_mobile_ux_pr4_review.md`](./thailand_2027_mobile_ux_pr4_review.md) · [`thailand_2027_mobile_ux_pr5_review.md`](./thailand_2027_mobile_ux_pr5_review.md) · [`thailand_2027_mobile_ux_pr6_review.md`](./thailand_2027_mobile_ux_pr6_review.md) · [`thailand_2027_mobile_ux_plan.html`](./thailand_2027_mobile_ux_plan.html)
 
 > [!NOTE]
 > This plan comes from reading the current code (`page.tsx`, `StickyStepNav`, `TopEditorialBar`, `EditorialMasthead`, `QuickPocketDesk`, the drawers and modals, and the six Step components). Every change has to keep the copywriting rules in `thailand_2027_context_handoff.md`: always "Shaq", never "Shaquille", and no second-person copy aimed at Shaq alone.  
@@ -163,17 +163,17 @@ For `ChangeLogDrawer`, `WardrobeDrawer` and `CreateLookModal`:
 - Pin a **sticky summary bar** (Total planned · Booked · Surplus £72.65) at the bottom of Step VI.
 
 #### 4.4 Packing Studio
-- Use a 2-column Polaroid grid on mobile with larger tiles; **decouple Polaroid header badges** (`PolaroidOutfitCard.tsx`) so they do not overlap garment thumbnails on narrow tiles. Tap opens full screen with **next/prev garment navigation** (buttons + lightbox carousel).
+- Use a 1-column full-width Polaroid Outfit Card grid on mobile (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`, matching HTML Example 5) so the `2×2` garment collage has generous space, paired with a top segmented `Digital Wardrobe` / `Packing Ledger` switch, single-row scrollable lookbook filter pills, corner `⤢` expand cues, a full-width weather strip below the collage, **collapsed-by-default `GARMENT LINKS (N)`** (`isLinksExpanded = false`, expanding cleanly on tap via `Show ▼` / `Hide ▲`), and a single-row footer (`Assigned` Day selector + `⋯` look action sheet). **Decouple Polaroid header badges** (`PolaroidOutfitCard.tsx`) so they do not overlap garment thumbnails. Tap opens full screen with **next/prev garment navigation** (`Prev` / `Next` buttons + piece selector pills inside `PolaroidLightboxModal`).
 - Packing checklist: large rows, **tap anywhere on the row** to toggle, grouped and collapsible by category, with a "Hide packed" filter.
-- `CreateLookModal` image upload: use **`accept="image/*"` without `capture="environment"`** so Chrome on Google Pixel (and iOS) offers **both** the Camera and the Android Photo Picker / Google Photos library (whereas `capture="environment"` bypasses the photo library completely); drag-and-drop stays for desktop.
+- `CreateLookModal` image upload: use **`accept="image/*"` without `capture="environment"`** so Chrome on Google Pixel (and iOS) offers **both** the Camera and the Android Photo Picker / Google Photos library (whereas `capture="environment"` bypasses the photo library completely); drag-and-drop stays for desktop. *(Interim Phase 4 storage compresses local uploads client-side via `readAndDownscalePhoto()` to `720px` WebP `0.85` data URLs in `garment.imageUrl`; external storage migration remains tracked under Decision 3.)*
 
 #### 4.5 Bookings Vault
 - PNR cipher strip: horizontally scrollable chips, 44px tall, with a ✓ shown inline after copying.
 - Flight cards: put the key facts (time, gate/terminal, seat, PNR) first, with baggage and payment details collapsed under "Details".
 
 #### 4.6 Feedback & micro-interactions
-- `navigator.vibrate(10)` on check-off (primary feedback on Google Pixel / Android Chrome; skip quietly on iOS).
-- Undo snackbar for every destructive action (remove activity, delete expense, clear log). The Change Log already records these.
+- `navigator.vibrate(10)` on check-off and `[15, 30, 15]` on destructive actions (`utils/haptics.ts`, primary feedback on Google Pixel / Android Chrome; fails gracefully elsewhere).
+- 6-second floating **Undo snackbar** (`data-testid="undo-snackbar"`) for destructive removals/deletions/clears (`removeCustomActivity`, `deleteExpense`, `removeCustomPackingItem`, `removeCustomOutfit`, `deleteChangeLogEntry`, `clearAllChangeLogs`), in addition to Change Log recording.
 
 ---
 
@@ -200,24 +200,35 @@ For `ChangeLogDrawer`, `WardrobeDrawer` and `CreateLookModal`:
 
 ## 4. Prioritised roadmap
 
-| Priority | Item | Effort | Impact |
-|---------|------|--------|--------|
-| P0 | 1.0 Scaffold `/thailand-2027-v2` & shared state | S | High (preserves live v1) |
-| P0 | 1.1 Type & tap-target floor | S | High |
-| P0 | 1.2 Input keyboards & mobile zoom | S | High |
-| P0 | 1.3 Safe areas & `dvh` | S | Med |
-| P0 | 1.5 Toast / FAB collision | S | Med |
-| P1 | 2.1 Bottom tab bar | M | **Very high** |
-| P1 | 2.2 Compact header | S | High |
-| P1 | 2.5 Pocket Desk bottom sheet | M | High |
-| P1 | 3.2 Driver card upgrades | S | High (on-trip) |
-| P1 | 5.2 Offline support | M | **Very high (on-trip)** |
-| P2 | 3.1 Today / Companion mode | M | Very high (on-trip) |
-| P2 | 2.3 Collapsible masthead | S | Med |
-| P2 | 4.1 Drawers → bottom sheets | M | Med |
-| P2 | 4.2 Itinerary row actions | M | High |
-| P2 | 4.3 Budget card list | S | Med |
-| P3 | 1.4, 1.6, 2.4, 4.4–4.6, 5.1, 5.3 | S–M | Polish |
+> [!NOTE]
+> **Implementation Status (`2026-11-14`):** **Phases 1–3 (`1.0`–`3.3`) are merged on `main`** inside `/naanas-space/thailand-2027-v2` ([PR #4](./thailand_2027_mobile_ux_pr4_review.md), [PR #5](./thailand_2027_mobile_ux_pr5_review.md), [PR #6](./thailand_2027_mobile_ux_pr6_review.md)), keeping `/naanas-space/thailand-2027` (`v1`) untouched. **Phase 4 (`4.1`–`4.6`, including HTML Example 5 Digital Wardrobe alignment and scrolled `StickyStepNav` overlap fix)** is **implemented & verified on `feat/thailand-2027-v2-phase-4`** (`8/8` Jest suites, `129/129` tests; pending PR review & merge), followed by **Phase 5 (`5.1`–`5.3`)**.
+>
+> | Phase | Scope | Status | PR | Notes |
+> |---|---|---|---|---|
+> | **Phase 1 (`1.0`–`1.6`)** | `v2` scaffold, typography/tap-target floor, `16px` inputs (`inputMode="decimal"`), `dvh` & safe areas, touch Polaroid labels, toast placement, local font bundling (`fonts/*.woff2`) | **Merged** | [#4](./thailand_2027_mobile_ux_pr4_review.md) | Also fixed Vercel font build via `next/font/local` (`c60a47e`). |
+> | **Phase 2 (`2.1`–`2.5`)** | 5-slot bottom bar (`Plan`, `Vault`, `Pocket`, `Pack`, `More`), 1-row `TopEditorialBar`, collapsible mobile `EditorialMasthead`, snap Date Ruler + bottom pagination, `<dialog>` `QuickPocketDesk` + `useBottomSheetDialog` | **Merged** | [#5](./thailand_2027_mobile_ux_pr5_review.md) | Desktop grid nav & floating controls preserved. |
+> | **Phase 3 (`3.1`–`3.3`)** | Companion / Today mode (`GMT`/`ICT`, strict live-day scoping + pre-trip preview), Dual Clock (`D00`, `D01`, `D04`, `D09`, `D10`), `UP NEXT` + `NOW` + outfit chip, `<dialog>` `DriverCardModal` (`lg:` bounds, Night Mode, Wake Lock re-acquire, Call/Share/Done), 1-tap SOS in `Pocket` & `More` | **Merged** | [#6](./thailand_2027_mobile_ux_pr6_review.md) | 8/8 suites (119/119 tests) passing on merge (`7610056`). |
+> | **Phase 4 (`4.1`–`4.6`)** | Drawer bottom sheets (`ChangeLogDrawer`, `WardrobeDrawer`, `CreateLookModal`), itinerary row `⋯` & edit sheets + undo snackbar, Budget stacked ledger cards + sticky summary, single-column Digital Wardrobe Polaroid cards (`2×2` collage, segmented switch, single-row filters, `⋯` look sheet, `Hide packed`, `accept="image/*"` upload) & scrolled `StickyStepNav` fix, Bookings swipe cipher strip + collapsible Details, haptics (`utils/haptics.ts`) | **Implemented (Branch)** | — (`feat/thailand-2027-v2-phase-4`) | `8/8` suites (`129/129` tests), `0` ESLint errors, and `390×844` / `1280×800` browser geometry verified; keeps `v1` UI untouched. |
+> | **Phase 5 (`5.1`–`5.3`)** | `manifest.webmanifest`, Pixel WebAPK install, `public/thailand-2027-sw.js`, 500ms `PUT` debounce + Set-Union merge + cross-tab `storage` listener, lazy dynamic drawers | **Planned** | — | Shared `useThailandTripState.ts` changes gated by `v1` + `v2` suites. |
+
+| Priority | Item | Effort | Impact | Status |
+|---------|------|--------|--------|--------|
+| P0 | 1.0 Scaffold `/thailand-2027-v2` & shared state | S | High (preserves live v1) | **Merged (`PR #4`)** |
+| P0 | 1.1 Type & tap-target floor | S | High | **Merged (`PR #4`)** |
+| P0 | 1.2 Input keyboards & mobile zoom | S | High | **Merged (`PR #4`)** |
+| P0 | 1.3 Safe areas & `dvh` | S | Med | **Merged (`PR #4`)** |
+| P0 | 1.5 Toast / FAB collision | S | Med | **Merged (`PR #4`)** |
+| P1 | 2.1 Bottom tab bar | M | **Very high** | **Merged (`PR #5`)** |
+| P1 | 2.2 Compact header | S | High | **Merged (`PR #5`)** |
+| P1 | 2.5 Pocket Desk bottom sheet | M | High | **Merged (`PR #5`)** |
+| P1 | 3.2 Driver card upgrades | S | High (on-trip) | **Merged (`PR #6`)** |
+| P1 | 5.2 Offline support | M | **Very high (on-trip)** | Planned |
+| P2 | 3.1 Today / Companion mode | M | Very high (on-trip) | **Merged (`PR #6`)** |
+| P2 | 2.3 Collapsible masthead | S | Med | **Merged (`PR #5`)** |
+| P2 | 4.1 Drawers → bottom sheets | M | Med | **Implemented (`feat/thailand-2027-v2-phase-4`)** |
+| P2 | 4.2 Itinerary row actions | M | High | **Implemented (`feat/thailand-2027-v2-phase-4`)** |
+| P2 | 4.3 Budget card list | S | Med | **Implemented (`feat/thailand-2027-v2-phase-4`)** |
+| P3 | 1.4, 1.6, 2.4 (`Merged`); 4.4–4.6 (`Implemented`); 5.1, 5.3 (`Open`) | S–M | Polish | **1.4, 1.6, 2.4 Merged · 4.4–4.6 Implemented** |
 
 ```mermaid
 flowchart LR
@@ -237,7 +248,8 @@ flowchart LR
 - **Devices / viewports (Android / Google Pixel first):**
   - **Primary (P0):** **`412×915` (Google Pixel 7 / 8 / 9)**, **`448×998` (Pixel 8 / 9 Pro)**, **`360×800` (compact Android)**, plus **`1280×800` (Desktop)**.
   - **Secondary (Nice-to-have compatibility):** `390×844` (iPhone 15), `430×932` (Pro Max), plus landscape and an iPad.
-- **Jest/RTL:** Keep existing `v1` tests (`src/app/naanas-space/thailand-2027/__tests__/...`) untouched and green, while adding `v2` (`thailand-2027-v2`) test suites covering `StickyStepNav.test.tsx`, `thailand-2027-v2.test.tsx`, the bottom bar, the `More` sheet, Companion mode (mock `Date`), `16px` (`text-base sm:text-sm`) inputs, single responsive DOM mount assertions, and shared `useThailandTripState.ts` dirty-state sync (`localUpdated > cloudUpdated`) + 500ms `PUT` debounce across both routes.
+- **Jest/RTL:** Keep existing `v1` tests (`src/app/naanas-space/thailand-2027/__tests__/...`) untouched and green, while maintaining `v2` (`thailand-2027-v2`) test suites covering `StickyStepNav.test.tsx`, `PolaroidOutfitCard.test.tsx`, and `thailand-2027-v2.test.tsx` (the bottom bar, the `More` sheet, Companion mode with mocked `Date`, `16px` `text-base sm:text-sm` inputs, single responsive DOM mount assertions, Phase 4 bottom sheets/Undo Snackbar/single-column Polaroid cards & `⋯` sheet — currently `8/8` suites, `129/129` tests passing) plus Phase 5 tests for shared `useThailandTripState.ts` dirty-state sync (`localUpdated > cloudUpdated`) + 500ms `PUT` debounce across both routes.
+- **Browser visual & layout checks (Phase 4):** Verified `/naanas-space/thailand-2027-v2` at desktop (`1280×800`, 3-column Wardrobe grid, scrolled `StickyStepNav` without tab overlap, `0` console/page errors) and mobile (`390×844`, single-column Polaroid cards with `0` horizontal overflow and flush `⋯` Look Actions bottom sheet), including collapsed-by-default `GARMENT LINKS (N)` toggles (`Show ▼` -> `Hide ▲`) across Step IV Digital Wardrobe and Step I `WardrobeDrawer`; follow-up target-device check on Pixel 7 (`412×915`) and `<640px` `WardrobeDrawer` screenshot capture ahead of Phase 5 PWA install verification.
 - **Lighthouse mobile:** target Performance ≥ 90, Accessibility ≥ 95, PWA installable (`beforeinstallprompt` verified on Android Chrome).
 - **Manual on-trip rehearsal (Google Pixel primary):** airplane mode → open the installed WebAPK → tick off an activity, add an expense, open a driver card → reconnect → confirm the cloud sync pushes local edits and preserves Change Log attribution (Shaq / Naana).
 - **Copy review:** check all new strings against the handoff rules ("Shaq", no Shaq-only "you").
@@ -288,9 +300,9 @@ flowchart LR
 
 ## 7. Open questions for Shaq & Naana
 
-*(Tracked with recommendations and sign-offs in [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md).)*
+*(Tracked with implementation status, recommendations, and sign-offs in [`thailand_2027_mobile_ux_open_decisions.md`](./thailand_2027_mobile_ux_open_decisions.md).)*
 
-1. Which **4 tabs** belong in the bottom bar? Proposed: Plan, Vault, Prep, Pack, with Guide and Budget under More (or static Pocket-first `Plan · Vault · ฿ Pocket · Pack · More`).
-2. Should Companion mode **switch on automatically** on 4 Feb, or only through a toggle?
-3. Is installing as a **home-screen app** (PWA / Android WebAPK) fine for both phones?
-4. Any must-have on-the-ground features missing (e.g. a shared photo log, a tipping calculator, LINE contact cards)?
+1. Which **4 tabs** belong in the bottom bar? Proposed & implemented in **Phase 2 (`PR #5`)**: **`Plan` · `Vault` · `Pocket` (`฿`) · `Pack` · `More`** (with Prep, Guide & SOS, Budget & THB, Change Log, and Hotel Taxi Cards inside `More`, plus SOS quick-dials inside both `Pocket` and `More`).
+2. Should Companion mode **switch on automatically** on 4 Feb, or only through a toggle? Implemented in **Phase 3 (`PR #6`)**: auto-opens `< 640px` onto today's day (`GMT` for `D00`, `ICT` for `D01–D10`) during `4–14 Feb 2027` while preserving Desktop Full Spread, paired with a manual `Companion / Today View` toggle (`Preview mode` pre-trip).
+3. Is installing as a **home-screen app** (PWA / Android WebAPK) fine for both phones? (*Open — scheduled for Phase 5.1.*)
+4. Any must-have on-the-ground features missing (e.g. a shared photo log, a tipping calculator, LINE contact cards)? (`100 / 200 / 500 / 1000 THB` quick presets & Driver Card Share/Night Mode/Wake Lock shipped in **Phases 2–3**; tipping reference, `line.me`/`wa.me` deep links, and Google Photos album link remain open.)

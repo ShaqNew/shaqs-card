@@ -37,6 +37,7 @@ import {
   resolveHotelIdForDay,
   resolveCompanionGrabTarget,
 } from "../../utils/companion";
+import { useBottomSheetDialog } from "../../hooks/useBottomSheetDialog";
 
 interface StepItineraryProps {
   tripState: PersistedTripState;
@@ -118,16 +119,53 @@ export function StepItinerary({
     useState<ItineraryActivity["category"]>("romance");
   const [newActNotes, setNewActNotes] = useState("");
 
-  // Inline editing state for custom activities
+  // Editing & mobile action sheet state
+  const [expandedSuggestionDays, setExpandedSuggestionDays] = useState<
+    number[]
+  >([]);
+  const [actionSheetTarget, setActionSheetTarget] = useState<{
+    dayNumber: number;
+    activity: ItineraryActivity;
+    isCustom: boolean;
+  } | null>(null);
   const [editingActivityId, setEditingActivityId] = useState<string | null>(
     null
   );
+  const [editingDayNumber, setEditingDayNumber] = useState<number | null>(null);
   const [editActTime, setEditActTime] = useState("");
   const [editActTitle, setEditActTitle] = useState("");
   const [editActLocation, setEditActLocation] = useState("");
   const [editActCategory, setEditActCategory] =
     useState<ItineraryActivity["category"]>("romance");
   const [editActNotes, setEditActNotes] = useState("");
+
+  const closeActionSheet = () => setActionSheetTarget(null);
+  const {
+    dialogRef: actionSheetDialogRef,
+    handleDialogClose: handleActionSheetClose,
+  } = useBottomSheetDialog({
+    open: Boolean(actionSheetTarget),
+    onClose: closeActionSheet,
+    desktopMode: "modal",
+    lightDismiss: true,
+  });
+
+  const isEditSheetOpen = Boolean(
+    editingActivityId && editingDayNumber !== null
+  );
+  const closeEditSheet = () => {
+    setEditingActivityId(null);
+    setEditingDayNumber(null);
+  };
+  const {
+    dialogRef: editSheetDialogRef,
+    handleDialogClose: handleEditSheetClose,
+  } = useBottomSheetDialog({
+    open: isEditSheetOpen,
+    onClose: closeEditSheet,
+    desktopMode: "modal",
+    lightDismiss: true,
+  });
 
   const filteredDays = useMemo(() => {
     return TRIP_DAYS.filter((day) => {
@@ -186,8 +224,9 @@ export function StepItinerary({
     scrollToItineraryTarget(`day-card-${targetDayNum}`);
   };
 
-  const startEditingActivity = (act: ItineraryActivity) => {
+  const startEditingActivity = (act: ItineraryActivity, dayNumber: number) => {
     setEditingActivityId(act.id);
+    setEditingDayNumber(dayNumber);
     setEditActTime(act.time);
     setEditActTitle(act.title);
     setEditActLocation(act.location || "");
@@ -212,6 +251,7 @@ export function StepItinerary({
       notes: editActNotes.trim() || undefined,
     });
     setEditingActivityId(null);
+    setEditingDayNumber(null);
   };
 
   const handleAddActivitySubmit = (e: React.FormEvent, dayNumber: number) => {
@@ -237,6 +277,7 @@ export function StepItinerary({
     onRemoveCustomActivity(dayNumber, activityId);
     if (editingActivityId === activityId) {
       setEditingActivityId(null);
+      setEditingDayNumber(null);
     }
   };
 
@@ -729,137 +770,197 @@ export function StepItinerary({
 
                     {/* Curated Concierge Suggestions */}
                     {day.quickSuggestions &&
-                      day.quickSuggestions.length > 0 && (
-                        <div className="pt-5 border-t border-[#1F1A16]/15 space-y-2.5">
-                          <p
-                            style={monoStyle}
-                            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71]"
-                          >
-                            SUGGESTIONS (TAP TO INSCRIBE)
-                          </p>
-                          <div className="space-y-2.5">
-                            {day.quickSuggestions.map((sug, idx) => {
-                              const sugKey = `${day.dayNumber}-${idx}`;
-                              const isInfoOpen =
-                                openSuggestionInfoKey === sugKey;
-                              const matchedCustomAct = customActs.find(
-                                (a) => a.title === sug.title
-                              );
-                              const alreadyAdded = Boolean(matchedCustomAct);
-                              return (
-                                <div
-                                  key={sugKey}
-                                  className={`border transition-colors ${
-                                    alreadyAdded
-                                      ? "bg-[#13382E]/8 border-[#13382E]/30"
-                                      : "bg-[#FBF8F3] border-[#1F1A16]/15 hover:border-[#A8442A]"
-                                  }`}
-                                >
-                                  <div className="flex items-stretch justify-between gap-1">
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (matchedCustomAct) {
-                                          handleRemoveCustomActivity(
-                                            day.dayNumber,
-                                            matchedCustomAct.id
-                                          );
-                                        } else {
-                                          onAddCustomActivity(day.dayNumber, {
-                                            time: sug.time,
-                                            title: sug.title,
-                                            category: sug.category,
-                                            location: sug.location,
-                                            notes: sug.notes,
-                                            mapUrl: sug.serviceLinks?.[0]?.url,
-                                          });
-                                        }
-                                      }}
-                                      className="min-h-11 sm:min-h-0 flex-1 text-left p-2.5 text-xs cursor-pointer"
-                                    >
-                                      <span
-                                        style={monoStyle}
-                                        className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
-                                      >
-                                        {alreadyAdded
-                                          ? "✓ INSCRIBED (TAP TO UNDO)"
-                                          : `+ ADD AT ${sug.time}`}
-                                      </span>
-                                      <span
-                                        className={`font-medium leading-snug block ${
-                                          alreadyAdded
-                                            ? "text-[#13382E]"
-                                            : "text-[#1F1A16]"
-                                        }`}
-                                      >
-                                        {sug.title}
-                                      </span>
-                                    </button>
+                      day.quickSuggestions.length > 0 && (() => {
+                        const isSuggestionsExpanded =
+                          expandedSuggestionDays.includes(day.dayNumber);
+                        const hasOverflowSuggestions =
+                          day.quickSuggestions.length > 3;
+                        const visibleSuggestions =
+                          hasOverflowSuggestions && !isSuggestionsExpanded
+                            ? day.quickSuggestions.slice(0, 3)
+                            : day.quickSuggestions;
 
-                                    {(sug.bookingGuide ||
-                                      (sug.serviceLinks &&
-                                        sug.serviceLinks.length > 0)) && (
+                        return (
+                          <div className="pt-5 border-t border-[#1F1A16]/15 space-y-2.5">
+                            <p
+                              style={monoStyle}
+                              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71]"
+                            >
+                              SUGGESTIONS (TAP TO INSCRIBE)
+                            </p>
+                            <div className="space-y-2.5">
+                              {visibleSuggestions.map((sug, idx) => {
+                                const sugKey = `${day.dayNumber}-${idx}`;
+                                const isInfoOpen =
+                                  openSuggestionInfoKey === sugKey;
+                                const matchedCustomAct = customActs.find(
+                                  (a) => a.title === sug.title
+                                );
+                                const alreadyAdded = Boolean(matchedCustomAct);
+                                return (
+                                  <div
+                                    key={sugKey}
+                                    className={`border transition-colors ${
+                                      alreadyAdded
+                                        ? "bg-[#13382E]/8 border-[#13382E]/30"
+                                        : "bg-[#FBF8F3] border-[#1F1A16]/15 hover:border-[#A8442A]"
+                                    }`}
+                                  >
+                                    <div className="flex items-stretch justify-between gap-1">
                                       <button
                                         type="button"
-                                        onClick={() =>
-                                          setOpenSuggestionInfoKey(
-                                            isInfoOpen ? null : sugKey
-                                          )
+                                        onClick={() => {
+                                          if (matchedCustomAct) {
+                                            handleRemoveCustomActivity(
+                                              day.dayNumber,
+                                              matchedCustomAct.id
+                                            );
+                                          } else {
+                                            onAddCustomActivity(day.dayNumber, {
+                                              time: sug.time,
+                                              title: sug.title,
+                                              category: sug.category,
+                                              location: sug.location,
+                                              notes: sug.notes,
+                                              mapUrl:
+                                                sug.serviceLinks?.[0]?.url,
+                                            });
+                                          }
+                                        }}
+                                        aria-label={
+                                          alreadyAdded
+                                            ? `Undo inscribed suggestion ${sug.title}`
+                                            : `Inscribe suggestion ${sug.title}`
                                         }
-                                        style={monoStyle}
-                                        aria-expanded={isInfoOpen}
-                                        title="How to book & service links"
-                                        className={`min-h-11 sm:min-h-0 px-3 sm:px-2.5 border-l border-[#1F1A16]/15 text-[11px] sm:text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer ${
-                                          isInfoOpen
-                                            ? "bg-[#1F1A16] text-[#F6F1E7]"
-                                            : "bg-[#EFE7D8]/60 text-[#5C5248] hover:text-[#1F1A16] hover:bg-[#EFE7D8]"
-                                        }`}
+                                        title={
+                                          alreadyAdded
+                                            ? "Tap to undo inscription and remove from itinerary"
+                                            : undefined
+                                        }
+                                        className="min-h-11 sm:min-h-0 flex-1 text-left p-2.5 text-xs cursor-pointer"
                                       >
-                                        {isInfoOpen ? "CLOSE" : "INFO"}
+                                        {alreadyAdded ? (
+                                          <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                                            <span
+                                              style={monoStyle}
+                                              className="inline-flex items-center px-2 py-0.5 bg-[#13382E] text-[#F6F1E7] text-[10px] uppercase tracking-wider font-semibold"
+                                            >
+                                              &#10003; Inscribed
+                                            </span>
+                                            <span
+                                              style={monoStyle}
+                                              className="text-[10px] uppercase tracking-wider text-[#5C5248]"
+                                            >
+                                              {sug.time}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span
+                                            style={monoStyle}
+                                            className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
+                                          >
+                                            + ADD AT {sug.time}
+                                          </span>
+                                        )}
+                                        <span
+                                          className={`font-medium leading-snug block ${
+                                            alreadyAdded
+                                              ? "text-[#13382E]"
+                                              : "text-[#1F1A16]"
+                                          }`}
+                                        >
+                                          {sug.title}
+                                        </span>
                                       </button>
+
+                                      {(sug.bookingGuide ||
+                                        (sug.serviceLinks &&
+                                          sug.serviceLinks.length > 0)) && (
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            setOpenSuggestionInfoKey(
+                                              isInfoOpen ? null : sugKey
+                                            )
+                                          }
+                                          style={monoStyle}
+                                          aria-expanded={isInfoOpen}
+                                          title="How to book & service links"
+                                          className={`min-h-11 sm:min-h-0 px-3 sm:px-2.5 border-l border-[#1F1A16]/15 text-[11px] sm:text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer ${
+                                            isInfoOpen
+                                              ? "bg-[#1F1A16] text-[#F6F1E7]"
+                                              : "bg-[#EFE7D8]/60 text-[#5C5248] hover:text-[#1F1A16] hover:bg-[#EFE7D8]"
+                                          }`}
+                                        >
+                                          {isInfoOpen ? "CLOSE" : "INFO"}
+                                        </button>
+                                      )}
+                                    </div>
+
+                                    {/* Quick Direct Service Links Row */}
+                                    {sug.serviceLinks &&
+                                      sug.serviceLinks.length > 0 && (
+                                        <div className="px-2.5 pb-2 pt-1 border-t border-[#1F1A16]/10 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                          {sug.serviceLinks.map((lnk) => (
+                                            <a
+                                              key={lnk.url}
+                                              href={lnk.url}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              style={monoStyle}
+                                              className="min-h-11 sm:min-h-0 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#13382E] hover:text-[#A8442A] underline font-semibold inline-flex items-center"
+                                            >
+                                              <span>{lnk.label}</span>
+                                              <ExternalArrow />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      )}
+
+                                    {/* Expandable Booking Guide Tooltip / Popup Drawer */}
+                                    {isInfoOpen && sug.bookingGuide && (
+                                      <div className="p-3 bg-[#EFE7D8] border-t border-[#1F1A16]/20 text-xs text-[#1F1A16] space-y-2">
+                                        <div
+                                          style={monoStyle}
+                                          className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold"
+                                        >
+                                          HOW TO BOOK &amp; ACCESS
+                                        </div>
+                                        <p className="leading-relaxed text-[#4A4036]">
+                                          {sug.bookingGuide}
+                                        </p>
+                                      </div>
                                     )}
                                   </div>
+                                );
+                              })}
 
-                                  {/* Quick Direct Service Links Row */}
-                                  {sug.serviceLinks &&
-                                    sug.serviceLinks.length > 0 && (
-                                      <div className="px-2.5 pb-2 pt-1 border-t border-[#1F1A16]/10 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                        {sug.serviceLinks.map((lnk) => (
-                                          <a
-                                            key={lnk.url}
-                                            href={lnk.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            style={monoStyle}
-                                            className="min-h-11 sm:min-h-0 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#13382E] hover:text-[#A8442A] underline font-semibold inline-flex items-center"
-                                          >
-                                            <span>{lnk.label}</span>
-                                            <ExternalArrow />
-                                          </a>
-                                        ))}
-                                      </div>
-                                    )}
-
-                                  {/* Expandable Booking Guide Tooltip / Popup Drawer */}
-                                  {isInfoOpen && sug.bookingGuide && (
-                                    <div className="p-3 bg-[#EFE7D8] border-t border-[#1F1A16]/20 text-xs text-[#1F1A16] space-y-2">
-                                      <div
-                                        style={monoStyle}
-                                        className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold"
-                                      >
-                                        HOW TO BOOK &amp; ACCESS
-                                      </div>
-                                      <p className="leading-relaxed text-[#4A4036]">
-                                        {sug.bookingGuide}
-                                      </p>
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            })}
+                              {hasOverflowSuggestions && (
+                                <button
+                                  type="button"
+                                  data-testid={`toggle-suggestions-day-${day.dayNumber}`}
+                                  aria-expanded={isSuggestionsExpanded}
+                                  onClick={() =>
+                                    setExpandedSuggestionDays((prev) =>
+                                      prev.includes(day.dayNumber)
+                                        ? prev.filter(
+                                            (d) => d !== day.dayNumber
+                                          )
+                                        : [...prev, day.dayNumber]
+                                    )
+                                  }
+                                  style={monoStyle}
+                                  className="min-h-11 w-full px-3 py-2 border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] text-[11px] uppercase tracking-wider font-semibold text-[#13382E] cursor-pointer transition-colors"
+                                >
+                                  {isSuggestionsExpanded
+                                    ? "Show top 3"
+                                    : `Show all (${day.quickSuggestions.length})`}
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                   </div>
 
                   {/* Right Column (8 cols): Chronological Schedule & Custom Entry Form */}
@@ -1083,136 +1184,6 @@ export function StepItinerary({
                               </span>
                             </button>
 
-                            {editingActivityId === act.id ? (
-                              <form
-                                onSubmit={(e) =>
-                                  handleSaveEditedActivity(
-                                    e,
-                                    day.dayNumber,
-                                    act.id
-                                  )
-                                }
-                                className="flex-1 bg-[#EFE7D8]/90 border border-[#1F1A16]/25 p-4 space-y-3"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span
-                                    style={monoStyle}
-                                    className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
-                                  >
-                                    EDIT ENTRY
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingActivityId(null)}
-                                    className="min-h-11 sm:min-h-0 px-2 sm:px-0 text-xs text-[#5C5248] hover:text-[#1F1A16] underline cursor-pointer"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                  <input
-                                    type="text"
-                                    enterKeyHint="next"
-                                    autoComplete="off"
-                                    value={editActTime}
-                                    onChange={(e) =>
-                                      setEditActTime(e.target.value)
-                                    }
-                                    placeholder="Time (e.g. 19:30 ICT)"
-                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
-                                  />
-                                  <input
-                                    type="text"
-                                    required
-                                    enterKeyHint="next"
-                                    autoComplete="off"
-                                    value={editActTitle}
-                                    onChange={(e) =>
-                                      setEditActTitle(e.target.value)
-                                    }
-                                    placeholder="Activity title..."
-                                    className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
-                                  />
-                                </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {[
-                                    "09:00 ICT",
-                                    "13:00 ICT",
-                                    "19:30 ICT",
-                                    "Flexible",
-                                  ].map((preset) => (
-                                    <button
-                                      key={preset}
-                                      type="button"
-                                      onClick={() => setEditActTime(preset)}
-                                      style={monoStyle}
-                                      className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
-                                        editActTime === preset
-                                          ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
-                                          : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
-                                      }`}
-                                    >
-                                      {preset}
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                                  <select
-                                    value={editActCategory}
-                                    onChange={(e) =>
-                                      setEditActCategory(
-                                        e.target
-                                          .value as ItineraryActivity["category"]
-                                      )
-                                    }
-                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
-                                  >
-                                    <option value="romance">
-                                      Celebration &amp; Romance
-                                    </option>
-                                    <option value="dining">Gastronomy</option>
-                                    <option value="beach">Andaman Coast</option>
-                                    <option value="spa">
-                                      Sanctuary &amp; Spa
-                                    </option>
-                                    <option value="culture">
-                                      Heritage &amp; Temple
-                                    </option>
-                                    <option value="transit">Passage</option>
-                                    <option value="custom">Bespoke Note</option>
-                                  </select>
-                                  <input
-                                    type="text"
-                                    enterKeyHint="next"
-                                    autoComplete="off"
-                                    value={editActLocation}
-                                    onChange={(e) =>
-                                      setEditActLocation(e.target.value)
-                                    }
-                                    placeholder="Venue / Location"
-                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
-                                  />
-                                  <input
-                                    type="text"
-                                    enterKeyHint="done"
-                                    autoComplete="off"
-                                    value={editActNotes}
-                                    onChange={(e) =>
-                                      setEditActNotes(e.target.value)
-                                    }
-                                    placeholder="Dress code or note"
-                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
-                                  />
-                                </div>
-                                <button
-                                  type="submit"
-                                  style={monoStyle}
-                                  className="min-h-11 sm:min-h-0 px-4 py-1.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] cursor-pointer"
-                                >
-                                  Save Changes
-                                </button>
-                              </form>
-                            ) : (
                               <div className="flex-1 min-w-0 space-y-1.5">
                                 <div className="flex flex-wrap items-center gap-2.5">
                                   <span
@@ -1230,7 +1201,7 @@ export function StepItinerary({
                                   {act.isLocked && (
                                     <span
                                       style={monoStyle}
-                                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#8A7E71]"
+                                      className="hidden sm:inline text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
                                     >
                                       &bull; CONFIRMED LOGISTICS
                                     </span>
@@ -1300,52 +1271,100 @@ export function StepItinerary({
                                   </div>
                                 )}
 
-                                <div
-                                  style={monoStyle}
-                                  className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-[#5C5248]"
-                                >
-                                  {act.location && (
-                                    <span>LOC: {act.location}</span>
-                                  )}
-                                  {act.mapUrl && (
+                                {(act.location || act.mapUrl) && (
+                                  <div
+                                    style={monoStyle}
+                                    className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-[#5C5248]"
+                                  >
+                                    {act.location && (
+                                      <span>LOC: {act.location}</span>
+                                    )}
+                                    <div className="hidden sm:flex flex-wrap items-center gap-3">
+                                      {act.mapUrl && (
+                                        <a
+                                          href={act.mapUrl}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                        >
+                                          VIEW CARTOGRAPHY <ExternalArrow />
+                                        </a>
+                                      )}
+                                      <span className="text-[#1F1A16]/20 select-none">
+                                        &bull;
+                                      </span>
+                                      <a
+                                        href={buildGoogleCalendarUrl(day, act)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
+                                        title="Add this event to Google Calendar"
+                                      >
+                                        <span>+ Google Cal</span>
+                                        <ExternalArrow />
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          handleExportSingleActivity(day, act)
+                                        }
+                                        className="text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+                                        title="Download .ics for Apple Calendar, Outlook, or iCal"
+                                      >
+                                        <span>+ .ics</span>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                                {!act.location && !act.mapUrl && (
+                                  <div
+                                    style={monoStyle}
+                                    className="hidden sm:flex flex-wrap items-center gap-3 pt-1 text-[11px] text-[#5C5248]"
+                                  >
                                     <a
-                                      href={act.mapUrl}
+                                      href={buildGoogleCalendarUrl(day, act)}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="min-h-11 sm:min-h-0 inline-flex items-center text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                      className="text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
+                                      title="Add this event to Google Calendar"
                                     >
-                                      VIEW CARTOGRAPHY <ExternalArrow />
+                                      <span>+ Google Cal</span>
+                                      <ExternalArrow />
                                     </a>
-                                  )}
-                                  <span className="text-[#1F1A16]/20 select-none">
-                                    &bull;
-                                  </span>
-                                  <a
-                                    href={buildGoogleCalendarUrl(day, act)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="min-h-11 sm:min-h-0 text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
-                                    title="Add this event to Google Calendar"
-                                  >
-                                    <span>+ Google Cal</span>
-                                    <ExternalArrow />
-                                  </a>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleExportSingleActivity(day, act)
-                                    }
-                                    className="min-h-11 sm:min-h-0 text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
-                                    title="Download .ics for Apple Calendar, Outlook, or iCal"
-                                  >
-                                    <span>+ .ics</span>
-                                  </button>
-                                </div>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleExportSingleActivity(day, act)
+                                      }
+                                      className="text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+                                      title="Download .ics for Apple Calendar, Outlook, or iCal"
+                                    >
+                                      <span>+ .ics</span>
+                                    </button>
+                                  </div>
+                                )}
                               </div>
-                            )}
 
-                            {editingActivityId !== act.id && (
-                              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-1 shrink-0">
+                            {/* Mobile ⋯ Action Sheet Trigger + Desktop Inline Actions */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setActionSheetTarget({
+                                    dayNumber: day.dayNumber,
+                                    activity: act,
+                                    isCustom:
+                                      !act.isLocked &&
+                                      act.id.startsWith("custom-"),
+                                  })
+                                }
+                                aria-label={`More actions for ${act.title}`}
+                                className="sm:hidden min-h-11 min-w-11 inline-flex items-center justify-center border border-[#1F1A16]/20 bg-[#EFE7D8]/70 hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-[#1F1A16] text-base font-bold cursor-pointer transition-colors"
+                              >
+                                &#8943;
+                              </button>
+
+                              <div className="hidden sm:flex items-center gap-1">
                                 {onOpenWardrobeDrawer && (
                                   <button
                                     type="button"
@@ -1358,16 +1377,13 @@ export function StepItinerary({
                                         ? `Outfit Override: ${actOutfit.title} (Tap to change)`
                                         : "Assign activity outfit override"
                                     }
-                                    className={`min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center gap-1 p-1.5 border transition-colors cursor-pointer ${
+                                    className={`inline-flex items-center justify-center gap-1 p-1.5 border transition-colors cursor-pointer ${
                                       actOutfit
                                         ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                                         : "bg-[#EFE7D8]/50 text-[#5C5248] hover:text-[#13382E] border-[#1F1A16]/15 hover:border-[#13382E]"
                                     }`}
                                   >
                                     <HangerIcon className="w-3.5 h-3.5" />
-                                    <span className="sm:hidden text-[11px] uppercase tracking-wider">
-                                      Look
-                                    </span>
                                   </button>
                                 )}
                                 {!act.isLocked &&
@@ -1376,10 +1392,13 @@ export function StepItinerary({
                                       <button
                                         type="button"
                                         onClick={() =>
-                                          startEditingActivity(act)
+                                          startEditingActivity(
+                                            act,
+                                            day.dayNumber
+                                          )
                                         }
                                         style={monoStyle}
-                                        className="min-h-11 sm:min-h-0 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2.5 sm:px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                                        className="text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
                                         title="Edit entry"
                                       >
                                         EDIT
@@ -1393,7 +1412,7 @@ export function StepItinerary({
                                           )
                                         }
                                         aria-label={`Remove custom entry ${act.title}`}
-                                        className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                                        className="inline-flex items-center justify-center text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
                                         title="Remove custom entry"
                                       >
                                         &#10005;
@@ -1401,7 +1420,7 @@ export function StepItinerary({
                                     </>
                                   )}
                               </div>
-                            )}
+                            </div>
                             </div>
                           </React.Fragment>
                         );
@@ -1605,6 +1624,355 @@ export function StepItinerary({
           </button>
         </div>
       )}
+
+      {/* Mobile Activity Overflow Action Sheet (<dialog>) */}
+      <dialog
+        ref={actionSheetDialogRef}
+        {...({
+          closedby: "any",
+        } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+        aria-labelledby="activity-action-sheet-title"
+        onClose={handleActionSheetClose}
+        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-md sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t sm:border border-[#C9BFA8] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/60 backdrop:backdrop-blur-[2px] backdrop:overflow-hidden backdrop:overscroll-contain"
+      >
+        {actionSheetTarget && (() => {
+          const targetDay = TRIP_DAYS.find(
+            (d) => d.dayNumber === actionSheetTarget.dayNumber
+          );
+          const act = actionSheetTarget.activity;
+          const catStyle = CATEGORY_EDITORIAL_STYLES[act.category];
+          return (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+              <div
+                data-sheet-drag-handle="true"
+                className="sm:hidden shrink-0 flex justify-center pt-2.5 pb-1 bg-[#EFE7D8]/70"
+              >
+                <span className="w-10 h-1 rounded-full bg-[#1F1A16]/25" />
+              </div>
+
+              <div className="shrink-0 p-4 border-b border-[#1F1A16]/15 bg-[#EFE7D8]/70 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <span
+                      style={monoStyle}
+                      className="text-xs font-semibold text-[#A8442A]"
+                    >
+                      {act.time}
+                    </span>
+                    <span
+                      style={monoStyle}
+                      className={`text-[10px] uppercase tracking-wider px-2 py-0.5 border ${catStyle.tag}`}
+                    >
+                      {catStyle.label}
+                    </span>
+                  </div>
+                  <h3
+                    id="activity-action-sheet-title"
+                    style={serifStyle}
+                    className="text-xl font-medium text-[#1F1A16] truncate"
+                  >
+                    {act.title}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeActionSheet}
+                  style={monoStyle}
+                  aria-label="Close activity actions"
+                  className="min-h-11 min-w-11 px-2.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0 inline-flex items-center justify-center"
+                >
+                  &#10005;
+                </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-2">
+                {onOpenWardrobeDrawer && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const dayNum = actionSheetTarget.dayNumber;
+                      closeActionSheet();
+                      onOpenWardrobeDrawer(dayNum, act);
+                    }}
+                    style={monoStyle}
+                    className="min-h-11 w-full px-4 py-2.5 bg-[#FBF8F3] hover:bg-[#EFE7D8] border border-[#1F1A16]/20 text-left text-xs uppercase tracking-wider font-semibold text-[#13382E] flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <HangerIcon className="w-4 h-4" />
+                      <span>Outfit</span>
+                    </span>
+                    <span className="text-[10px] text-[#5C5248]">
+                      Assign / Override &rarr;
+                    </span>
+                  </button>
+                )}
+
+                {act.mapUrl && (
+                  <a
+                    href={act.mapUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={monoStyle}
+                    className="min-h-11 w-full px-4 py-2.5 bg-[#FBF8F3] hover:bg-[#EFE7D8] border border-[#1F1A16]/20 text-xs uppercase tracking-wider font-semibold text-[#13382E] flex items-center justify-between"
+                  >
+                    <span>Maps</span>
+                    <span className="inline-flex items-center gap-1">
+                      <span>Open Cartography</span>
+                      <ExternalArrow />
+                    </span>
+                  </a>
+                )}
+
+                {targetDay && (
+                  <>
+                    <a
+                      href={buildGoogleCalendarUrl(targetDay, act)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={monoStyle}
+                      className="min-h-11 w-full px-4 py-2.5 bg-[#FBF8F3] hover:bg-[#EFE7D8] border border-[#1F1A16]/20 text-xs uppercase tracking-wider font-semibold text-[#A8442A] flex items-center justify-between"
+                    >
+                      <span>+ Google Cal</span>
+                      <ExternalArrow />
+                    </a>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleExportSingleActivity(targetDay, act);
+                        closeActionSheet();
+                      }}
+                      style={monoStyle}
+                      className="min-h-11 w-full px-4 py-2.5 bg-[#FBF8F3] hover:bg-[#EFE7D8] border border-[#1F1A16]/20 text-left text-xs uppercase tracking-wider font-semibold text-[#13382E] flex items-center justify-between cursor-pointer"
+                    >
+                      <span>+ .ics</span>
+                      <span className="text-[10px] text-[#5C5248]">
+                        Download Calendar File
+                      </span>
+                    </button>
+                  </>
+                )}
+
+                {actionSheetTarget.isCustom && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dayNum = actionSheetTarget.dayNumber;
+                        closeActionSheet();
+                        startEditingActivity(act, dayNum);
+                      }}
+                      style={monoStyle}
+                      className="min-h-11 w-full px-4 py-2.5 bg-[#FBF8F3] hover:bg-[#EFE7D8] border border-[#1F1A16]/20 text-left text-xs uppercase tracking-wider font-semibold text-[#1F1A16] flex items-center justify-between cursor-pointer"
+                    >
+                      <span>Edit</span>
+                      <span className="text-[10px] text-[#5C5248]">
+                        Modify Details
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dayNum = actionSheetTarget.dayNumber;
+                        closeActionSheet();
+                        handleRemoveCustomActivity(dayNum, act.id);
+                      }}
+                      style={monoStyle}
+                      className="min-h-11 w-full px-4 py-2.5 bg-[#A8442A]/10 hover:bg-[#A8442A] border border-[#A8442A]/40 text-left text-xs uppercase tracking-wider font-semibold text-[#A8442A] hover:text-[#FBF8F3] flex items-center justify-between cursor-pointer transition-colors"
+                    >
+                      <span>Remove</span>
+                      <span className="text-[10px]">Delete Entry</span>
+                    </button>
+                  </>
+                )}
+              </div>
+
+              <div className="shrink-0 sticky bottom-0 bg-[#EFE7D8] border-t border-[#D8CEBC] px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={closeActionSheet}
+                  style={monoStyle}
+                  className="min-h-11 px-4 py-2 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider font-semibold cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+      </dialog>
+
+      {/* Responsive Activity Edit Bottom Sheet (<dialog>) */}
+      <dialog
+        ref={editSheetDialogRef}
+        {...({
+          closedby: "any",
+        } as React.DialogHTMLAttributes<HTMLDialogElement>)}
+        aria-labelledby="activity-edit-sheet-title"
+        onClose={handleEditSheetClose}
+        className="[&:not([open])]:hidden open:flex open:flex-col fixed inset-x-0 bottom-0 top-auto m-0 mt-auto w-full max-w-none max-h-[88dvh] rounded-t-2xl sm:inset-0 sm:m-auto sm:max-w-lg sm:rounded-none bg-[#F6F1E7] text-[#1F1A16] border-t-2 sm:border-2 border-[#1F1A16] shadow-2xl p-0 z-50 overflow-hidden overscroll-contain backdrop:bg-[#1F1A16]/70 backdrop:backdrop-blur-sm backdrop:overflow-hidden backdrop:overscroll-contain"
+      >
+        {isEditSheetOpen &&
+          editingActivityId &&
+          editingDayNumber !== null && (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col flex-1 min-h-0 overflow-hidden"
+            >
+              <div
+                data-sheet-drag-handle="true"
+                className="sm:hidden shrink-0 flex justify-center pt-2.5 pb-1 bg-[#EFE7D8]/70"
+              >
+                <span className="w-10 h-1 rounded-full bg-[#1F1A16]/25" />
+              </div>
+
+              <div className="shrink-0 p-4 sm:p-5 border-b border-[#1F1A16]/20 bg-[#EFE7D8]/70 flex items-center justify-between gap-3">
+                <div>
+                  <span
+                    style={monoStyle}
+                    className="text-[11px] uppercase tracking-[0.12em] text-[#13382E] font-semibold block"
+                  >
+                    EDIT ENTRY &bull; DAY {formatDayNumber(editingDayNumber)}
+                  </span>
+                  <h3
+                    id="activity-edit-sheet-title"
+                    style={serifStyle}
+                    className="text-2xl font-normal text-[#1F1A16]"
+                  >
+                    Update Itinerary Movement
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeEditSheet}
+                  style={monoStyle}
+                  aria-label="Close edit activity dialog"
+                  className="min-h-11 min-w-11 px-2.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0 inline-flex items-center justify-center"
+                >
+                  &#10005;
+                </button>
+              </div>
+
+              <form
+                onSubmit={(e) =>
+                  handleSaveEditedActivity(
+                    e,
+                    editingDayNumber,
+                    editingActivityId
+                  )
+                }
+                className="flex flex-col flex-1 min-h-0 overflow-hidden"
+              >
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    <input
+                      type="text"
+                      enterKeyHint="next"
+                      autoComplete="off"
+                      value={editActTime}
+                      onChange={(e) => setEditActTime(e.target.value)}
+                      placeholder="Time (e.g. 19:30 ICT)"
+                      className="min-h-11 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
+                    />
+                    <input
+                      type="text"
+                      required
+                      enterKeyHint="next"
+                      autoComplete="off"
+                      value={editActTitle}
+                      onChange={(e) => setEditActTitle(e.target.value)}
+                      placeholder="Activity title..."
+                      className="sm:col-span-2 min-h-11 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[
+                      "09:00 ICT",
+                      "13:00 ICT",
+                      "19:30 ICT",
+                      "Flexible",
+                    ].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setEditActTime(preset)}
+                        style={monoStyle}
+                        className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                          editActTime === preset
+                            ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                            : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2.5">
+                    <select
+                      value={editActCategory}
+                      onChange={(e) =>
+                        setEditActCategory(
+                          e.target.value as ItineraryActivity["category"]
+                        )
+                      }
+                      className="min-h-11 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
+                    >
+                      <option value="romance">Celebration &amp; Romance</option>
+                      <option value="dining">Gastronomy</option>
+                      <option value="beach">Andaman Coast</option>
+                      <option value="spa">Sanctuary &amp; Spa</option>
+                      <option value="culture">Heritage &amp; Temple</option>
+                      <option value="transit">Passage</option>
+                      <option value="custom">Bespoke Note</option>
+                    </select>
+                    <input
+                      type="text"
+                      enterKeyHint="next"
+                      autoComplete="off"
+                      value={editActLocation}
+                      onChange={(e) => setEditActLocation(e.target.value)}
+                      placeholder="Venue / Location"
+                      className="min-h-11 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
+                    />
+                    <input
+                      type="text"
+                      enterKeyHint="done"
+                      autoComplete="off"
+                      value={editActNotes}
+                      onChange={(e) => setEditActNotes(e.target.value)}
+                      placeholder="Dress code or note"
+                      className="min-h-11 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
+                    />
+                  </div>
+                </div>
+
+                <div className="shrink-0 sticky bottom-0 bg-[#EFE7D8] border-t border-[#D8CEBC] px-4 sm:px-5 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={closeEditSheet}
+                    style={monoStyle}
+                    className="min-h-11 px-4 py-2 border border-[#1F1A16]/25 bg-[#FBF8F3] text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={monoStyle}
+                    className="min-h-11 px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.12em] font-semibold cursor-pointer"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+      </dialog>
     </section>
   );
 }

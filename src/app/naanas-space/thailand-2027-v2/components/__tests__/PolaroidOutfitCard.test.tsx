@@ -1,5 +1,11 @@
 import React from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { PolaroidOutfitCard } from "../PolaroidOutfitCard";
 import { CreateLookModal } from "../CreateLookModal";
 import { WardrobeOutfit } from "@/lib/thailandTripData";
@@ -276,7 +282,10 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         screen.queryByRole("dialog", { name: /Confirm deletion/i })
       ).not.toBeInTheDocument();
 
-      // Click Delete button on card
+      // Open overflow actions sheet and click Delete
+      fireEvent.click(
+        screen.getByRole("button", { name: /More actions for Test Styling Look/i })
+      );
       fireEvent.click(
         screen.getByRole("button", { name: /Delete look Test Styling Look/i })
       );
@@ -308,7 +317,10 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         />
       );
 
-      // Click Delete button
+      // Open overflow actions sheet and click Delete
+      fireEvent.click(
+        screen.getByRole("button", { name: /More actions for Test Styling Look/i })
+      );
       fireEvent.click(
         screen.getByRole("button", { name: /Delete look Test Styling Look/i })
       );
@@ -336,6 +348,9 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         />
       );
 
+      fireEvent.click(
+        screen.getByRole("button", { name: /More actions for Test Styling Look/i })
+      );
       fireEvent.click(
         screen.getByRole("button", { name: /Delete look Test Styling Look/i })
       );
@@ -398,13 +413,21 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(handleAssign).toHaveBeenCalledWith(3, outfitWithGarments.id);
     });
 
-    it("collapses and expands the GARMENT LINKS list on click", () => {
+    it("keeps GARMENT LINKS collapsed by default and expands/collapses on click", () => {
       render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
 
       const toggleBtn = screen.getByRole("button", {
         name: /GARMENT LINKS \(2\)/i,
       });
+      expect(toggleBtn).toHaveAttribute("aria-expanded", "false");
+      expect(toggleBtn).toHaveTextContent(/Show ▼/i);
+      expect(
+        screen.queryByRole("link", { name: /Linen Overshirt/i })
+      ).not.toBeInTheDocument();
+
+      fireEvent.click(toggleBtn);
       expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
+      expect(toggleBtn).toHaveTextContent(/Hide ▲/i);
       expect(
         screen.getByRole("link", { name: /Linen Overshirt/i })
       ).toBeInTheDocument();
@@ -414,12 +437,6 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       expect(
         screen.queryByRole("link", { name: /Linen Overshirt/i })
       ).not.toBeInTheDocument();
-
-      fireEvent.click(toggleBtn);
-      expect(toggleBtn).toHaveAttribute("aria-expanded", "true");
-      expect(
-        screen.getByRole("link", { name: /Linen Overshirt/i })
-      ).toBeInTheDocument();
     });
 
     it("invokes onPackOutfitGarments when + To Packing Ledger is clicked and disables when already in ledger", () => {
@@ -430,6 +447,12 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
           onPackOutfitGarments={handlePack}
           isPackedInTrunk={false}
         />
+      );
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: /More actions for Test Styling Look/i,
+        })
       );
 
       const toLedgerBtn = screen.getByRole("button", {
@@ -449,6 +472,11 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
         />
       );
 
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: /More actions for Test Styling Look/i,
+        })
+      );
       const packedBtn = screen.getByRole("button", {
         name: /All garments from Test Styling Look are in Packing Ledger/i,
       });
@@ -523,8 +551,13 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
     it("collapses and expands the entire outfit card on clicking the Collapse/Expand card button", () => {
       render(<PolaroidOutfitCard outfit={outfitWithGarments} />);
 
-      // Initially expanded: Polaroid collage grid and garment links are visible
+      // Initially expanded card shows Polaroid collage grid with GARMENT LINKS collapsed by default
       expect(screen.getByTestId("polaroid-collage-grid")).toBeInTheDocument();
+      const linksToggleBtn = screen.getByRole("button", {
+        name: /GARMENT LINKS \(2\)/i,
+      });
+      expect(linksToggleBtn).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(linksToggleBtn);
       expect(
         screen.getByRole("link", { name: /Linen Overshirt/i })
       ).toBeInTheDocument();
@@ -553,6 +586,205 @@ describe("PolaroidOutfitCard responsive collage tiles", () => {
       fireEvent.click(expandBtn);
 
       expect(screen.getByTestId("polaroid-collage-grid")).toBeInTheDocument();
+    });
+  });
+
+  describe("Phase 4 Polaroid header decoupling, native lightbox cycling & local photo upload", () => {
+    const multiGarmentOutfit: WardrobeOutfit = {
+      id: "phase4-look",
+      title: "Phase 4 Silk & Linen",
+      owner: "naana",
+      dressCode: "temple",
+      climateTag: "31°C Evening Silk",
+      isCustom: true,
+      isInspiration: false,
+      garments: [
+        {
+          id: "g-1",
+          label: "Silk Halter Top",
+          url: "https://example.com/silk-halter",
+          imageUrl: "https://example.com/silk-halter.jpg",
+          category: "top",
+        },
+        {
+          id: "g-2",
+          label: "Wide Linen Trousers",
+          url: "https://example.com/linen-trousers",
+          imageUrl: "https://example.com/linen-trousers.jpg",
+          category: "bottom",
+        },
+      ],
+    };
+
+    it("renders polaroid-badge-header outside polaroid-collage-grid so badges never occlude photos", () => {
+      render(
+        <PolaroidOutfitCard
+          outfit={multiGarmentOutfit}
+          assignedDayNums={[3]}
+          onToggleInspiration={jest.fn()}
+        />
+      );
+
+      const badgeHeader = screen.getByTestId("polaroid-badge-header");
+      const collageGrid = screen.getByTestId("polaroid-collage-grid");
+      const weatherStrip = screen.getByTestId("polaroid-weather-strip");
+
+      expect(badgeHeader).toBeInTheDocument();
+      expect(collageGrid).not.toContainElement(badgeHeader);
+      expect(collageGrid).not.toContainElement(weatherStrip);
+      expect(within(badgeHeader).getByText("Naana")).toBeInTheDocument();
+      expect(within(badgeHeader).getByText("✓ Owned")).toBeInTheDocument();
+      expect(within(badgeHeader).getByText("2 Garments")).toBeInTheDocument();
+      expect(
+        within(weatherStrip).getByText("31°C Evening Silk")
+      ).toBeInTheDocument();
+      expect(within(collageGrid).queryByText("Naana")).not.toBeInTheDocument();
+      expect(
+        within(collageGrid).queryByText("✓ Owned")
+      ).not.toBeInTheDocument();
+      expect(
+        within(collageGrid).queryByText("31°C Evening Silk")
+      ).not.toBeInTheDocument();
+      expect(
+        collageGrid.compareDocumentPosition(weatherStrip) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+      ).toBeTruthy();
+    });
+
+    it("opens GarmentLightboxModal as a native <dialog> and cycles prev/next through garments with wrap-around", () => {
+      render(<PolaroidOutfitCard outfit={multiGarmentOutfit} />);
+
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: /Expand thumbnail for Silk Halter Top/i,
+        })
+      );
+
+      const lightbox = document.querySelector(
+        "dialog[aria-label='Expanded preview: Silk Halter Top']"
+      ) as HTMLDialogElement;
+      expect(lightbox).toBeInTheDocument();
+      expect(lightbox).toHaveAttribute("open");
+      expect(lightbox).not.toHaveAttribute("role");
+      expect(lightbox).not.toHaveAttribute("aria-modal");
+      expect(lightbox).toHaveAttribute("closedby", "any");
+
+      const nextBtn = within(lightbox).getByRole("button", {
+        name: /Next garment/i,
+      });
+      const prevBtn = within(lightbox).getByRole("button", {
+        name: /Previous garment/i,
+      });
+
+      // Next -> garment 2
+      fireEvent.click(nextBtn);
+      expect(
+        document.querySelector(
+          "dialog[aria-label='Expanded preview: Wide Linen Trousers']"
+        )
+      ).toHaveAttribute("open");
+
+      // Next again -> wraps back to garment 1
+      fireEvent.click(nextBtn);
+      expect(
+        document.querySelector(
+          "dialog[aria-label='Expanded preview: Silk Halter Top']"
+        )
+      ).toHaveAttribute("open");
+
+      // Prev from garment 1 -> wraps back to garment 2
+      fireEvent.click(prevBtn);
+      expect(
+        document.querySelector(
+          "dialog[aria-label='Expanded preview: Wide Linen Trousers']"
+        )
+      ).toHaveAttribute("open");
+    });
+
+    it("renders local <input type='file' accept='image/*'> without capture attribute and loads image preview", async () => {
+      render(
+        <CreateLookModal
+          isOpen={true}
+          onClose={jest.fn()}
+          onCreateOutfit={jest.fn()}
+        />
+      );
+
+      const fileInput = screen.getByLabelText(/Upload local garment photo/i);
+      expect(fileInput).toHaveAttribute("type", "file");
+      expect(fileInput).toHaveAttribute("accept", "image/*");
+      expect(fileInput).not.toHaveAttribute("capture");
+
+      const file = new File(["mock-image-bytes"], "silk-dress.png", {
+        type: "image/png",
+      });
+      fireEvent.change(fileInput, { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/Added “silk-dress” from local photo\./i)
+        ).toBeInTheDocument();
+      });
+
+      const previewImg = within(
+        screen.getByTestId("polaroid-preview-grid")
+      ).getByRole("img", { name: /silk-dress/i });
+      expect(previewImg).toHaveAttribute(
+        "src",
+        expect.stringMatching(/^data:image\/png;base64,/)
+      );
+    });
+
+    it("opens the overflow ⋯ actions sheet without menu ARIA mismatches and formats Assigned Day summary in footer selector", () => {
+      const handleEdit = jest.fn();
+      const handleAssign = jest.fn();
+      render(
+        <PolaroidOutfitCard
+          outfit={multiGarmentOutfit}
+          assignedDayNumbers={[0]}
+          onAssignToDay={handleAssign}
+          onEditOutfit={handleEdit}
+          onPackOutfitGarments={jest.fn()}
+          onRemoveCustomOutfit={jest.fn()}
+        />
+      );
+
+      // Compact corner expand cue + collapsible garment links (collapsed by default) with overflow-safe guards
+      const expandCues = screen.getAllByTestId("polaroid-tile-expand-cue");
+      expect(expandCues).toHaveLength(2);
+      const garmentLinksToggle = screen.getByRole("button", {
+        name: /GARMENT LINKS \(2\)/i,
+      });
+      expect(garmentLinksToggle).toHaveAttribute("aria-expanded", "false");
+      expect(
+        screen.queryByRole("link", { name: /Silk Halter Top/i })
+      ).not.toBeInTheDocument();
+      fireEvent.click(garmentLinksToggle);
+      const firstLink = screen.getByRole("link", { name: /Silk Halter Top/i });
+      expect(firstLink).toHaveClass("max-w-full", "min-w-0");
+
+      // Footer Day selector displays assigned summary and uses accessible ⋯ button without invalid aria-haspopup
+      const daySelect = screen.getByLabelText(/ASSIGN TO DAY:/i);
+      expect(daySelect).toHaveTextContent(/Assigned: Day 00/i);
+
+      const moreBtn = screen.getByRole("button", {
+        name: /More actions for Phase 4 Silk & Linen/i,
+      });
+      expect(moreBtn).not.toHaveAttribute("aria-haspopup");
+      expect(moreBtn).toHaveAttribute("aria-expanded", "false");
+
+      fireEvent.click(moreBtn);
+      const actionSheet = document.querySelector(
+        "dialog[aria-label='Actions for Phase 4 Silk & Linen']"
+      );
+      expect(actionSheet).toHaveAttribute("open");
+      expect(moreBtn).toHaveAttribute("aria-expanded", "true");
+
+      const editBtn = within(actionSheet as HTMLElement).getByRole("button", {
+        name: /Edit look Phase 4 Silk & Linen/i,
+      });
+      fireEvent.click(editBtn);
+      expect(handleEdit).toHaveBeenCalledWith(multiGarmentOutfit);
     });
   });
 });

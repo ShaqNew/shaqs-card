@@ -40,6 +40,12 @@ export function StepBudgetAndLedger({
   const [newExpCategory, setNewExpCategory] =
     useState<PlannedExpense["category"]>("Birthday Treat");
 
+  const plannedTotalThb = plannedExpenses.reduce(
+    (acc, e) => acc + e.amountThb,
+    0
+  );
+  const plannedTotalGbp = plannedTotalThb / exchangeRate;
+
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
     const rawAmount = parseFloat(newExpAmount.replace(",", "."));
@@ -203,15 +209,18 @@ export function StepBudgetAndLedger({
         </div>
 
         {/* Verified Accounting Matrix */}
-        <div className="lg:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/20 p-6 sm:p-8 space-y-4 overflow-x-auto">
+        <div className="lg:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/20 p-5 sm:p-8 space-y-4 overflow-hidden md:overflow-x-auto">
           <h3
             style={serifStyle}
             className="text-2xl sm:text-3xl font-normal text-[#1F1A16]"
           >
             Verified Core Infrastructure Ledger
           </h3>
-          <table className="w-full text-left border-collapse text-xs sm:text-sm">
-            <thead>
+          <table
+            data-testid="financial-matrix-table"
+            className="block md:table w-full text-left border-collapse text-xs sm:text-sm"
+          >
+            <thead className="hidden md:table-header-group">
               <tr
                 style={monoStyle}
                 className="border-b-2 border-[#1F1A16] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[#5C5248]"
@@ -222,50 +231,76 @@ export function StepBudgetAndLedger({
                 <th className="py-2.5 pl-3">Verification &amp; Folio</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#1F1A16]/15">
+            <tbody className="block md:table-row-group divide-y divide-[#1F1A16]/15">
               {FINANCIAL_MATRIX.map((row) => (
-                <tr key={row.component}>
-                  <td className="py-3 pr-3 font-semibold text-[#1F1A16]">
+                <tr
+                  key={row.component}
+                  className="block md:table-row py-3.5 md:py-0 first:pt-0 hover:bg-[#F6F1E7]/60 transition-colors"
+                >
+                  <td className="block md:table-cell py-1 md:py-3 md:pr-3 font-semibold text-[#1F1A16]">
                     {row.component}
-                  </td>
-                  <td style={monoStyle} className="py-3 px-3 text-[#4A4036]">
-                    {row.currencyAmount}
                   </td>
                   <td
                     style={monoStyle}
-                    className="py-3 px-3 font-bold text-[#13382E]"
+                    className="flex items-center justify-between gap-2 md:table-cell py-1 md:py-3 md:px-3 text-[#4A4036]"
                   >
-                    ~£{row.gbpEquivalent.toFixed(2)}
+                    <span className="md:hidden text-[10px] uppercase tracking-wider text-[#6C6255]">
+                      Settled
+                    </span>
+                    <span>{row.currencyAmount}</span>
                   </td>
-                  <td className="py-3 pl-3 text-[#5C5248] text-xs">
-                    {row.notes}
+                  <td
+                    style={monoStyle}
+                    className="flex items-center justify-between gap-2 md:table-cell py-1 md:py-3 md:px-3 font-bold text-[#13382E]"
+                  >
+                    <span className="md:hidden text-[10px] uppercase tracking-wider text-[#6C6255] font-normal">
+                      GBP
+                    </span>
+                    <span>~£{row.gbpEquivalent.toFixed(2)}</span>
+                  </td>
+                  <td className="flex items-start justify-between gap-3 md:table-cell py-1 md:py-3 md:pl-3 text-[#5C5248] text-xs">
+                    <span
+                      style={monoStyle}
+                      className="md:hidden text-[10px] uppercase tracking-wider text-[#6C6255] shrink-0"
+                    >
+                      Notes
+                    </span>
+                    <span className="text-right md:text-left">{row.notes}</span>
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              <tr className="border-t-2 border-b-2 border-[#1F1A16] bg-[#EFE7D8]/70">
+            <tfoot className="block md:table-footer-group">
+              <tr className="block md:table-row p-3.5 md:p-0 border-t-2 border-b-2 border-[#1F1A16] bg-[#EFE7D8]/70">
                 <td
                   colSpan={2}
                   style={serifStyle}
-                  className="py-3.5 pr-3 text-xl font-semibold text-[#1F1A16]"
+                  className="block md:table-cell py-1 md:py-3.5 md:pr-3 text-xl font-semibold text-[#1F1A16]"
                 >
                   Grand Total (Confirmed Aviation &amp; Eight Nights Residence)
                 </td>
                 <td
                   style={monoStyle}
-                  className="py-3.5 px-3 font-bold text-[#A8442A] text-base"
+                  className="flex items-center justify-between gap-2 md:table-cell py-1 md:py-3.5 md:px-3 font-bold text-[#A8442A] text-base"
                 >
-                  ~£
-                  {TRIP_METADATA.grandTotalGbp.toLocaleString("en-GB", {
-                    minimumFractionDigits: 2,
-                  })}
+                  <span className="md:hidden text-[10px] uppercase tracking-wider text-[#6C6255] font-normal">
+                    Total GBP
+                  </span>
+                  <span>
+                    ~£
+                    {TRIP_METADATA.grandTotalGbp.toLocaleString("en-GB", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
                 </td>
                 <td
                   style={monoStyle}
-                  className="py-3.5 pl-3 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
+                  className="flex items-center justify-between gap-2 md:table-cell py-1 md:py-3.5 md:pl-3 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
                 >
-                  SETTLED IN FULL
+                  <span className="md:hidden text-[10px] uppercase tracking-wider text-[#6C6255]">
+                    Status
+                  </span>
+                  <span>SETTLED IN FULL</span>
                 </td>
               </tr>
             </tfoot>
@@ -426,6 +461,33 @@ export function StepBudgetAndLedger({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Sticky Financial Summary Bar */}
+      <div
+        data-testid="budget-sticky-summary"
+        style={monoStyle}
+        className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] sm:bottom-0 z-20 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] px-4 py-3 shadow-lg flex flex-wrap items-center justify-between gap-2 text-[11px] uppercase tracking-wider"
+      >
+        <span>
+          Total planned:{" "}
+          <strong className="text-[#FBF8F3]">
+            THB {plannedTotalThb.toLocaleString()} (~£
+            {plannedTotalGbp.toFixed(0)})
+          </strong>
+        </span>
+        <span>
+          Booked:{" "}
+          <strong className="text-[#FBF8F3]">
+            £
+            {TRIP_METADATA.grandTotalGbp.toLocaleString("en-GB", {
+              minimumFractionDigits: 2,
+            })}
+          </strong>
+        </span>
+        <span className="text-[#D8B979] font-semibold">
+          Surplus: +£72.65 (~3,233 THB)
+        </span>
       </div>
     </section>
   );
