@@ -145,7 +145,7 @@ export function StickyStepNav({
                 key={tab.id}
                 type="button"
                 onClick={() => onSelectTab(tab.id)}
-                className={`group flex flex-col items-start justify-between text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative ${
+                className={`group flex flex-col items-start justify-between text-left transition-all duration-300 ease-in-out motion-reduce:transition-none cursor-pointer relative min-h-11 sm:min-h-0 ${
                   isScrolled ? "px-2.5 py-1.5 sm:p-4" : "p-3 sm:p-4"
                 } ${
                   isActive
@@ -171,7 +171,7 @@ export function StickyStepNav({
                       style={serifStyle}
                       className={`italic transition-all duration-300 ${
                         isScrolled
-                          ? "text-[10px] sm:text-sm"
+                          ? "text-[11px] sm:text-sm"
                           : "text-xs sm:text-sm"
                       } ${isActive ? "text-[#D8B979]" : "text-[#9E7B3B]"}`}
                     >
@@ -210,7 +210,7 @@ export function StickyStepNav({
                 >
                   <span
                     style={monoStyle}
-                    className={`block text-[11px] uppercase tracking-[0.14em] ${
+                    className={`block text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] ${
                       isActive ? "text-[#F6F1E7]/75" : "text-[#8A7E71]"
                     }`}
                   >
@@ -233,7 +233,7 @@ export function StickyStepNav({
               type="button"
               onClick={() => onSelectDayNum(null)}
               style={monoStyle}
-              className={`shrink-0 text-[11px] uppercase tracking-[0.14em] border transition-all duration-300 cursor-pointer ${
+              className={`shrink-0 min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border transition-all duration-300 cursor-pointer ${
                 isScrolled ? "px-2 py-0.5 sm:px-3 sm:py-1.5" : "px-3 py-1.5"
               } ${
                 selectedDayNum === null
@@ -253,7 +253,7 @@ export function StickyStepNav({
                     onSelectDayNum(isSelected ? null : d.dayNumber)
                   }
                   style={monoStyle}
-                  className={`shrink-0 text-[11px] uppercase tracking-[0.12em] border transition-all duration-300 cursor-pointer ${
+                  className={`shrink-0 min-h-11 sm:min-h-0 inline-flex items-center text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.12em] border transition-all duration-300 cursor-pointer ${
                     isScrolled
                       ? "px-2 py-0.5 sm:px-2.5 sm:py-1.5"
                       : "px-2.5 py-1.5"
@@ -269,11 +269,35 @@ export function StickyStepNav({
             })}
           </div>
         )}
+
+        {/* Mobile-only compact Jump-to-Top trigger in sticky header when scrolled */}
+        {isScrolled && (
+          <div className="sm:hidden flex items-center justify-between px-3 py-1 bg-[#EFE7D8]/95 border-t border-[#1F1A16]/15">
+            <span
+              style={monoStyle}
+              className="text-[11px] uppercase tracking-[0.1em] text-[#5C5248]"
+            >
+              Thailand &apos;27 Dossier
+            </span>
+            <button
+              type="button"
+              onClick={handleScrollToChronometer}
+              aria-label="Jump to top countdown"
+              style={monoStyle}
+              className="min-h-11 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] border border-[#9E7B3B] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <span className="text-[#D8B979]" aria-hidden="true">
+                &uarr;
+              </span>
+              <span>Top</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Floating Scroll-to-Chronometer Button — Reveals once scrolled past the -72px sticky threshold */}
+      {/* Floating Scroll-to-Chronometer Button (Desktop sm+) — Reveals once scrolled past the -72px sticky threshold */}
       <div
-        className={`fixed bottom-5 right-5 z-40 transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+        className={`hidden sm:block fixed bottom-5 right-5 z-40 pb-[env(safe-area-inset-bottom)] transition-all duration-300 ease-in-out motion-reduce:transition-none ${
           isScrolled
             ? "visible opacity-100 translate-y-0 pointer-events-auto"
             : "invisible opacity-0 translate-y-5 pointer-events-none"
@@ -286,7 +310,7 @@ export function StickyStepNav({
           aria-label="Scroll to Chronometer"
           title="Return to the Countdown Chronometer & Readiness Dossier"
           style={monoStyle}
-          className="px-4 py-3 bg-[#1F1A16] hover:bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl text-[11px] uppercase tracking-[0.16em] font-semibold flex items-center gap-2 cursor-pointer transition-colors"
+          className="px-4 py-3 bg-[#1F1A16] hover:bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold flex items-center gap-2 cursor-pointer transition-colors"
         >
           <span className="text-[#D8B979]" aria-hidden="true">
             &uarr;

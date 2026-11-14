@@ -81,14 +81,14 @@ export function GarmentLightboxModal({
             <div className="flex flex-wrap items-center gap-2">
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.18em] text-[#A8442A] font-semibold"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#A8442A] font-semibold"
               >
                 {garment.category || "GARMENT PIECE"} &bull; {domain}
               </span>
               {outfitTitle && (
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-[0.14em] text-[#5C5248]"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248]"
                 >
                   ({outfitTitle})
                 </span>
@@ -106,27 +106,27 @@ export function GarmentLightboxModal({
             onClick={onClose}
             style={monoStyle}
             aria-label="Close expanded image"
-            className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+            className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center cursor-pointer shrink-0"
           >
             Close &#10005;
           </button>
         </div>
 
         {/* Main Image Viewport */}
-        <div className="relative bg-[#EFE7D8]/70 border border-[#1F1A16]/15 flex items-center justify-center min-h-[260px] max-h-[68vh] overflow-hidden p-2">
+        <div className="relative bg-[#EFE7D8]/70 border border-[#1F1A16]/15 flex items-center justify-center min-h-[260px] max-h-[68dvh] overflow-hidden p-2">
           {showImage ? (
             <img
               src={garment.imageUrl}
               alt={garment.label}
               referrerPolicy="no-referrer"
               onError={() => setImgError(true)}
-              className="max-h-[64vh] w-auto max-w-full object-contain mx-auto shadow-sm"
+              className="max-h-[64dvh] w-auto max-w-full object-contain mx-auto shadow-sm"
             />
           ) : (
             <div className="p-8 text-center space-y-3 max-w-md">
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
               >
                 {domain} EDITORIAL TILE
               </span>
@@ -150,7 +150,7 @@ export function GarmentLightboxModal({
             <div className="flex flex-wrap items-center gap-1.5">
               <span
                 style={monoStyle}
-                className="text-[9px] uppercase tracking-wider text-[#5C5248] mr-1"
+                className="text-[11px] sm:text-[9px] uppercase tracking-wider text-[#5C5248] mr-1"
               >
                 PIECES ({allGarments.length}):
               </span>
@@ -160,7 +160,7 @@ export function GarmentLightboxModal({
                   type="button"
                   onClick={() => onSelectGarment(g)}
                   style={monoStyle}
-                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                  className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
                     g.id === garment.id
                       ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
                       : "bg-[#EFE7D8]/70 text-[#1F1A16] border-[#1F1A16]/20 hover:border-[#13382E]"
@@ -174,7 +174,7 @@ export function GarmentLightboxModal({
           ) : (
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-wider text-[#5C5248]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
             >
               SOURCE: {domain}
             </span>
@@ -185,7 +185,7 @@ export function GarmentLightboxModal({
             target="_blank"
             rel="noopener noreferrer"
             style={monoStyle}
-            className="px-3.5 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[10px] uppercase tracking-[0.16em] font-semibold inline-flex items-center gap-1.5"
+            className="min-h-11 sm:min-h-0 px-3.5 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold inline-flex items-center gap-1.5"
           >
             <span>Open Original on {domain}</span>
             <ExternalArrow />
@@ -237,7 +237,7 @@ export function DeleteOutfitConfirmModal({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
             >
               DIGITAL WARDROBE &bull; CONFIRM REMOVAL
             </span>
@@ -253,7 +253,7 @@ export function DeleteOutfitConfirmModal({
             onClick={onClose}
             style={monoStyle}
             aria-label="Close delete confirmation"
-            className="px-2.5 py-1 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 px-2.5 py-1 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center justify-center cursor-pointer shrink-0"
           >
             &#10005;
           </button>
@@ -289,7 +289,7 @@ export function DeleteOutfitConfirmModal({
             type="button"
             onClick={onClose}
             style={monoStyle}
-            className="px-3.5 py-2 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] cursor-pointer"
+            className="min-h-11 sm:min-h-0 px-3.5 py-2 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#EFE7D8] cursor-pointer"
           >
             Cancel
           </button>
@@ -298,7 +298,7 @@ export function DeleteOutfitConfirmModal({
             onClick={onConfirm}
             style={monoStyle}
             aria-label={`Confirm delete ${outfit.title}`}
-            className="px-4 py-2 text-xs uppercase tracking-[0.14em] font-semibold text-[#FBF8F3] bg-[#A8442A] hover:bg-[#8F351E] cursor-pointer shadow-sm"
+            className="min-h-11 sm:min-h-0 px-4 py-2 text-xs uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold text-[#FBF8F3] bg-[#A8442A] hover:bg-[#8F351E] cursor-pointer shadow-sm"
           >
             Confirm Delete
           </button>
@@ -365,7 +365,7 @@ export function PolaroidCollageTile({
       >
         <span
           style={monoStyle}
-          className="text-[9px] uppercase tracking-[0.18em] text-[#8A7E71]/70"
+          className="text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71]/70"
         >
           SLOT 0{slotIndex + 1}
         </span>
@@ -430,13 +430,13 @@ export function PolaroidCollageTile({
             <div className="flex items-center justify-between gap-1">
               <span
                 style={monoStyle}
-                className="text-[9px] uppercase tracking-[0.14em] text-[#A8442A] font-semibold truncate"
+                className="text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#A8442A] font-semibold truncate"
               >
                 {garment.category || "GARMENT"}
               </span>
               <span
                 style={monoStyle}
-                className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-[#FBF8F3]/90 text-[#13382E] border border-[#1F1A16]/15 shrink-0"
+                className="text-[11px] sm:text-[9px] uppercase tracking-wider px-1.5 py-0.5 bg-[#FBF8F3]/90 text-[#13382E] border border-[#1F1A16]/15 shrink-0"
               >
                 {domain}
               </span>
@@ -450,22 +450,22 @@ export function PolaroidCollageTile({
           </div>
         )}
 
-        {/* Subtle Hover Expand Pill (Top-Right) */}
+        {/* Touch-Visible Expand Pill (Always visible on touch, reveal on hover on desktop) */}
         <span
           style={monoStyle}
-          className="absolute top-1.5 right-1.5 z-10 opacity-0 group-hover/tile:opacity-100 transition-opacity px-1.5 py-0.5 bg-[#1F1A16]/85 text-[#F6F1E7] text-[8px] uppercase tracking-wider pointer-events-none"
+          className="absolute top-1.5 right-1.5 z-10 opacity-100 sm:opacity-0 sm:group-hover/tile:opacity-100 transition-opacity px-1.5 py-0.5 bg-[#1F1A16]/85 text-[#F6F1E7] text-[11px] sm:text-[8px] uppercase tracking-wider pointer-events-none"
         >
           Expand &#10530;
         </span>
 
         {showImage && (
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1F1A16]/85 via-[#1F1A16]/45 to-transparent p-2 flex items-end justify-between gap-1 w-full">
-            <span className="text-[10px] text-[#FBF8F3] font-medium leading-tight line-clamp-1">
+            <span className="text-[11px] sm:text-[10px] text-[#FBF8F3] font-medium leading-tight line-clamp-1">
               {garment.label}
             </span>
             <span
               style={monoStyle}
-              className="text-[8px] uppercase tracking-wider px-1 py-0.5 bg-[#FBF8F3]/90 text-[#1F1A16] shrink-0"
+              className="text-[11px] sm:text-[8px] uppercase tracking-wider px-1 py-0.5 bg-[#FBF8F3]/90 text-[#1F1A16] shrink-0"
             >
               {domain}
             </span>
@@ -577,7 +577,7 @@ export function PolaroidOutfitCard({
             <div className="absolute top-2 left-2 z-10 flex flex-wrap items-center gap-1.5 pointer-events-none">
               <span
                 style={monoStyle}
-                className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.16em] font-semibold shadow-sm ${
+                className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold shadow-sm ${
                   outfit.owner === "shaq"
                     ? "bg-[#13382E] text-[#F6F1E7]"
                     : outfit.owner === "naana"
@@ -604,7 +604,7 @@ export function PolaroidOutfitCard({
                     isInspo ? "Inspiration" : "Owned"
                   })`}
                   style={monoStyle}
-                  className={`pointer-events-auto px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
+                  className={`pointer-events-auto min-h-11 sm:min-h-0 inline-flex items-center px-2.5 sm:px-2 py-1 sm:py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold shadow-sm border cursor-pointer transition-colors ${
                     isInspo
                       ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B] hover:bg-[#82632C]"
                       : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40 hover:bg-[#13382E] hover:text-[#F6F1E7]"
@@ -615,7 +615,7 @@ export function PolaroidOutfitCard({
               ) : (
                 <span
                   style={monoStyle}
-                  className={`px-2 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold shadow-sm border ${
+                  className={`px-2 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold shadow-sm border ${
                     isInspo
                       ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
                       : "bg-[#FBF8F3]/95 text-[#13382E] border-[#13382E]/40"
@@ -630,7 +630,7 @@ export function PolaroidOutfitCard({
             <div className="absolute bottom-2 inset-x-2 z-10 flex justify-between items-center pointer-events-none">
               <span
                 style={monoStyle}
-                className="px-2 py-0.5 bg-[#FBF8F3]/95 text-[#1F1A16] border border-[#1F1A16]/20 text-[9px] uppercase tracking-[0.13em] font-semibold shadow-sm truncate max-w-full"
+                className="px-2 py-0.5 bg-[#FBF8F3]/95 text-[#1F1A16] border border-[#1F1A16]/20 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.13em] font-semibold shadow-sm truncate max-w-full"
               >
                 {outfit.climateTag}
               </span>
@@ -646,7 +646,7 @@ export function PolaroidOutfitCard({
                 <>
                   <span
                     style={monoStyle}
-                    className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.14em] font-semibold ${
+                    className={`px-1.5 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold ${
                       outfit.owner === "shaq"
                         ? "bg-[#13382E] text-[#F6F1E7]"
                         : outfit.owner === "naana"
@@ -667,7 +667,7 @@ export function PolaroidOutfitCard({
                         isInspo ? "Inspiration" : "Owned"
                       })`}
                       style={monoStyle}
-                      className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.13em] font-semibold border cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 inline-flex items-center px-2 sm:px-1.5 py-1 sm:py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.13em] font-semibold border cursor-pointer ${
                         isInspo
                           ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
                           : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40"
@@ -678,7 +678,7 @@ export function PolaroidOutfitCard({
                   ) : (
                     <span
                       style={monoStyle}
-                      className={`px-1.5 py-0.5 text-[9px] uppercase tracking-[0.13em] font-semibold border ${
+                      className={`px-1.5 py-0.5 text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.13em] font-semibold border ${
                         isInspo
                           ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
                           : "bg-[#FBF8F3] text-[#13382E] border-[#13382E]/40"
@@ -691,7 +691,7 @@ export function PolaroidOutfitCard({
               )}
               <span
                 style={monoStyle}
-                className={`text-[9px] uppercase tracking-[0.15em] px-2 py-0.5 border font-semibold ${dressMeta.badgeClass}`}
+                className={`text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.15em] px-2 py-0.5 border font-semibold ${dressMeta.badgeClass}`}
               >
                 {dressMeta.shortBadge}
               </span>
@@ -711,7 +711,7 @@ export function PolaroidOutfitCard({
                           dNum
                         )}`}
                         style={monoStyle}
-                        className="px-1.5 py-0.5 bg-[#13382E]/10 hover:bg-[#A8442A]/15 text-[#13382E] hover:text-[#A8442A] border border-[#13382E]/30 hover:border-[#A8442A]/40 text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
+                        className="min-h-11 sm:min-h-0 px-2 sm:px-1.5 py-1 sm:py-0.5 bg-[#13382E]/10 hover:bg-[#A8442A]/15 text-[#13382E] hover:text-[#A8442A] border border-[#13382E]/30 hover:border-[#A8442A]/40 text-[11px] sm:text-[9px] uppercase tracking-wider font-semibold inline-flex items-center gap-1 cursor-pointer transition-colors"
                       >
                         <span>D{formatDayNumber(dNum)}</span>
                         <span aria-hidden="true">&#10005;</span>
@@ -720,7 +720,7 @@ export function PolaroidOutfitCard({
                       <span
                         key={dNum}
                         style={monoStyle}
-                        className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[9px] uppercase tracking-wider font-semibold"
+                        className="px-1.5 py-0.5 bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 text-[11px] sm:text-[9px] uppercase tracking-wider font-semibold"
                       >
                         D{formatDayNumber(dNum)}
                       </span>
@@ -737,7 +737,7 @@ export function PolaroidOutfitCard({
                   effectiveCollapsed ? "Expand" : "Collapse"
                 } outfit card for ${outfit.title}`}
                 style={monoStyle}
-                className="px-2 py-0.5 text-[9px] uppercase tracking-wider border border-[#1F1A16]/20 bg-[#EFE7D8]/60 hover:bg-[#1F1A16] text-[#5C5248] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+                className="min-h-11 sm:min-h-0 inline-flex items-center px-2.5 sm:px-2 py-1 sm:py-0.5 text-[11px] sm:text-[9px] uppercase tracking-wider border border-[#1F1A16]/20 bg-[#EFE7D8]/60 hover:bg-[#1F1A16] text-[#5C5248] hover:text-[#F6F1E7] cursor-pointer transition-colors"
               >
                 {effectiveCollapsed ? "Expand ▼" : "Collapse ▲"}
               </button>
@@ -756,7 +756,7 @@ export function PolaroidOutfitCard({
             {effectiveCollapsed && (
               <span
                 style={monoStyle}
-                className="text-[9px] uppercase tracking-wider text-[#8A7E71] shrink-0"
+                className="text-[11px] sm:text-[9px] uppercase tracking-wider text-[#8A7E71] shrink-0"
               >
                 {outfit.garments.length}{" "}
                 {outfit.garments.length === 1 ? "piece" : "pieces"}
@@ -780,10 +780,10 @@ export function PolaroidOutfitCard({
                     onClick={() => setIsLinksExpanded((prev) => !prev)}
                     aria-expanded={isLinksExpanded}
                     style={monoStyle}
-                    className="w-full flex items-center justify-between text-[9px] uppercase tracking-[0.16em] text-[#8A7E71] hover:text-[#1F1A16] cursor-pointer py-0.5 transition-colors"
+                    className="w-full min-h-11 sm:min-h-0 flex items-center justify-between text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71] hover:text-[#1F1A16] cursor-pointer py-1 sm:py-0.5 transition-colors"
                   >
                     <span>GARMENT LINKS ({outfit.garments.length})</span>
-                    <span className="text-[8px] tracking-wider text-[#5C5248]">
+                    <span className="text-[11px] sm:text-[8px] tracking-wider text-[#5C5248]">
                       {isLinksExpanded ? "Hide ▲" : "Show ▼"}
                     </span>
                   </button>
@@ -796,7 +796,7 @@ export function PolaroidOutfitCard({
                           target="_blank"
                           rel="noopener noreferrer"
                           style={monoStyle}
-                          className="px-2 py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
+                          className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1.5 sm:py-1 bg-[#EFE7D8]/70 hover:bg-[#EFE7D8] border border-[#1F1A16]/15 hover:border-[#13382E] text-[11px] sm:text-[10px] text-[#1F1A16] hover:text-[#13382E] inline-flex items-center gap-1 transition-colors"
                           title={`${g.label} (${extractSourceDomain(g.url)})`}
                         >
                           <span className="truncate max-w-[155px]">
@@ -826,7 +826,7 @@ export function PolaroidOutfitCard({
                 type="button"
                 onClick={() => onSelectOutfit(outfit.id)}
                 style={monoStyle}
-                className={`flex-1 py-2 text-[11px] uppercase tracking-[0.15em] font-semibold border cursor-pointer transition-colors ${
+                className={`flex-1 min-h-11 sm:min-h-0 py-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] font-semibold border cursor-pointer transition-colors ${
                   isSelected
                     ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                     : "bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border-[#1F1A16]/25"
@@ -839,7 +839,7 @@ export function PolaroidOutfitCard({
                   type="button"
                   onClick={() => onEditOutfit(outfit)}
                   style={monoStyle}
-                  className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#FBF8F3] cursor-pointer shrink-0"
+                  className="min-h-11 sm:min-h-0 px-2.5 py-2 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#FBF8F3] cursor-pointer shrink-0"
                   aria-label={`Edit look ${outfit.title}`}
                 >
                   Edit
@@ -850,7 +850,7 @@ export function PolaroidOutfitCard({
                   type="button"
                   onClick={() => setShowDeleteConfirm(true)}
                   style={monoStyle}
-                  className="px-2.5 py-2 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-[#1F1A16]/15 hover:border-[#A8442A]/40 bg-[#FBF8F3] cursor-pointer shrink-0"
+                  className="min-h-11 sm:min-h-0 px-2.5 py-2 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-[#1F1A16]/15 hover:border-[#A8442A]/40 bg-[#FBF8F3] cursor-pointer shrink-0"
                   aria-label={`Delete look ${outfit.title}`}
                 >
                   Delete &#10005;
@@ -864,7 +864,7 @@ export function PolaroidOutfitCard({
                   <label
                     htmlFor={`assign-day-${outfit.id}`}
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-wider text-[#5C5248] shrink-0"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] shrink-0"
                   >
                     ASSIGN TO DAY:
                   </label>
@@ -883,7 +883,7 @@ export function PolaroidOutfitCard({
                       }
                     }}
                     style={monoStyle}
-                    className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2 py-1 text-[10px] text-[#1F1A16] flex-1 min-w-0 cursor-pointer"
+                    className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2 py-1.5 sm:py-1 min-h-11 sm:min-h-0 text-base sm:text-sm text-[#1F1A16] flex-1 min-w-0 cursor-pointer"
                   >
                     <option value="">Select Day (D00–D10)...</option>
                     {TRIP_DAYS.map((d) => {
@@ -919,7 +919,7 @@ export function PolaroidOutfitCard({
                         ? "All garments from this look are already listed in The Packing Ledger"
                         : "Add this look's garments to The Packing Ledger checklist"
                     }
-                    className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border transition-colors ${
+                    className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border transition-colors ${
                       isPackedInTrunk
                         ? "bg-[#13382E]/10 text-[#13382E] border-[#13382E]/30 cursor-default font-semibold"
                         : "text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border-[#13382E]/35 bg-[#EFE7D8]/60 cursor-pointer font-semibold"
@@ -936,7 +936,7 @@ export function PolaroidOutfitCard({
                     type="button"
                     onClick={() => onEditOutfit(outfit)}
                     style={monoStyle}
-                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] border border-[#1F1A16]/20 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
                     aria-label={`Edit look ${outfit.title}`}
                   >
                     Edit
@@ -948,7 +948,7 @@ export function PolaroidOutfitCard({
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
                     style={monoStyle}
-                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-transparent hover:border-[#A8442A]/30 cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] hover:text-[#A8442A] border border-transparent hover:border-[#A8442A]/30 cursor-pointer"
                     aria-label={`Delete look ${outfit.title}`}
                   >
                     Delete &#10005;
@@ -965,7 +965,7 @@ export function PolaroidOutfitCard({
               type="button"
               onClick={() => onSelectOutfit(outfit.id)}
               style={monoStyle}
-              className={`px-3 py-1 text-[10px] uppercase tracking-[0.14em] font-semibold border cursor-pointer transition-colors ${
+              className={`min-h-11 sm:min-h-0 px-3 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold border cursor-pointer transition-colors ${
                 isSelected
                   ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                   : "bg-[#EFE7D8] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border-[#1F1A16]/25"

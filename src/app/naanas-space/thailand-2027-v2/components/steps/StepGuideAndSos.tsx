@@ -15,7 +15,7 @@ export function StepGuideAndSos() {
           <div className="border-b border-[#1F1A16]/15 pb-3">
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
             >
               DISPATCH 01 &bull; BANGKOK (05&ndash;08 FEB)
             </span>
@@ -91,7 +91,7 @@ export function StepGuideAndSos() {
           <div className="border-b border-[#1F1A16]/15 pb-3">
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#13382E] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#13382E] font-semibold"
             >
               DISPATCH 02 &bull; PHUKET (08&ndash;13 FEB)
             </span>
@@ -168,7 +168,7 @@ export function StepGuideAndSos() {
         <div className="border-b border-[#1F1A16]/15 pb-3">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
           >
             CULINARY &amp; HEALTH ADVISORY &bull; FOOD &amp; WATER PROTOCOLS
           </span>
@@ -192,7 +192,7 @@ export function StepGuideAndSos() {
               <div>
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
                 >
                   {item.badge}
                 </span>
@@ -223,7 +223,7 @@ export function StepGuideAndSos() {
         <div className="border-b border-[#1F1A16]/15 pb-3">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
           >
             CRITICAL ASSISTANCE &bull; CONSULAR &amp; MEDICAL DIRECTORY
           </span>
@@ -244,7 +244,7 @@ export function StepGuideAndSos() {
               <div>
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A] font-semibold"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold"
                 >
                   {c.badge}
                 </span>
@@ -261,7 +261,7 @@ export function StepGuideAndSos() {
                 <a
                   href={c.telHref}
                   style={monoStyle}
-                  className="block w-full text-center py-2.5 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-xs uppercase tracking-[0.16em] font-semibold transition-colors"
+                  className="min-h-11 sm:min-h-0 flex items-center justify-center w-full text-center py-2.5 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold transition-colors"
                 >
                   Dial {c.number}
                 </a>
@@ -271,9 +271,10 @@ export function StepGuideAndSos() {
                     target="_blank"
                     rel="noopener noreferrer"
                     style={monoStyle}
-                    className="block text-center text-[10px] uppercase tracking-[0.14em] text-[#13382E] underline"
+                    className="min-h-11 sm:min-h-0 flex items-center justify-center text-center text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#13382E] underline gap-1"
                   >
-                    {c.linkLabel} <ExternalArrow />
+                    <span>{c.linkLabel}</span>
+                    <ExternalArrow />
                   </a>
                 )}
               </div>
@@ -284,7 +285,7 @@ export function StepGuideAndSos() {
         <div className="pt-2">
           <h4
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#5C5248] mb-3"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#5C5248] mb-3"
           >
             ACCREDITED INTERNATIONAL HOSPITALS
           </h4>
@@ -295,11 +296,11 @@ export function StepGuideAndSos() {
                 href={hosp.mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-4 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] transition-colors block"
+                className="min-h-11 p-4 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] transition-colors block"
               >
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-[0.15em] text-[#A8442A] font-semibold"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[#A8442A] font-semibold"
                 >
                   {hosp.city}
                 </span>

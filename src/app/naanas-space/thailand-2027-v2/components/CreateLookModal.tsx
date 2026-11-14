@@ -379,14 +379,14 @@ export function CreateLookModal({
       ref={dialogRef}
       aria-labelledby="create-look-modal-title"
       onClose={onClose}
-      className="fixed inset-0 z-50 m-auto bg-[#FBF8F3] text-[#1F1A16] border-2 border-[#1F1A16] max-w-3xl w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl backdrop:bg-[#1F1A16]/80 backdrop:backdrop-blur-sm"
+      className="fixed inset-0 z-50 m-auto bg-[#FBF8F3] text-[#1F1A16] border-2 border-[#1F1A16] max-w-3xl w-[calc(100%-2rem)] max-h-[90dvh] overflow-y-auto p-6 sm:p-8 shadow-2xl backdrop:bg-[#1F1A16]/80 backdrop:backdrop-blur-sm"
     >
       <div className="space-y-6">
         <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/20 pb-4">
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
             >
               DIGITAL WARDROBE ATELIER &bull; STEP IV LOOKBOOK
             </span>
@@ -409,7 +409,7 @@ export function CreateLookModal({
             type="button"
             onClick={onClose}
             style={monoStyle}
-            className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+            className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
           >
             Close &#10005;
           </button>
@@ -423,7 +423,7 @@ export function CreateLookModal({
                 <label
                   htmlFor="look-title-input"
                   style={monoStyle}
-                  className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                  className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                 >
                   LOOK TITLE *
                 </label>
@@ -432,6 +432,8 @@ export function CreateLookModal({
                   type="text"
                   required
                   autoFocus
+                  enterKeyHint="next"
+                  autoComplete="off"
                   value={title}
                   onChange={(e) => {
                     const nextTitle = e.target.value;
@@ -444,7 +446,7 @@ export function CreateLookModal({
                     }
                   }}
                   placeholder="e.g. Wat Arun Sunrise Linen or Catch Beach Club Sunset"
-                  className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                  className="w-full min-h-11 sm:min-h-0 bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                 />
               </div>
 
@@ -452,7 +454,7 @@ export function CreateLookModal({
               <div>
                 <span
                   style={monoStyle}
-                  className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                  className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                 >
                   WARDROBE TAG (OWNED VS. INSPIRATION)
                 </span>
@@ -464,7 +466,7 @@ export function CreateLookModal({
                       setHasUserToggledInspo(true);
                     }}
                     style={monoStyle}
-                    className={`py-2 px-3 text-[10px] uppercase tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
+                    className={`min-h-11 sm:min-h-0 py-2 px-3 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
                       !isInspiration
                         ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                         : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
@@ -479,7 +481,7 @@ export function CreateLookModal({
                       setHasUserToggledInspo(true);
                     }}
                     style={monoStyle}
-                    className={`py-2 px-3 text-[10px] uppercase tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
+                    className={`min-h-11 sm:min-h-0 py-2 px-3 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border font-semibold cursor-pointer transition-colors ${
                       isInspiration
                         ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
                         : "bg-[#F6F1E7] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#9E7B3B]"
@@ -495,7 +497,7 @@ export function CreateLookModal({
                   <label
                     htmlFor="look-owner-select"
                     style={monoStyle}
-                    className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                    className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                   >
                     CURATED FOR
                   </label>
@@ -505,7 +507,7 @@ export function CreateLookModal({
                     onChange={(e) =>
                       setOwner(e.target.value as WardrobeOutfit["owner"])
                     }
-                    className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
+                    className="w-full min-h-11 sm:min-h-0 bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                   >
                     <option value="both">Shared Look (Shaq &amp; Naana)</option>
                     <option value="naana">Naana</option>
@@ -517,7 +519,7 @@ export function CreateLookModal({
                   <label
                     htmlFor="look-dresscode-select"
                     style={monoStyle}
-                    className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                    className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                   >
                     DRESS CODE PROFILE
                   </label>
@@ -527,7 +529,7 @@ export function CreateLookModal({
                     onChange={(e) =>
                       handleDressCodeChange(e.target.value as DressCodeProfile)
                     }
-                    className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
+                    className="w-full min-h-11 sm:min-h-0 bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                   >
                     <option value="temple">
                       Temple &amp; Royal Heritage (Covered)
@@ -553,34 +555,38 @@ export function CreateLookModal({
                   <label
                     htmlFor="look-climate-input"
                     style={monoStyle}
-                    className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                    className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                   >
                     CLIMATE &amp; SETTING TAG
                   </label>
                   <input
                     id="look-climate-input"
                     type="text"
+                    enterKeyHint="next"
+                    autoComplete="off"
                     value={climateTag}
                     onChange={(e) => setClimateTag(e.target.value)}
                     placeholder="e.g. 33°C Sacred Heritage"
-                    className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
+                    className="w-full min-h-11 sm:min-h-0 bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="look-notes-input"
                     style={monoStyle}
-                    className="block text-[10px] uppercase tracking-[0.16em] text-[#5C5248] mb-1"
+                    className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248] mb-1"
                   >
                     STYLING NOTE (OPTIONAL)
                   </label>
                   <input
                     id="look-notes-input"
                     type="text"
+                    enterKeyHint="next"
+                    autoComplete="off"
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder="Accessories, footwear, or sarong reminder..."
-                    className="w-full bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
+                    className="w-full min-h-11 sm:min-h-0 bg-[#F6F1E7] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                   />
                 </div>
               </div>
@@ -599,10 +605,10 @@ export function CreateLookModal({
                     : "border-[#1F1A16]/30 bg-[#EFE7D8]/60"
                 }`}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
                   >
                     {editingGarmentId
                       ? "EDITING SELECTED GARMENT LINK"
@@ -610,7 +616,7 @@ export function CreateLookModal({
                   </span>
                   <span
                     style={monoStyle}
-                    className="text-[10px] text-[#5C5248]"
+                    className="text-[11px] sm:text-[10px] text-[#5C5248] shrink-0"
                   >
                     {garments.length}/4 Collage Slots
                   </span>
@@ -619,12 +625,18 @@ export function CreateLookModal({
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                   <input
                     type="url"
+                    inputMode="url"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    enterKeyHint="next"
+                    autoComplete="off"
                     aria-label="Garment URL"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     onPaste={handleUrlPaste}
                     placeholder="Paste garment or Google Photos share link (photos.app.goo.gl / ASOS / Pinterest)..."
-                    className="sm:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-xs text-[#1F1A16]"
+                    className="sm:col-span-8 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                   />
                   <select
                     aria-label="Garment Category"
@@ -634,7 +646,7 @@ export function CreateLookModal({
                         e.target.value as NonNullable<GarmentLink["category"]>
                       )
                     }
-                    className="sm:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/25 px-2.5 py-2 text-xs text-[#1F1A16]"
+                    className="sm:col-span-4 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-2.5 py-2 text-base sm:text-sm text-[#1F1A16]"
                   >
                     <option value="Top">Top / Shirt</option>
                     <option value="Bottom">Bottom / Trousers</option>
@@ -647,11 +659,13 @@ export function CreateLookModal({
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                   <input
                     type="text"
+                    enterKeyHint="done"
+                    autoComplete="off"
                     aria-label="Garment Label"
                     value={labelInput}
                     onChange={(e) => setLabelInput(e.target.value)}
                     placeholder="Piece name (optional — auto-scraped from link if blank)"
-                    className="sm:col-span-8 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-1.5 text-xs text-[#1F1A16]"
+                    className="sm:col-span-8 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                   />
                   <button
                     type="button"
@@ -660,7 +674,7 @@ export function CreateLookModal({
                       scrapeAndAddGarmentUrl(urlInput, labelInput)
                     }
                     style={monoStyle}
-                    className="sm:col-span-4 bg-[#A8442A] hover:bg-[#8F351E] disabled:opacity-45 text-[#FBF8F3] text-[10px] uppercase tracking-[0.14em] font-semibold py-2 px-3 cursor-pointer"
+                    className="sm:col-span-4 min-h-11 sm:min-h-0 bg-[#A8442A] hover:bg-[#8F351E] disabled:opacity-45 text-[#FBF8F3] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] font-semibold py-2 px-3 cursor-pointer"
                   >
                     {isScraping
                       ? "Scraping..."
@@ -674,7 +688,7 @@ export function CreateLookModal({
                   <p
                     role="alert"
                     style={monoStyle}
-                    className="text-[10px] text-[#A8442A] font-semibold pt-0.5"
+                    className="text-[11px] sm:text-[10px] text-[#A8442A] font-semibold pt-0.5"
                   >
                     &#9888; Private Google Photos URL detected. In Google Photos,
                     tap Share &rarr; Create link (photos.app.goo.gl) so the
@@ -685,7 +699,7 @@ export function CreateLookModal({
                 {scrapeStatus && (
                   <p
                     style={monoStyle}
-                    className="text-[10px] text-[#13382E] pt-0.5"
+                    className="text-[11px] sm:text-[10px] text-[#13382E] pt-0.5"
                   >
                     {scrapeStatus}
                   </p>
@@ -698,7 +712,7 @@ export function CreateLookModal({
               <div>
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block mb-2"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71] block mb-2"
                 >
                   POLAROID SPLIT-GRID PREVIEW
                 </span>
@@ -726,7 +740,7 @@ export function CreateLookModal({
                   <div className="px-1">
                     <div
                       style={monoStyle}
-                      className="text-[9px] uppercase tracking-wider text-[#A8442A]"
+                      className="text-[11px] sm:text-[9px] uppercase tracking-wider text-[#A8442A]"
                     >
                       {climateTag ||
                         DRESS_CODE_METADATA[dressCode].defaultClimateTag}
@@ -745,7 +759,7 @@ export function CreateLookModal({
                 <div className="space-y-1.5">
                   <span
                     style={monoStyle}
-                    className="text-[9px] uppercase tracking-wider text-[#5C5248]"
+                    className="text-[11px] sm:text-[9px] uppercase tracking-wider text-[#5C5248]"
                   >
                     ADDED GARMENTS ({garments.length})
                   </span>
@@ -763,7 +777,7 @@ export function CreateLookModal({
                             type="button"
                             onClick={() => handleStartEditGarment(g)}
                             style={monoStyle}
-                            className="text-[9px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] underline cursor-pointer"
+                            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center px-2 sm:px-0 text-[11px] sm:text-[9px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] underline cursor-pointer"
                             aria-label={`Edit garment ${g.label}`}
                           >
                             Edit
@@ -771,7 +785,7 @@ export function CreateLookModal({
                           <button
                             type="button"
                             onClick={() => handleRemoveGarment(g.id)}
-                            className="text-[#8A7E71] hover:text-[#A8442A] text-xs cursor-pointer"
+                            className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-[#8A7E71] hover:text-[#A8442A] text-xs cursor-pointer"
                             aria-label={`Remove garment ${g.label}`}
                           >
                             &#10005;
@@ -790,14 +804,14 @@ export function CreateLookModal({
               type="button"
               onClick={onClose}
               style={monoStyle}
-              className="px-4 py-2.5 border border-[#1F1A16]/25 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+              className="min-h-11 sm:min-h-0 px-4 py-2.5 border border-[#1F1A16]/25 text-xs uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               style={monoStyle}
-              className="px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
+              className="min-h-11 sm:min-h-0 px-6 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
             >
               {isEditMode ? "Save Look Changes" : "Save Look to Wardrobe"}
             </button>

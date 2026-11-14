@@ -21,11 +21,11 @@ export function TopEditorialBar({
 }: TopEditorialBarProps) {
   return (
     <div className="border-b border-[#1F1A16]/15 bg-[#EFE7D8]/70 px-4 sm:px-8 py-3">
-      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.2em] text-[#5C5248]">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#5C5248]">
         <div className="flex flex-wrap items-center gap-3">
           <Link
             href="/naanas-space"
-            className="text-[#1F1A16] hover:text-[#A8442A] font-semibold flex items-center gap-2 transition-colors"
+            className="min-h-11 sm:min-h-0 text-[#1F1A16] hover:text-[#A8442A] font-semibold flex items-center gap-2 transition-colors"
           >
             <span>&larr;</span>
             <span>Back to Naana&apos;s Space</span>
@@ -44,7 +44,7 @@ export function TopEditorialBar({
           {/* Active Editor Toggle (Shaq / Naana) */}
           <div
             style={monoStyle}
-            className="flex items-center border border-[#1F1A16]/20 bg-[#FBF8F3] text-[10px] tracking-[0.14em]"
+            className="flex items-center border border-[#1F1A16]/20 bg-[#FBF8F3] text-[11px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.14em]"
             title="Select who is making changes on this device"
           >
             <span className="px-2 py-0.5 text-[#8A7E71] border-r border-[#1F1A16]/15">
@@ -55,7 +55,7 @@ export function TopEditorialBar({
                 key={person}
                 type="button"
                 onClick={() => onSetActiveActor(person)}
-                className={`px-2 py-0.5 uppercase transition-colors cursor-pointer ${
+                className={`min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 sm:py-0.5 uppercase inline-flex items-center transition-colors cursor-pointer ${
                   activeActor === person
                     ? person === "Shaq"
                       ? "bg-[#13382E] text-[#F6F1E7] font-semibold"
@@ -73,7 +73,7 @@ export function TopEditorialBar({
             type="button"
             onClick={onOpenChangeLog}
             style={monoStyle}
-            className="px-2.5 py-0.5 border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[10px] tracking-[0.14em] text-[#1F1A16] hover:text-[#F6F1E7] font-semibold transition-colors cursor-pointer"
+            className="min-h-11 sm:min-h-0 inline-flex items-center px-2.5 py-0.5 border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[11px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.14em] text-[#1F1A16] hover:text-[#F6F1E7] font-semibold transition-colors cursor-pointer"
             title="View history of itinerary, prep, packing, and budget changes"
           >
             CHANGE LOG ({changeLogCount})
@@ -83,7 +83,7 @@ export function TopEditorialBar({
             type="button"
             onClick={onSyncFromCloud}
             style={monoStyle}
-            className="px-2.5 py-0.5 border border-[#1F1A16]/20 bg-[#FBF8F3] text-[10px] tracking-[0.14em] text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+            className="min-h-11 sm:min-h-0 inline-flex items-center px-2.5 py-0.5 border border-[#1F1A16]/20 bg-[#FBF8F3] text-[11px] sm:text-[10px] tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
             title="Sync folio state with Vercel KV cloud storage"
           >
             {syncStatus === "synced"

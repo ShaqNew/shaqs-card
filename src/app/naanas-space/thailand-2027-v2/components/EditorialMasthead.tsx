@@ -25,7 +25,7 @@ export function EditorialMasthead({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pb-8 border-b border-[#1F1A16]/20 items-end">
         <div className="lg:col-span-8 space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="px-3 py-1 bg-[#A8442A] text-[#FBF8F3] text-[10px] uppercase tracking-[0.22em] font-semibold">
+            <span className="px-3 py-1 bg-[#A8442A] text-[#FBF8F3] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.22em] font-semibold">
               Celebrating Naana&apos;s Birthday
             </span>
           </div>
@@ -65,7 +65,7 @@ export function EditorialMasthead({
           {/* Minimalist Route List */}
           <ul
             style={monoStyle}
-            className="flex flex-col gap-1.5 pt-2 text-[11px] uppercase tracking-[0.14em] text-[#5C5248]"
+            className="flex flex-col gap-1.5 pt-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248]"
           >
             <li className="text-[#1F1A16] font-semibold">
               LGW &rarr; SHJ &rarr; BKK
@@ -88,13 +88,13 @@ export function EditorialMasthead({
           <div className="flex items-center justify-between pb-3 mb-4 border-b border-[#1F1A16]/15">
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
             >
               CHRONOMETER
             </span>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
             >
               ALL RESERVATIONS VERIFIED
             </span>
@@ -110,7 +110,7 @@ export function EditorialMasthead({
               </div>
               <div
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71] mt-1.5"
               >
                 Days
               </div>
@@ -124,7 +124,7 @@ export function EditorialMasthead({
               </div>
               <div
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71] mt-1.5"
               >
                 Hours
               </div>
@@ -138,7 +138,7 @@ export function EditorialMasthead({
               </div>
               <div
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71] mt-1.5"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71] mt-1.5"
               >
                 Mins
               </div>
@@ -157,7 +157,7 @@ export function EditorialMasthead({
             <div className="flex justify-between items-baseline">
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.18em] text-[#5C5248]"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#5C5248]"
               >
                 DOSSIER READINESS
               </span>
@@ -188,7 +188,7 @@ export function EditorialMasthead({
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }, 50);
                 }}
-                className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                className="min-h-11 sm:min-h-0 inline-flex items-center px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
                 title="Jump to Pre-Departure Clearance Ledger (Step III)"
               >
                 PREP {prepProgress.done}/{prepProgress.total}
@@ -203,7 +203,7 @@ export function EditorialMasthead({
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }, 50);
                 }}
-                className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                className="min-h-11 sm:min-h-0 inline-flex items-center px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
                 title="Jump to Essential Applications Directory (Step III)"
               >
                 APPS {appsProgress.done}/{appsProgress.total}
@@ -218,7 +218,7 @@ export function EditorialMasthead({
                       ?.scrollIntoView({ behavior: "smooth", block: "start" });
                   }, 50);
                 }}
-                className="px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
+                className="min-h-11 sm:min-h-0 inline-flex items-center px-2 py-1 border border-transparent hover:border-[#1F1A16]/25 hover:bg-[#EFE7D8] hover:text-[#13382E] transition-colors cursor-pointer underline decoration-[#1F1A16]/30 underline-offset-4"
                 title="Jump to The Packing Ledger (Step IV)"
               >
                 PACKING {packingProgress.done}/{packingProgress.total}

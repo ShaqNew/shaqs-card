@@ -123,7 +123,7 @@ export default function ThailandTripDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F1E7] text-[#1F1A16] pb-24">
+    <div className="min-h-dvh bg-[#F6F1E7] text-[#1F1A16] pb-[calc(6rem+env(safe-area-inset-bottom))]">
       <TopEditorialBar
         activeActor={activeActor}
         onSetActiveActor={handleSetActiveActor}
@@ -148,11 +148,11 @@ export default function ThailandTripDashboard() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
+          className="fixed bottom-20 inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
         >
           <span
             style={monoStyle}
-            className="text-[11px] uppercase tracking-[0.18em] text-[#D8B979]"
+            className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#D8B979]"
           >
             COPIED TO FOLIO
           </span>

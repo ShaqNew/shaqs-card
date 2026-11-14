@@ -229,7 +229,7 @@ export function StepItinerary({
           <div>
             <span
               style={monoStyle}
-              className="text-[11px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+              className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#A8442A] font-semibold"
             >
               STEP I &bull; THE DAILY CHRONICLE
             </span>
@@ -266,7 +266,7 @@ export function StepItinerary({
                       onSetPhaseFilter(pf.id as PhaseFilter);
                       onSelectDayNum(null);
                     }}
-                    className={`px-3.5 py-1.5 text-xs uppercase tracking-[0.12em] border transition-colors cursor-pointer ${
+                    className={`min-h-11 sm:min-h-0 px-3.5 py-1.5 text-xs uppercase tracking-[0.08em] sm:tracking-[0.12em] border transition-colors cursor-pointer ${
                       active
                         ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16] font-semibold"
                         : "bg-transparent text-[#5C5248] border-[#1F1A16]/20 hover:border-[#1F1A16]"
@@ -283,7 +283,7 @@ export function StepItinerary({
                 type="button"
                 onClick={handleExportMasterCalendar}
                 style={monoStyle}
-                className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#A8442A]/10 text-[#A8442A] border border-[#A8442A]/30 hover:bg-[#A8442A] hover:text-[#F6F1E7] transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] bg-[#A8442A]/10 text-[#A8442A] border border-[#A8442A]/30 hover:bg-[#A8442A] hover:text-[#F6F1E7] transition-colors cursor-pointer inline-flex items-center gap-1.5"
                 title="Download 10-day master trip calendar (.ics) for Apple Calendar, Google Calendar, or Outlook"
               >
                 <CalendarIcon className="w-3.5 h-3.5" />
@@ -293,7 +293,7 @@ export function StepItinerary({
                 type="button"
                 onClick={jumpToActiveOrFirstDay}
                 style={monoStyle}
-                className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 hover:bg-[#13382E] hover:text-[#F6F1E7] transition-colors cursor-pointer"
+                className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] bg-[#13382E]/10 text-[#13382E] border border-[#13382E]/30 hover:bg-[#13382E] hover:text-[#F6F1E7] transition-colors cursor-pointer"
               >
                 Jump to Current / Departure Day
               </button>
@@ -301,7 +301,7 @@ export function StepItinerary({
                 type="button"
                 onClick={toggleAllDaysCollapsed}
                 style={monoStyle}
-                className="px-3 py-1 text-[11px] uppercase tracking-[0.14em] bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/20 hover:text-[#1F1A16] hover:border-[#1F1A16] transition-colors cursor-pointer"
+                className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/20 hover:text-[#1F1A16] hover:border-[#1F1A16] transition-colors cursor-pointer"
               >
                 {allDaysCollapsed ? "Expand All Days" : "Collapse All Days"}
               </button>
@@ -373,13 +373,13 @@ export function StepItinerary({
                     </span>
                     <span
                       style={monoStyle}
-                      className="text-[11px] uppercase tracking-[0.15em] text-[#5C5248]"
+                      className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[#5C5248]"
                     >
                       {day.dateLabel}
                     </span>
                     <span
                       style={monoStyle}
-                      className="px-2 py-0.5 text-[10px] uppercase tracking-[0.16em] bg-[#13382E] text-[#F6F1E7]"
+                      className="px-2 py-0.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] bg-[#13382E] text-[#F6F1E7]"
                     >
                       {day.locationBadge}
                     </span>
@@ -390,10 +390,10 @@ export function StepItinerary({
                       {day.title}
                     </h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span
                       style={monoStyle}
-                      className="text-[11px] uppercase tracking-[0.14em] text-[#5C5248] mr-1"
+                      className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] mr-1"
                     >
                       {completedDayCount}/{allDayActivities.length} DONE
                     </span>
@@ -403,7 +403,7 @@ export function StepItinerary({
                         handleExportDayCalendar(day, allDayActivities)
                       }
                       style={monoStyle}
-                      className="px-2.5 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] hover:text-[#13382E] text-[11px] uppercase tracking-[0.14em] text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
+                      className="min-h-11 sm:min-h-0 px-2.5 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] hover:text-[#13382E] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
                       title={`Export Day ${formatDayNumber(day.dayNumber)} schedule to .ics`}
                     >
                       <CalendarIcon className="w-3 h-3" />
@@ -413,7 +413,7 @@ export function StepItinerary({
                       type="button"
                       onClick={() => toggleDayCollapsed(day.dayNumber)}
                       style={monoStyle}
-                      className="px-3 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#1F1A16] text-[11px] uppercase tracking-[0.14em] text-[#1F1A16] cursor-pointer"
+                      className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#1F1A16] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#1F1A16] cursor-pointer"
                     >
                       Expand Day +
                     </button>
@@ -424,17 +424,17 @@ export function StepItinerary({
                   {/* Left Column (4 cols): Day Title, Atmosphere, Weather & Curated Margin Suggestions */}
                   <div className="lg:col-span-4 p-6 sm:p-8 bg-[#EFE7D8]/45 flex flex-col justify-between space-y-6">
                     <div className="space-y-4">
-                      <div className="flex items-baseline justify-between border-b border-[#1F1A16]/15 pb-3">
+                      <div className="flex items-baseline justify-between border-b border-[#1F1A16]/15 pb-3 gap-2 flex-wrap">
                         <span
                           style={serifStyle}
                           className="text-4xl sm:text-5xl font-normal text-[#A8442A]"
                         >
                           Day {formatDayNumber(day.dayNumber)}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span
                             style={monoStyle}
-                            className="text-[11px] uppercase tracking-[0.16em] text-[#5C5248]"
+                            className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248]"
                           >
                             {day.dateLabel}
                           </span>
@@ -445,7 +445,7 @@ export function StepItinerary({
                             }
                             style={monoStyle}
                             title={`Export Day ${formatDayNumber(day.dayNumber)} schedule to .ics`}
-                            className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] hover:text-[#13382E] text-[10px] uppercase tracking-wider text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
+                            className="min-h-11 sm:min-h-0 px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] hover:text-[#13382E] text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] cursor-pointer inline-flex items-center gap-1"
                           >
                             <CalendarIcon className="w-3 h-3" />
                             <span>Day .ics</span>
@@ -455,7 +455,7 @@ export function StepItinerary({
                             onClick={() => toggleDayCollapsed(day.dayNumber)}
                             style={monoStyle}
                             title="Collapse this day card"
-                            className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#1F1A16] text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
+                            className="min-h-11 sm:min-h-0 px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#1F1A16] text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#1F1A16] cursor-pointer"
                           >
                             Collapse &ndash;
                           </button>
@@ -464,7 +464,7 @@ export function StepItinerary({
 
                       <div
                         style={monoStyle}
-                        className="inline-block px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] bg-[#13382E] text-[#F6F1E7]"
+                        className="inline-block px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] bg-[#13382E] text-[#F6F1E7]"
                       >
                         {day.locationBadge}
                       </div>
@@ -487,7 +487,7 @@ export function StepItinerary({
                         <div className="flex items-start gap-2">
                           <span
                             style={monoStyle}
-                            className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
+                            className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
                           >
                             CLIMATE
                           </span>
@@ -498,7 +498,7 @@ export function StepItinerary({
                         <div className="flex items-start gap-2">
                           <span
                             style={monoStyle}
-                            className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0 pt-0.5"
+                            className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0 pt-0.5"
                           >
                             ATTIRE
                           </span>
@@ -510,7 +510,7 @@ export function StepItinerary({
                                 </span>
                                 <span
                                   style={monoStyle}
-                                  className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 border font-semibold ${
+                                  className={`text-[11px] sm:text-[9px] uppercase tracking-wider px-1.5 py-0.5 border font-semibold ${
                                     DRESS_CODE_METADATA[
                                       resolvedDayLook.dressCode
                                     ].badgeClass
@@ -532,7 +532,7 @@ export function StepItinerary({
                                     aria-label={`Change daily attire for Day ${formatDayNumber(
                                       day.dayNumber
                                     )}`}
-                                    className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
+                                    className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 sm:py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[11px] sm:text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
                                   >
                                     <HangerIcon className="w-3 h-3" />
                                     <span>Change Look</span>
@@ -540,7 +540,7 @@ export function StepItinerary({
                                 )}
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="italic text-[#8A7E71]">
                                   No daily look assigned
                                 </span>
@@ -554,7 +554,7 @@ export function StepItinerary({
                                     aria-label={`Assign daily attire for Day ${formatDayNumber(
                                       day.dayNumber
                                     )}`}
-                                    className="px-2 py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
+                                    className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 sm:py-0.5 bg-[#FBF8F3] border border-[#1F1A16]/20 hover:border-[#13382E] text-[11px] sm:text-[9px] uppercase tracking-wider text-[#13382E] cursor-pointer inline-flex items-center gap-1"
                                   >
                                     <HangerIcon className="w-3 h-3" />
                                     <span>+ Assign Look</span>
@@ -570,7 +570,7 @@ export function StepItinerary({
                               >
                                 <strong
                                   style={monoStyle}
-                                  className="text-[9px] uppercase tracking-wider block text-[#A8442A]"
+                                  className="text-[11px] sm:text-[9px] uppercase tracking-wider block text-[#A8442A]"
                                 >
                                   &#9888;{" "}
                                   {dayDressConflicts[0].check.headline}
@@ -587,7 +587,7 @@ export function StepItinerary({
                           <div className="flex items-start gap-2">
                             <span
                               style={monoStyle}
-                              className="text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
+                              className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] w-20 shrink-0"
                             >
                               RESIDENCE
                             </span>
@@ -605,7 +605,7 @@ export function StepItinerary({
                         <div className="pt-5 border-t border-[#1F1A16]/15 space-y-2.5">
                           <p
                             style={monoStyle}
-                            className="text-[10px] uppercase tracking-[0.18em] text-[#8A7E71]"
+                            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#8A7E71]"
                           >
                             SUGGESTIONS (TAP TO INSCRIBE)
                           </p>
@@ -647,11 +647,11 @@ export function StepItinerary({
                                           });
                                         }
                                       }}
-                                      className="flex-1 text-left p-2.5 text-xs cursor-pointer"
+                                      className="min-h-11 sm:min-h-0 flex-1 text-left p-2.5 text-xs cursor-pointer"
                                     >
                                       <span
                                         style={monoStyle}
-                                        className="text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
+                                        className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#A8442A] block mb-0.5"
                                       >
                                         {alreadyAdded
                                           ? "✓ INSCRIBED (TAP TO UNDO)"
@@ -681,7 +681,7 @@ export function StepItinerary({
                                         style={monoStyle}
                                         aria-expanded={isInfoOpen}
                                         title="How to book & service links"
-                                        className={`px-2.5 border-l border-[#1F1A16]/15 text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer ${
+                                        className={`min-h-11 sm:min-h-0 px-3 sm:px-2.5 border-l border-[#1F1A16]/15 text-[11px] sm:text-[10px] uppercase tracking-wider shrink-0 transition-colors cursor-pointer ${
                                           isInfoOpen
                                             ? "bg-[#1F1A16] text-[#F6F1E7]"
                                             : "bg-[#EFE7D8]/60 text-[#5C5248] hover:text-[#1F1A16] hover:bg-[#EFE7D8]"
@@ -703,7 +703,7 @@ export function StepItinerary({
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             style={monoStyle}
-                                            className="text-[10px] uppercase tracking-wider text-[#13382E] hover:text-[#A8442A] underline font-semibold inline-flex items-center"
+                                            className="min-h-11 sm:min-h-0 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#13382E] hover:text-[#A8442A] underline font-semibold inline-flex items-center"
                                           >
                                             <span>{lnk.label}</span>
                                             <ExternalArrow />
@@ -717,7 +717,7 @@ export function StepItinerary({
                                     <div className="p-3 bg-[#EFE7D8] border-t border-[#1F1A16]/20 text-xs text-[#1F1A16] space-y-2">
                                       <div
                                         style={monoStyle}
-                                        className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A] font-semibold"
+                                        className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold"
                                       >
                                         HOW TO BOOK &amp; ACCESS
                                       </div>
@@ -765,13 +765,18 @@ export function StepItinerary({
                               aria-label={`Mark ${act.title} as ${
                                 isDone ? "incomplete" : "complete"
                               }`}
-                              className={`mt-1 w-5 h-5 border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${
-                                isDone
-                                  ? "bg-[#13382E] border-[#13382E] text-[#F6F1E7] text-xs"
-                                  : "border-[#1F1A16]/40 hover:border-[#1F1A16] bg-[#F6F1E7]"
-                              }`}
+                              className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 -m-2.5 sm:m-0 sm:mt-1 flex items-center justify-center shrink-0 cursor-pointer"
                             >
-                              {isDone ? "✓" : ""}
+                              <span
+                                aria-hidden="true"
+                                className={`w-5 h-5 border flex items-center justify-center transition-colors ${
+                                  isDone
+                                    ? "bg-[#13382E] border-[#13382E] text-[#F6F1E7] text-xs"
+                                    : "border-[#1F1A16]/40 hover:border-[#1F1A16] bg-[#F6F1E7]"
+                                }`}
+                              >
+                                {isDone ? "✓" : ""}
+                              </span>
                             </button>
 
                             {editingActivityId === act.id ? (
@@ -788,14 +793,14 @@ export function StepItinerary({
                                 <div className="flex items-center justify-between">
                                   <span
                                     style={monoStyle}
-                                    className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                                    className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
                                   >
                                     EDIT ENTRY
                                   </span>
                                   <button
                                     type="button"
                                     onClick={() => setEditingActivityId(null)}
-                                    className="text-xs text-[#5C5248] hover:text-[#1F1A16] underline cursor-pointer"
+                                    className="min-h-11 sm:min-h-0 px-2 sm:px-0 text-xs text-[#5C5248] hover:text-[#1F1A16] underline cursor-pointer"
                                   >
                                     Cancel
                                   </button>
@@ -803,23 +808,49 @@ export function StepItinerary({
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                   <input
                                     type="text"
+                                    enterKeyHint="next"
+                                    autoComplete="off"
                                     value={editActTime}
                                     onChange={(e) =>
                                       setEditActTime(e.target.value)
                                     }
                                     placeholder="Time (e.g. 19:30 ICT)"
-                                    className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                                   />
                                   <input
                                     type="text"
                                     required
+                                    enterKeyHint="next"
+                                    autoComplete="off"
                                     value={editActTitle}
                                     onChange={(e) =>
                                       setEditActTitle(e.target.value)
                                     }
                                     placeholder="Activity title..."
-                                    className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                    className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                                   />
+                                </div>
+                                <div className="flex flex-wrap items-center gap-1.5">
+                                  {[
+                                    "09:00 ICT",
+                                    "13:00 ICT",
+                                    "19:30 ICT",
+                                    "Flexible",
+                                  ].map((preset) => (
+                                    <button
+                                      key={preset}
+                                      type="button"
+                                      onClick={() => setEditActTime(preset)}
+                                      style={monoStyle}
+                                      className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                                        editActTime === preset
+                                          ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                                          : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
+                                      }`}
+                                    >
+                                      {preset}
+                                    </button>
+                                  ))}
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                                   <select
@@ -830,7 +861,7 @@ export function StepItinerary({
                                           .value as ItineraryActivity["category"]
                                       )
                                     }
-                                    className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                                   >
                                     <option value="romance">
                                       Celebration &amp; Romance
@@ -848,27 +879,31 @@ export function StepItinerary({
                                   </select>
                                   <input
                                     type="text"
+                                    enterKeyHint="next"
+                                    autoComplete="off"
                                     value={editActLocation}
                                     onChange={(e) =>
                                       setEditActLocation(e.target.value)
                                     }
                                     placeholder="Venue / Location"
-                                    className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                                   />
                                   <input
                                     type="text"
+                                    enterKeyHint="done"
+                                    autoComplete="off"
                                     value={editActNotes}
                                     onChange={(e) =>
                                       setEditActNotes(e.target.value)
                                     }
                                     placeholder="Dress code or note"
-                                    className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-xs sm:text-sm text-[#1F1A16]"
+                                    className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-1.5 text-base sm:text-sm text-[#1F1A16]"
                                   />
                                 </div>
                                 <button
                                   type="submit"
                                   style={monoStyle}
-                                  className="px-4 py-1.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.16em] cursor-pointer"
+                                  className="min-h-11 sm:min-h-0 px-4 py-1.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] cursor-pointer"
                                 >
                                   Save Changes
                                 </button>
@@ -884,14 +919,14 @@ export function StepItinerary({
                                   </span>
                                   <span
                                     style={monoStyle}
-                                    className={`text-[10px] uppercase tracking-[0.15em] px-2 py-0.5 border ${style.tag}`}
+                                    className={`text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] px-2 py-0.5 border ${style.tag}`}
                                   >
                                     {style.label}
                                   </span>
                                   {act.isLocked && (
                                     <span
                                       style={monoStyle}
-                                      className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#8A7E71]"
                                     >
                                       &bull; CONFIRMED LOGISTICS
                                     </span>
@@ -899,7 +934,7 @@ export function StepItinerary({
                                   {actOutfit && (
                                     <span
                                       style={monoStyle}
-                                      className="text-[10px] uppercase tracking-[0.13em] px-2 py-0.5 bg-[#13382E]/10 border border-[#13382E]/30 text-[#13382E] inline-flex items-center gap-1"
+                                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] px-2 py-0.5 bg-[#13382E]/10 border border-[#13382E]/30 text-[#13382E] inline-flex items-center gap-1"
                                     >
                                       <HangerIcon className="w-3 h-3" />
                                       <span>LOOK: {actOutfit.title}</span>
@@ -937,7 +972,7 @@ export function StepItinerary({
                                   >
                                     <div
                                       style={monoStyle}
-                                      className="text-[10px] uppercase tracking-wider font-bold text-[#A8442A]"
+                                      className="text-[11px] sm:text-[10px] uppercase tracking-wider font-bold text-[#A8442A]"
                                     >
                                       &#9888; {outfitValidation.headline}
                                     </div>
@@ -959,7 +994,7 @@ export function StepItinerary({
                                       href={act.mapUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="text-[#13382E] hover:text-[#A8442A] underline font-medium"
+                                      className="min-h-11 sm:min-h-0 inline-flex items-center text-[#13382E] hover:text-[#A8442A] underline font-medium"
                                     >
                                       VIEW CARTOGRAPHY <ExternalArrow />
                                     </a>
@@ -971,7 +1006,7 @@ export function StepItinerary({
                                     href={buildGoogleCalendarUrl(day, act)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
+                                    className="min-h-11 sm:min-h-0 text-[#A8442A] hover:underline font-medium inline-flex items-center gap-0.5"
                                     title="Add this event to Google Calendar"
                                   >
                                     <span>+ Google Cal</span>
@@ -982,7 +1017,7 @@ export function StepItinerary({
                                     onClick={() =>
                                       handleExportSingleActivity(day, act)
                                     }
-                                    className="text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
+                                    className="min-h-11 sm:min-h-0 text-[#13382E] hover:underline font-medium cursor-pointer inline-flex items-center gap-1"
                                     title="Download .ics for Apple Calendar, Outlook, or iCal"
                                   >
                                     <span>+ .ics</span>
@@ -992,7 +1027,7 @@ export function StepItinerary({
                             )}
 
                             {editingActivityId !== act.id && (
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1.5 sm:gap-1 shrink-0">
                                 {onOpenWardrobeDrawer && (
                                   <button
                                     type="button"
@@ -1005,13 +1040,16 @@ export function StepItinerary({
                                         ? `Outfit Override: ${actOutfit.title} (Tap to change)`
                                         : "Assign activity outfit override"
                                     }
-                                    className={`p-1.5 border transition-colors cursor-pointer ${
+                                    className={`min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center gap-1 p-1.5 border transition-colors cursor-pointer ${
                                       actOutfit
                                         ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                                         : "bg-[#EFE7D8]/50 text-[#5C5248] hover:text-[#13382E] border-[#1F1A16]/15 hover:border-[#13382E]"
                                     }`}
                                   >
                                     <HangerIcon className="w-3.5 h-3.5" />
+                                    <span className="sm:hidden text-[11px] uppercase tracking-wider">
+                                      Look
+                                    </span>
                                   </button>
                                 )}
                                 {!act.isLocked &&
@@ -1023,7 +1061,7 @@ export function StepItinerary({
                                           startEditingActivity(act)
                                         }
                                         style={monoStyle}
-                                        className="text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
+                                        className="min-h-11 sm:min-h-0 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248] hover:text-[#13382E] px-2.5 sm:px-2 py-1 border border-[#1F1A16]/15 hover:border-[#13382E] bg-[#EFE7D8]/50 cursor-pointer"
                                         title="Edit entry"
                                       >
                                         EDIT
@@ -1036,7 +1074,8 @@ export function StepItinerary({
                                             act.id
                                           )
                                         }
-                                        className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                                        aria-label={`Remove custom entry ${act.title}`}
+                                        className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
                                         title="Remove custom entry"
                                       >
                                         &#10005;
@@ -1062,14 +1101,14 @@ export function StepItinerary({
                           <div className="flex items-center justify-between">
                             <span
                               style={monoStyle}
-                              className="text-[11px] uppercase tracking-[0.18em] font-semibold text-[#13382E]"
+                              className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.18em] font-semibold text-[#13382E]"
                             >
                               INSCRIBE NEW ENTRY FOR {day.shortDate}
                             </span>
                             <button
                               type="button"
                               onClick={() => setAddingToDay(null)}
-                              className="text-xs text-[#5C5248] hover:text-[#1F1A16] underline"
+                              className="min-h-11 sm:min-h-0 px-2 sm:px-0 text-xs text-[#5C5248] hover:text-[#1F1A16] underline cursor-pointer"
                             >
                               Close
                             </button>
@@ -1077,19 +1116,45 @@ export function StepItinerary({
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <input
                               type="text"
+                              enterKeyHint="next"
+                              autoComplete="off"
                               value={newActTime}
                               onChange={(e) => setNewActTime(e.target.value)}
                               placeholder="Time (e.g. 19:30 ICT)"
-                              className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                              className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                             />
                             <input
                               type="text"
                               required
+                              enterKeyHint="next"
+                              autoComplete="off"
                               value={newActTitle}
                               onChange={(e) => setNewActTitle(e.target.value)}
                               placeholder="Reservation, excursion, or birthday note..."
-                              className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                              className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                             />
+                          </div>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {[
+                              "09:00 ICT",
+                              "13:00 ICT",
+                              "19:30 ICT",
+                              "Flexible",
+                            ].map((preset) => (
+                              <button
+                                key={preset}
+                                type="button"
+                                onClick={() => setNewActTime(preset)}
+                                style={monoStyle}
+                                className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                                  newActTime === preset
+                                    ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
+                                    : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20 hover:border-[#13382E]"
+                                }`}
+                              >
+                                {preset}
+                              </button>
+                            ))}
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <select
@@ -1100,7 +1165,7 @@ export function StepItinerary({
                                     .value as ItineraryActivity["category"]
                                 )
                               }
-                              className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                              className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                             >
                               <option value="romance">
                                 Celebration &amp; Romance
@@ -1116,25 +1181,29 @@ export function StepItinerary({
                             </select>
                             <input
                               type="text"
+                              enterKeyHint="next"
+                              autoComplete="off"
                               value={newActLocation}
                               onChange={(e) =>
                                 setNewActLocation(e.target.value)
                               }
                               placeholder="Venue / Location"
-                              className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                              className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                             />
                             <input
                               type="text"
+                              enterKeyHint="done"
+                              autoComplete="off"
                               value={newActNotes}
                               onChange={(e) => setNewActNotes(e.target.value)}
                               placeholder="Dress code or concierge note"
-                              className="bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-sm text-[#1F1A16]"
+                              className="min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/25 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
                             />
                           </div>
                           <button
                             type="submit"
                             style={monoStyle}
-                            className="px-5 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] cursor-pointer"
+                            className="min-h-11 sm:min-h-0 px-5 py-2.5 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] cursor-pointer"
                           >
                             Save to Day {day.dayNumber}
                           </button>
@@ -1144,7 +1213,7 @@ export function StepItinerary({
                           type="button"
                           onClick={() => setAddingToDay(day.dayNumber)}
                           style={monoStyle}
-                          className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] hover:text-[#A8442A] font-semibold flex items-center gap-2 cursor-pointer"
+                          className="min-h-11 sm:min-h-0 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] hover:text-[#A8442A] font-semibold flex items-center gap-2 cursor-pointer"
                         >
                           <span>+ INSCRIBE BESPOKE RESERVATION OR NOTE</span>
                           <span>&rarr;</span>

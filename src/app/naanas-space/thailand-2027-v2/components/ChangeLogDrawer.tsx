@@ -41,7 +41,7 @@ export function ChangeLogDrawer({
       onClick={onClose}
     >
       <div
-        className="bg-[#FBF8F3] border-l-2 border-[#1F1A16] w-full max-w-xl h-full flex flex-col justify-between shadow-2xl overflow-hidden"
+        className="bg-[#FBF8F3] border-l-2 border-[#1F1A16] w-full max-w-xl h-dvh flex flex-col justify-between shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}
@@ -50,7 +50,7 @@ export function ChangeLogDrawer({
             <div>
               <span
                 style={monoStyle}
-                className="text-[11px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
               >
                 AUDIT &amp; REVISION CHRONICLE
               </span>
@@ -69,7 +69,7 @@ export function ChangeLogDrawer({
               type="button"
               onClick={onClose}
               style={monoStyle}
-              className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+              className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center cursor-pointer shrink-0"
             >
               Close &#10005;
             </button>
@@ -80,7 +80,7 @@ export function ChangeLogDrawer({
             <div className="flex items-center gap-2">
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-wider text-[#5C5248]"
+                className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
               >
                 LOGGING AS:
               </span>
@@ -90,7 +90,7 @@ export function ChangeLogDrawer({
                   type="button"
                   onClick={() => onSetActiveActor(person)}
                   style={monoStyle}
-                  className={`px-2.5 py-1 text-[11px] uppercase tracking-wider border cursor-pointer ${
+                  className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] uppercase tracking-wider border cursor-pointer ${
                     activeActor === person
                       ? person === "Shaq"
                         ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E] font-semibold"
@@ -121,7 +121,7 @@ export function ChangeLogDrawer({
                     )
                   }
                   style={monoStyle}
-                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                  className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer ${
                     logSectionFilter === f.id
                       ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                       : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -165,7 +165,7 @@ export function ChangeLogDrawer({
                     <div className="flex flex-wrap items-center gap-2">
                       <span
                         style={monoStyle}
-                        className={`px-2 py-0.5 text-[10px] uppercase tracking-wider font-semibold ${
+                        className={`px-2 py-0.5 text-[11px] sm:text-[10px] uppercase tracking-wider font-semibold ${
                           entry.actor === "Shaq"
                             ? "bg-[#13382E] text-[#F6F1E7]"
                             : "bg-[#A8442A] text-[#FBF8F3]"
@@ -181,7 +181,7 @@ export function ChangeLogDrawer({
                       </span>
                       <span
                         style={monoStyle}
-                        className="text-[10px] text-[#8A7E71]"
+                        className="text-[11px] sm:text-[10px] text-[#8A7E71]"
                       >
                         &bull; {formattedDate}
                       </span>
@@ -193,7 +193,8 @@ export function ChangeLogDrawer({
                   <button
                     type="button"
                     onClick={() => onDeleteEntry(entry.id)}
-                    className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-1.5 py-0.5 shrink-0 cursor-pointer"
+                    aria-label={`Remove log entry ${entry.action}`}
+                    className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 text-xs text-[#8A7E71] hover:text-[#A8442A] px-1.5 py-0.5 inline-flex items-center justify-center shrink-0 cursor-pointer"
                     title="Remove this log entry"
                   >
                     &#10005;
@@ -205,7 +206,7 @@ export function ChangeLogDrawer({
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-[#1F1A16]/20 bg-[#EFE7D8]/60 flex items-center justify-between">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-[#1F1A16]/20 bg-[#EFE7D8]/60 flex items-center justify-between">
           <span style={monoStyle} className="text-[11px] text-[#5C5248]">
             TOTAL LOGGED EVENTS: {changeLog.length}
           </span>
@@ -214,7 +215,7 @@ export function ChangeLogDrawer({
               type="button"
               onClick={onClearAll}
               style={monoStyle}
-              className="px-3 py-1.5 border border-[#A8442A]/40 text-[#A8442A] hover:bg-[#A8442A] hover:text-[#FBF8F3] text-[10px] uppercase tracking-wider cursor-pointer transition-colors"
+              className="min-h-11 sm:min-h-0 px-3 py-1.5 border border-[#A8442A]/40 text-[#A8442A] hover:bg-[#A8442A] hover:text-[#FBF8F3] text-[11px] sm:text-[10px] uppercase tracking-wider cursor-pointer transition-colors"
             >
               Clear All History
             </button>

@@ -23,7 +23,7 @@ export function StepBookingsVault({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#A8442A] font-semibold"
             >
               STEP II &bull; CONFIRMED DOSSIER CREDENTIALS
             </span>
@@ -71,15 +71,15 @@ export function StepBookingsVault({
               key={ref.code}
               type="button"
               onClick={() => onCopy(ref.code, `${ref.label} (${ref.code})`)}
-              className="p-4 text-left hover:bg-[#EFE7D8] transition-colors group cursor-pointer flex flex-col justify-between"
+              className="min-h-11 sm:min-h-0 p-4 text-left hover:bg-[#EFE7D8] transition-colors group cursor-pointer flex flex-col justify-between"
             >
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71]"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71]"
               >
                 {ref.label}
               </span>
-              <div className="flex items-baseline justify-between w-full my-1.5">
+              <div className="flex items-baseline justify-between w-full my-1.5 gap-2">
                 <span
                   style={monoStyle}
                   className="text-lg font-bold text-[#13382E] group-hover:text-[#A8442A]"
@@ -88,7 +88,7 @@ export function StepBookingsVault({
                 </span>
                 <span
                   style={monoStyle}
-                  className="text-[10px] uppercase tracking-wider text-[#8A7E71] group-hover:text-[#1F1A16]"
+                  className="text-[11px] sm:text-[10px] uppercase tracking-wider text-[#8A7E71] group-hover:text-[#1F1A16]"
                 >
                   [COPY]
                 </span>
@@ -104,7 +104,7 @@ export function StepBookingsVault({
         <div className="border-b border-[#1F1A16]/20 pb-2">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
           >
             SECTION 01 &bull; AVIATION MANIFEST
           </span>
@@ -129,7 +129,7 @@ export function StepBookingsVault({
                   <div>
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
                     >
                       {flight.direction}
                     </span>
@@ -146,7 +146,7 @@ export function StepBookingsVault({
                   <div className="text-right">
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71] block"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71] block"
                     >
                       VERIFIED SETTLEMENT
                     </span>
@@ -168,7 +168,7 @@ export function StepBookingsVault({
                     >
                       <div
                         style={monoStyle}
-                        className="flex items-center justify-between text-[11px] uppercase tracking-[0.14em] text-[#5C5248] border-b border-[#1F1A16]/10 pb-2"
+                        className="flex items-center justify-between text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] border-b border-[#1F1A16]/10 pb-2"
                       >
                         <span className="font-bold text-[#1F1A16]">
                           FLIGHT {seg.flightNumber}
@@ -195,7 +195,7 @@ export function StepBookingsVault({
                           </div>
                           <div
                             style={monoStyle}
-                            className="text-[10px] text-[#8A7E71]"
+                            className="text-[11px] sm:text-[10px] text-[#8A7E71]"
                           >
                             {seg.depDate}
                           </div>
@@ -230,7 +230,7 @@ export function StepBookingsVault({
                           </div>
                           <div
                             style={monoStyle}
-                            className="text-[10px] text-[#8A7E71]"
+                            className="text-[11px] sm:text-[10px] text-[#8A7E71]"
                           >
                             {seg.arrDate}
                           </div>
@@ -301,7 +301,7 @@ export function StepBookingsVault({
                 <div className="space-y-3">
                   <span
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71] block"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71] block"
                   >
                     PASSENGER COUPON / PNR
                   </span>
@@ -315,7 +315,7 @@ export function StepBookingsVault({
                     type="button"
                     onClick={() => onCopy(flight.pnr, `PNR ${flight.pnr}`)}
                     style={monoStyle}
-                    className="w-full py-2.5 bg-[#1F1A16] hover:bg-[#A8442A] text-[#F6F1E7] text-[11px] uppercase tracking-[0.18em] transition-colors cursor-pointer"
+                    className="min-h-11 sm:min-h-0 w-full py-2.5 bg-[#1F1A16] hover:bg-[#A8442A] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.18em] transition-colors cursor-pointer"
                   >
                     Copy PNR Reference
                   </button>
@@ -327,7 +327,7 @@ export function StepBookingsVault({
                     target="_blank"
                     rel="noopener noreferrer"
                     style={monoStyle}
-                    className="block w-full text-center py-2.5 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-[11px] uppercase tracking-[0.16em] transition-colors"
+                    className="min-h-11 sm:min-h-0 flex items-center justify-center w-full text-center py-2.5 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] transition-colors"
                   >
                     Manage Airline Portal <ExternalArrow />
                   </a>
@@ -338,7 +338,7 @@ export function StepBookingsVault({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={monoStyle}
-                      className="block w-full text-center py-1.5 text-[10px] uppercase tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
+                      className="min-h-11 sm:min-h-0 flex items-center justify-center w-full text-center py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#5C5248] hover:text-[#A8442A] underline"
                     >
                       {lnk.label} <ExternalArrow />
                     </a>
@@ -355,7 +355,7 @@ export function StepBookingsVault({
         <div className="border-b border-[#1F1A16]/20 pb-2">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
           >
             SECTION 02 &bull; SANCTUARIES &amp; RESIDENCES
           </span>
@@ -371,11 +371,11 @@ export function StepBookingsVault({
               className="bg-[#FBF8F3] border border-[#1F1A16]/25 p-6 sm:p-8 flex flex-col justify-between space-y-6"
             >
               <div className="space-y-5">
-                <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/15 pb-4">
+                <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#1F1A16]/15 pb-4">
                   <div>
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
                     >
                       {hotel.city} &bull; {hotel.nights} NIGHTS
                     </span>
@@ -401,7 +401,7 @@ export function StepBookingsVault({
                       )
                     }
                     style={monoStyle}
-                    className="px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-bold text-[#13382E] hover:border-[#1F1A16] shrink-0 cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-bold text-[#13382E] hover:border-[#1F1A16] shrink-0 cursor-pointer"
                   >
                     REF: {hotel.bookingRef}
                   </button>
@@ -431,10 +431,10 @@ export function StepBookingsVault({
 
                 {/* Financial Ledger Box */}
                 <div className="border border-[#13382E]/30 bg-[#13382E]/5 p-4 space-y-2">
-                  <div className="flex items-baseline justify-between">
+                  <div className="flex items-baseline justify-between gap-2 flex-wrap">
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.16em] text-[#5C5248]"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#5C5248]"
                     >
                       CONFIRMED TARIFF
                     </span>
@@ -449,12 +449,12 @@ export function StepBookingsVault({
                   <p className="text-xs text-[#5C5248]">{hotel.paymentNote}</p>
 
                   {hotel.balanceDueThb > 0 && (
-                    <label className="flex items-center gap-2.5 pt-2.5 border-t border-[#13382E]/20 text-xs text-[#1F1A16] font-medium cursor-pointer">
+                    <label className="min-h-11 sm:min-h-0 flex items-center gap-2.5 pt-2.5 border-t border-[#13382E]/20 text-xs text-[#1F1A16] font-medium cursor-pointer">
                       <input
                         type="checkbox"
                         checked={pavilionsBalancePaid}
                         onChange={onTogglePavilionsBalancePaid}
-                        className="w-4 h-4 accent-[#13382E]"
+                        className="w-5 h-5 sm:w-4 sm:h-4 accent-[#13382E] shrink-0"
                       />
                       <span>
                         {pavilionsBalancePaid
@@ -492,7 +492,7 @@ export function StepBookingsVault({
                     type="button"
                     onClick={() => onOpenDriverModal(hotel.id)}
                     style={monoStyle}
-                    className="px-4 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.15em] font-semibold cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-4 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] font-semibold cursor-pointer"
                   >
                     Show Driver (Thai Script)
                   </button>
@@ -501,7 +501,7 @@ export function StepBookingsVault({
                     target="_blank"
                     rel="noopener noreferrer"
                     style={monoStyle}
-                    className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.15em]"
+                    className="min-h-11 sm:min-h-0 inline-flex items-center px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em]"
                   >
                     Open Google Maps <ExternalArrow />
                   </a>
@@ -511,7 +511,7 @@ export function StepBookingsVault({
                       onCopy(hotel.address, `${hotel.name} Address`)
                     }
                     style={monoStyle}
-                    className="px-4 py-2 border border-[#1F1A16]/30 hover:border-[#1F1A16] text-[#1F1A16] text-[11px] uppercase tracking-[0.15em] cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-4 py-2 border border-[#1F1A16]/30 hover:border-[#1F1A16] text-[#1F1A16] text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.15em] cursor-pointer"
                   >
                     Copy Chauffeur / Grab Address
                   </button>

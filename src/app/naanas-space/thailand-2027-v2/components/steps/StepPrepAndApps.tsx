@@ -33,7 +33,7 @@ export function StepPrepAndApps({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#A8442A] font-semibold"
             >
               STEP III &bull; ENTRY &amp; IMMIGRATION PROTOCOL
             </span>
@@ -44,7 +44,7 @@ export function StepPrepAndApps({
               Pre-Departure Clearance Ledger
             </h2>
           </div>
-          <div className="flex gap-1.5">
+          <div className="flex flex-wrap gap-1.5">
             {[
               { id: "all", label: "All" },
               { id: "both", label: "Joint" },
@@ -60,7 +60,7 @@ export function StepPrepAndApps({
                   )
                 }
                 style={monoStyle}
-                className={`px-3 py-1.5 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
+                className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                   prepAssigneeFilter === f.id
                     ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                     : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -82,7 +82,7 @@ export function StepPrepAndApps({
             return (
               <label
                 key={item.id}
-                className={`py-4 first:pt-0 last:pb-0 flex items-start gap-4 cursor-pointer transition-opacity ${
+                className={`min-h-11 sm:min-h-0 py-4 first:pt-0 last:pb-0 flex items-start gap-4 cursor-pointer transition-opacity ${
                   isDone ? "opacity-60" : ""
                 }`}
               >
@@ -90,7 +90,7 @@ export function StepPrepAndApps({
                   type="checkbox"
                   checked={isDone}
                   onChange={() => onTogglePrepItem(item.id)}
-                  className="mt-1.5 w-4 h-4 accent-[#13382E]"
+                  className="mt-1 sm:mt-1.5 w-5 h-5 sm:w-4 sm:h-4 accent-[#13382E] shrink-0"
                 />
                 <div className="flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2.5">
@@ -107,14 +107,14 @@ export function StepPrepAndApps({
                     {item.urgentTag && (
                       <span
                         style={monoStyle}
-                        className="text-[10px] uppercase tracking-[0.14em] px-2 py-0.5 bg-[#A8442A]/12 text-[#A8442A] border border-[#A8442A]/30"
+                        className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] px-2 py-0.5 bg-[#A8442A]/12 text-[#A8442A] border border-[#A8442A]/30"
                       >
                         {item.urgentTag}
                       </span>
                     )}
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.14em] text-[#8A7E71]"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#8A7E71]"
                     >
                       [{item.assignee}]
                     </span>
@@ -134,7 +134,7 @@ export function StepPrepAndApps({
         <div className="bg-[#EFE7D8] border-2 border-[#1F1A16] p-6 space-y-3">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
           >
             MONETARY ADVISORY I &bull; THAI ATMS
           </span>
@@ -160,7 +160,7 @@ export function StepPrepAndApps({
         <div className="bg-[#FBF8F3] border border-[#1F1A16]/25 p-6 space-y-3">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.2em] text-[#13382E] font-semibold"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#13382E] font-semibold"
           >
             MONETARY ADVISORY II &bull; CURRENCY DESK
           </span>
@@ -192,7 +192,7 @@ export function StepPrepAndApps({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.22em] text-[#8A7E71]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#8A7E71]"
             >
               DIGITAL UTILITIES DIRECTORY
             </span>
@@ -217,7 +217,7 @@ export function StepPrepAndApps({
             return (
               <label
                 key={app.id}
-                className={`p-5 border cursor-pointer transition-colors flex items-start gap-4 ${
+                className={`min-h-11 p-5 border cursor-pointer transition-colors flex items-start gap-4 ${
                   installed
                     ? "bg-[#13382E]/6 border-[#13382E]/35"
                     : "bg-[#F6F1E7]/70 border-[#1F1A16]/15 hover:border-[#1F1A16]/40"
@@ -227,7 +227,7 @@ export function StepPrepAndApps({
                   type="checkbox"
                   checked={installed}
                   onChange={() => onToggleAppInstalled(app.id)}
-                  className="mt-1.5 w-4 h-4 accent-[#13382E]"
+                  className="mt-1 sm:mt-1.5 w-5 h-5 sm:w-4 sm:h-4 accent-[#13382E] shrink-0"
                 />
                 <div className="space-y-1.5 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
@@ -239,14 +239,14 @@ export function StepPrepAndApps({
                     </span>
                     <span
                       style={monoStyle}
-                      className="text-[10px] uppercase tracking-[0.14em] px-2 py-0.5 bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/15"
+                      className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] px-2 py-0.5 bg-[#EFE7D8] text-[#5C5248] border border-[#1F1A16]/15 shrink-0"
                     >
                       {app.badge}
                     </span>
                   </div>
                   <div
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A]"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A]"
                   >
                     {app.category}
                   </div>

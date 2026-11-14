@@ -27,14 +27,14 @@ export function DriverCardModal({
       onClick={onClose}
     >
       <div
-        className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl"
+        className="bg-[#FBF8F3] border-2 border-[#1F1A16] max-w-xl w-full max-h-[90dvh] overflow-y-auto p-6 sm:p-8 space-y-6 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-4 border-b border-[#1F1A16]/20 pb-4">
           <div>
             <span
               style={monoStyle}
-              className="text-[11px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+              className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
             >
               CHAUFFEUR &amp; TAXI DISPATCH CARD &bull; SHOW TO DRIVER
             </span>
@@ -49,7 +49,7 @@ export function DriverCardModal({
             type="button"
             onClick={onClose}
             style={monoStyle}
-            className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer"
+            className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider inline-flex items-center cursor-pointer"
           >
             Close &#10005;
           </button>
@@ -59,7 +59,7 @@ export function DriverCardModal({
         <div className="bg-[#EFE7D8] border-2 border-[#13382E] p-5 sm:p-6 space-y-3">
           <div
             style={monoStyle}
-            className="text-[11px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+            className="text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
           >
             กรุณาไปส่งที่โรงแรมนี้ (PLEASE TAKE US TO THIS HOTEL):
           </div>
@@ -102,7 +102,7 @@ export function DriverCardModal({
               )
             }
             style={monoStyle}
-            className="flex-1 py-3 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
+            className="flex-1 min-h-11 sm:min-h-0 py-3 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
           >
             Copy Thai Script for Grab
           </button>
@@ -111,7 +111,7 @@ export function DriverCardModal({
             target="_blank"
             rel="noopener noreferrer"
             style={monoStyle}
-            className="px-5 py-3 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-xs uppercase tracking-[0.16em] text-center"
+            className="min-h-11 sm:min-h-0 px-5 py-3 border border-[#1F1A16] text-[#1F1A16] hover:bg-[#1F1A16] hover:text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] inline-flex items-center justify-center text-center"
           >
             Open Google Maps <ExternalArrow />
           </a>

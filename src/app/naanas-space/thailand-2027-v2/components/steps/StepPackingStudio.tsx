@@ -207,7 +207,7 @@ export function StepPackingStudio({
         <div className="flex flex-wrap items-center gap-1.5">
           <span
             style={monoStyle}
-            className="text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mr-1"
+            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#5C5248] mr-1"
           >
             STUDIO SECTIONS:
           </span>
@@ -216,7 +216,7 @@ export function StepPackingStudio({
             onClick={() => setIsClimateDressOpen((prev) => !prev)}
             aria-expanded={isClimateDressOpen}
             style={monoStyle}
-            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
               isClimateDressOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -229,7 +229,7 @@ export function StepPackingStudio({
             onClick={() => setIsWardrobeOpen((prev) => !prev)}
             aria-expanded={isWardrobeOpen}
             style={monoStyle}
-            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
               isWardrobeOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -242,7 +242,7 @@ export function StepPackingStudio({
             onClick={() => setIsTrunkOpen((prev) => !prev)}
             aria-expanded={isTrunkOpen}
             style={monoStyle}
-            className={`px-2.5 py-1 text-[10px] uppercase tracking-[0.13em] border cursor-pointer transition-colors ${
+            className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] border cursor-pointer transition-colors ${
               isTrunkOpen
                 ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                 : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -257,7 +257,7 @@ export function StepPackingStudio({
           type="button"
           onClick={handleToggleAllSections}
           style={monoStyle}
-          className="px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border border-[#13382E]/35 bg-[#FBF8F3] cursor-pointer transition-colors"
+          className="min-h-11 sm:min-h-0 px-3 py-1 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] border border-[#13382E]/35 bg-[#FBF8F3] cursor-pointer transition-colors"
         >
           {allSectionsOpen ? "Collapse All Sections" : "Expand All Sections"}
         </button>
@@ -269,7 +269,7 @@ export function StepPackingStudio({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
             >
               SECTION I &bull; METEOROLOGY &amp; SARTORIAL ETIQUETTE
             </span>
@@ -286,7 +286,7 @@ export function StepPackingStudio({
             aria-expanded={isClimateDressOpen}
             aria-label="Toggle Climate Monograph and Dress Code Lookbook section"
             style={monoStyle}
-            className="px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer shrink-0 transition-colors"
+            className="min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#1F1A16]/25 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer shrink-0 transition-colors"
           >
             {isClimateDressOpen ? "Collapse ▲" : "Expand ▼"}
           </button>
@@ -298,7 +298,7 @@ export function StepPackingStudio({
             <div className="lg:col-span-5 bg-[#F6F1E7]/60 border border-[#1F1A16]/15 p-5 space-y-4">
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
               >
                 METEOROLOGICAL PROFILE &bull; FEBRUARY
               </span>
@@ -367,7 +367,7 @@ export function StepPackingStudio({
                 <div>
                   <span
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
                   >
                     SARTORIAL ETIQUETTE
                   </span>
@@ -394,7 +394,7 @@ export function StepPackingStudio({
                         )
                       }
                       style={monoStyle}
-                      className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 px-3.5 py-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                         dressCodeTab === t.id
                           ? "bg-[#13382E] text-[#F6F1E7] border-[#13382E]"
                           : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -528,7 +528,7 @@ export function StepPackingStudio({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold"
             >
               SARTORIAL CURATION &bull; PINTEREST &amp; BOUTIQUE COLLAGES
             </span>
@@ -550,7 +550,7 @@ export function StepPackingStudio({
                 type="button"
                 onClick={onOpenCreateLookModal}
                 style={monoStyle}
-                className="px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.16em] font-semibold cursor-pointer"
+                className="min-h-11 sm:min-h-0 px-4 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-xs uppercase tracking-[0.1em] sm:tracking-[0.16em] font-semibold cursor-pointer"
               >
                 + Create Look
               </button>
@@ -561,7 +561,7 @@ export function StepPackingStudio({
               aria-expanded={isWardrobeOpen}
               aria-label="Toggle Digital Wardrobe section"
               style={monoStyle}
-              className="px-3 py-2 text-[10px] uppercase tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+              className="min-h-11 sm:min-h-0 px-3 py-2 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
             >
               {isWardrobeOpen ? "Collapse ▲" : "Expand ▼"}
             </button>
@@ -579,7 +579,7 @@ export function StepPackingStudio({
             <button
               type="button"
               onClick={() => setTrunkToast(null)}
-              className="text-[#D8B979] hover:text-[#F6F1E7] cursor-pointer"
+              className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-[#D8B979] hover:text-[#F6F1E7] cursor-pointer"
               aria-label="Dismiss notification"
             >
               &#10005;
@@ -599,7 +599,7 @@ export function StepPackingStudio({
                     aria-expanded={isWardrobeFiltersOpen}
                     aria-label="Toggle Digital Wardrobe filters"
                     style={monoStyle}
-                    className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer transition-colors ${
+                    className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer transition-colors ${
                       isWardrobeFiltersOpen
                         ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                         : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]/25 hover:bg-[#1F1A16] hover:text-[#F6F1E7]"
@@ -612,7 +612,7 @@ export function StepPackingStudio({
 
                   <span
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.13em] text-[#5C5248]"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.13em] text-[#5C5248]"
                   >
                     Showing {filteredOutfits.length} of {allOutfits.length}{" "}
                     {allOutfits.length === 1 ? "Look" : "Looks"}
@@ -627,7 +627,7 @@ export function StepPackingStudio({
                         setWardrobeCodeFilter("all");
                       }}
                       style={monoStyle}
-                      className="px-2 py-1 text-[9px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/35 bg-[#FBF8F3] hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer transition-colors"
+                      className="min-h-11 sm:min-h-0 px-2.5 sm:px-2 py-1 text-[11px] sm:text-[9px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/35 bg-[#FBF8F3] hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer transition-colors"
                     >
                       Reset Filters &#10005;
                     </button>
@@ -640,7 +640,7 @@ export function StepPackingStudio({
                     onClick={handleToggleAllOutfitCards}
                     aria-label="Toggle collapse all outfit cards"
                     style={monoStyle}
-                    className="px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#FBF8F3] cursor-pointer transition-colors"
+                    className="min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#FBF8F3] cursor-pointer transition-colors"
                   >
                     {allOutfitCardsCollapsed
                       ? "Expand All Cards ▼"
@@ -668,7 +668,7 @@ export function StepPackingStudio({
                             )
                           }
                           style={monoStyle}
-                          className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                          className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                             wardrobeOwnerFilter === f.id
                               ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                               : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -707,7 +707,7 @@ export function StepPackingStudio({
                             )
                           }
                           style={monoStyle}
-                          className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                          className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                             wardrobeSourceFilter === s.id
                               ? s.id === "inspo"
                                 ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
@@ -737,7 +737,7 @@ export function StepPackingStudio({
                           setWardrobeCodeFilter(c.id as "all" | DressCodeProfile)
                         }
                         style={monoStyle}
-                        className={`px-3 py-1.5 text-[10px] uppercase tracking-[0.14em] border cursor-pointer ${
+                        className={`min-h-11 sm:min-h-0 px-3 py-1.5 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                           wardrobeCodeFilter === c.id
                             ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
                             : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -806,7 +806,7 @@ export function StepPackingStudio({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
             >
               BAGGAGE ALLOWANCE: AIR ARABIA 20KG + 10KG &bull; VIETJET 25KG
               (SHAQ) / 30KG (NAANA) + 7KG
@@ -838,7 +838,7 @@ export function StepPackingStudio({
                       )
                     }
                     style={monoStyle}
-                    className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
+                    className={`min-h-11 sm:min-h-0 px-3.5 py-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                       packingOwnerFilter === f.id
                         ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                         : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -851,7 +851,7 @@ export function StepPackingStudio({
                   type="button"
                   onClick={() => setShowUnpackedOnly(!showUnpackedOnly)}
                   style={monoStyle}
-                  className={`px-3.5 py-2 text-[11px] uppercase tracking-[0.14em] border cursor-pointer ${
+                  className={`min-h-11 sm:min-h-0 px-3.5 py-2 text-[11px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border cursor-pointer ${
                     showUnpackedOnly
                       ? "bg-[#A8442A] text-[#FBF8F3] border-[#A8442A]"
                       : "bg-transparent text-[#5C5248] border-[#1F1A16]/20"
@@ -863,7 +863,7 @@ export function StepPackingStudio({
                   type="button"
                   onClick={handleToggleAllCategories}
                   style={monoStyle}
-                  className="px-3 py-2 text-[10px] uppercase tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#F6F1E7] cursor-pointer transition-colors"
+                  className="min-h-11 sm:min-h-0 px-3 py-2 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#13382E]/35 text-[#13382E] hover:bg-[#13382E] hover:text-[#F6F1E7] bg-[#F6F1E7] cursor-pointer transition-colors"
                 >
                   {allCategoriesCollapsed
                     ? "Expand All Categories"
@@ -877,7 +877,7 @@ export function StepPackingStudio({
               aria-expanded={isTrunkOpen}
               aria-label="Toggle Packing Ledger section"
               style={monoStyle}
-              className="px-3 py-2 text-[10px] uppercase tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+              className="min-h-11 sm:min-h-0 px-3 py-2 text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em] border border-[#1F1A16]/25 bg-[#F6F1E7] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] cursor-pointer transition-colors"
             >
               {isTrunkOpen ? "Collapse ▲" : "Expand ▼"}
             </button>
@@ -893,17 +893,19 @@ export function StepPackingStudio({
             >
               <input
                 type="text"
+                enterKeyHint="done"
+                autoComplete="off"
                 value={newPackLabel}
                 onChange={(e) => setNewPackLabel(e.target.value)}
                 placeholder="Add a custom item to pack (e.g. 35mm film camera, linen evening shawl)..."
-                className="sm:col-span-6 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs sm:text-sm text-[#1F1A16]"
+                className="sm:col-span-6 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
               />
               <select
                 value={newPackCategory}
                 onChange={(e) =>
                   setNewPackCategory(e.target.value as PackingItem["category"])
                 }
-                className="sm:col-span-3 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                className="sm:col-span-3 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
               >
                 <option value="Daytime & Temple Wear">
                   Daytime &amp; Temple Wear
@@ -930,7 +932,7 @@ export function StepPackingStudio({
                 onChange={(e) =>
                   setNewPackForWho(e.target.value as PackingItem["forWho"])
                 }
-                className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+                className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
               >
                 <option value="both">Shared</option>
                 <option value="shaq">Shaq</option>
@@ -939,7 +941,7 @@ export function StepPackingStudio({
               <button
                 type="submit"
                 style={monoStyle}
-                className="sm:col-span-1 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
+                className="sm:col-span-1 min-h-11 sm:min-h-0 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
               >
                 + Add
               </button>
@@ -977,7 +979,7 @@ export function StepPackingStudio({
                       type="button"
                       onClick={() => toggleCategory(cat)}
                       aria-expanded={!isCatCollapsed}
-                      className={`w-full flex items-center justify-between gap-2 text-left cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 w-full flex items-center justify-between gap-2 text-left cursor-pointer ${
                         isCatCollapsed
                           ? ""
                           : "border-b border-[#1F1A16]/15 pb-2"
@@ -992,7 +994,7 @@ export function StepPackingStudio({
                       <div className="flex items-center gap-2 shrink-0">
                         <span
                           style={monoStyle}
-                          className={`px-2 py-0.5 text-[10px] uppercase tracking-wider border ${
+                          className={`px-2 py-0.5 text-[11px] sm:text-[10px] uppercase tracking-wider border ${
                             catDone === catTotal
                               ? "bg-[#13382E]/10 text-[#13382E] border-[#13382E]/30 font-semibold"
                               : "bg-[#EFE7D8] text-[#5C5248] border-[#1F1A16]/15"
@@ -1002,7 +1004,7 @@ export function StepPackingStudio({
                         </span>
                         <span
                           style={monoStyle}
-                          className="text-[10px] text-[#5C5248]"
+                          className="text-[11px] sm:text-[10px] text-[#5C5248]"
                           aria-hidden="true"
                         >
                           {isCatCollapsed ? "▼" : "▲"}
@@ -1021,12 +1023,12 @@ export function StepPackingStudio({
                                 isPacked ? "opacity-55" : ""
                               }`}
                             >
-                              <label className="flex items-start gap-3 cursor-pointer flex-1">
+                              <label className="min-h-11 sm:min-h-0 py-1 sm:py-0 flex items-start gap-3 cursor-pointer flex-1">
                                 <input
                                   type="checkbox"
                                   checked={isPacked}
                                   onChange={() => onTogglePackingItem(item.id)}
-                                  className="mt-1 w-4 h-4 accent-[#13382E]"
+                                  className="mt-0.5 sm:mt-1 w-5 h-5 sm:w-4 sm:h-4 accent-[#13382E] shrink-0"
                                 />
                                 <div className="flex-1 text-xs">
                                   <div className="flex flex-wrap items-center gap-2">
@@ -1061,7 +1063,7 @@ export function StepPackingStudio({
                                   onClick={() =>
                                     onRemoveCustomPackingItem(item.id)
                                   }
-                                  className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 shrink-0 cursor-pointer"
+                                  className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 shrink-0 cursor-pointer"
                                   title="Remove custom packing item"
                                   aria-label={`Remove ${item.label}`}
                                 >

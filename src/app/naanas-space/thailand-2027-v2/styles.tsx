@@ -43,6 +43,18 @@ export const CATEGORY_EDITORIAL_STYLES: Record<
   },
 };
 
+export const MOBILE_TYPE_TOKENS = {
+  eyebrow:
+    "text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em]",
+  meta:
+    "text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.14em]",
+  badge:
+    "text-[11px] sm:text-[9px] uppercase tracking-[0.1em] sm:tracking-[0.14em]",
+  body: "text-sm leading-relaxed",
+  tapTarget: "min-h-11 min-w-11",
+  tapRow: "min-h-11",
+} as const;
+
 export const serifStyle = {
   fontFamily: "var(--font-editorial-serif), Georgia, serif",
   fontVariantNumeric: "lining-nums tabular-nums" as const,

@@ -143,7 +143,7 @@ export function WardrobeDrawer({
       onClick={onClose}
     >
       <div
-        className="bg-[#FBF8F3] border-l-2 border-[#1F1A16] w-full max-w-2xl h-full flex flex-col justify-between shadow-2xl overflow-hidden"
+        className="bg-[#FBF8F3] border-l-2 border-[#1F1A16] w-full max-w-2xl h-dvh flex flex-col justify-between shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drawer Header */}
@@ -152,7 +152,7 @@ export function WardrobeDrawer({
             <div>
               <span
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.2em] text-[#A8442A] font-semibold block"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#A8442A] font-semibold block"
               >
                 {isActivityMode
                   ? `ACTIVITY ATTIRE OVERRIDE • DAY ${formatDayNumber(
@@ -182,7 +182,7 @@ export function WardrobeDrawer({
               type="button"
               onClick={onClose}
               style={monoStyle}
-              className="px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
+              className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-xs uppercase tracking-wider cursor-pointer shrink-0"
             >
               Close &#10005;
             </button>
@@ -193,7 +193,7 @@ export function WardrobeDrawer({
             <div className="p-3 bg-[#FBF8F3] border-l-2 border-[#13382E] text-xs space-y-1">
               <div
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.16em] text-[#13382E] font-semibold"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#13382E] font-semibold"
               >
                 REQUIRED ETIQUETTE: {requirement.contextTitle}
               </div>
@@ -210,7 +210,7 @@ export function WardrobeDrawer({
             >
               <div
                 style={monoStyle}
-                className="text-[10px] uppercase tracking-[0.16em] text-[#A8442A] font-bold"
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-bold"
               >
                 &#9888; {activeValidation.headline}
               </div>
@@ -230,7 +230,7 @@ export function WardrobeDrawer({
                   aria-expanded={isDrawerFiltersOpen}
                   aria-label="Toggle Wardrobe Drawer filters"
                   style={monoStyle}
-                  className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
+                  className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer transition-colors ${
                     isDrawerFiltersOpen
                       ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                       : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]/25"
@@ -248,7 +248,7 @@ export function WardrobeDrawer({
                     type="button"
                     onClick={handleToggleAllDrawerCards}
                     style={monoStyle}
-                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider border border-[#13382E]/35 text-[#13382E] bg-[#FBF8F3] hover:bg-[#13382E] hover:text-[#F6F1E7] cursor-pointer transition-colors"
+                    className="min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border border-[#13382E]/35 text-[#13382E] bg-[#FBF8F3] hover:bg-[#13382E] hover:text-[#F6F1E7] cursor-pointer transition-colors"
                   >
                     {allDrawerCardsCollapsed
                       ? "Expand Cards ▼"
@@ -263,7 +263,7 @@ export function WardrobeDrawer({
                     type="button"
                     onClick={handleClearAssignment}
                     style={monoStyle}
-                    className="px-2.5 py-1 text-[10px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/40 hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer"
+                    className="min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#A8442A] border border-[#A8442A]/40 hover:bg-[#A8442A] hover:text-[#FBF8F3] cursor-pointer"
                   >
                     Clear Slot
                   </button>
@@ -272,7 +272,7 @@ export function WardrobeDrawer({
                   type="button"
                   onClick={onOpenCreateLookModal}
                   style={monoStyle}
-                  className="px-2.5 py-1 text-[10px] uppercase tracking-wider bg-[#13382E] text-[#F6F1E7] cursor-pointer"
+                  className="min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider bg-[#13382E] text-[#F6F1E7] cursor-pointer"
                 >
                   + Create New Look
                 </button>
@@ -297,7 +297,7 @@ export function WardrobeDrawer({
                         setFilterCode(tab.id as "all" | DressCodeProfile)
                       }
                       style={monoStyle}
-                      className={`px-2.5 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 px-2.5 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer ${
                         filterCode === tab.id
                           ? "bg-[#1F1A16] text-[#F6F1E7] border-[#1F1A16]"
                           : "bg-[#FBF8F3] text-[#5C5248] border-[#1F1A16]/20"
@@ -321,7 +321,7 @@ export function WardrobeDrawer({
                         setFilterSource(src.id as "all" | "owned" | "inspo")
                       }
                       style={monoStyle}
-                      className={`px-2 py-1 text-[10px] uppercase tracking-wider border cursor-pointer ${
+                      className={`min-h-11 sm:min-h-0 px-2 py-1 text-[11px] sm:text-[10px] uppercase tracking-wider border cursor-pointer ${
                         filterSource === src.id
                           ? src.id === "inspo"
                             ? "bg-[#9E7B3B] text-[#FBF8F3] border-[#9E7B3B]"
@@ -351,7 +351,7 @@ export function WardrobeDrawer({
                   {candidateConflict?.hasConflict && (
                     <div
                       style={monoStyle}
-                      className="px-2.5 py-1 bg-[#A8442A]/12 border border-[#A8442A]/40 text-[#A8442A] text-[9px] uppercase tracking-wider font-semibold"
+                      className="px-2.5 py-1 bg-[#A8442A]/12 border border-[#A8442A]/40 text-[#A8442A] text-[11px] sm:text-[9px] uppercase tracking-wider font-semibold"
                     >
                       &#9888; {candidateConflict.headline}
                     </div>
@@ -374,7 +374,7 @@ export function WardrobeDrawer({
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-[#1F1A16]/20 bg-[#EFE7D8]/60 flex items-center justify-between">
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] border-t border-[#1F1A16]/20 bg-[#EFE7D8]/60 flex items-center justify-between">
           <span style={monoStyle} className="text-[11px] text-[#5C5248]">
             CURRENTLY ASSIGNED:{" "}
             <strong className="text-[#1F1A16]">
@@ -389,7 +389,7 @@ export function WardrobeDrawer({
             type="button"
             onClick={onClose}
             style={monoStyle}
-            className="px-4 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-[10px] uppercase tracking-wider cursor-pointer"
+            className="min-h-11 sm:min-h-0 px-4 py-1.5 bg-[#1F1A16] text-[#F6F1E7] text-[11px] sm:text-[10px] uppercase tracking-wider cursor-pointer"
           >
             Done
           </button>

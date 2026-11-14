@@ -68,7 +68,7 @@ export function StepBudgetAndLedger({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.22em] text-[#A8442A] font-semibold"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.22em] text-[#A8442A] font-semibold"
             >
               STEP VI &bull; CURRENCY BUREAU &amp; FINANCIAL LEDGER
             </span>
@@ -87,17 +87,22 @@ export function StepBudgetAndLedger({
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
           <div className="md:col-span-5 bg-[#EFE7D8]/70 border border-[#1F1A16]/20 p-5">
             <label
+              htmlFor="budget-thb-input"
               style={monoStyle}
-              className="block text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mb-1"
+              className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#5C5248] mb-1"
             >
               SIAMESE BAHT (THB &#3647;)
             </label>
             <input
-              type="number"
+              id="budget-thb-input"
+              type="text"
+              inputMode="decimal"
+              enterKeyHint="done"
+              autoComplete="off"
               value={thbInput}
               onChange={(e) => onThbChange(e.target.value)}
               style={serifStyle}
-              className="w-full bg-transparent text-4xl font-normal text-[#1F1A16] focus:outline-none"
+              className="w-full min-h-11 bg-transparent text-4xl font-normal text-[#1F1A16] focus:outline-none"
             />
           </div>
 
@@ -110,17 +115,22 @@ export function StepBudgetAndLedger({
 
           <div className="md:col-span-5 bg-[#EFE7D8]/70 border border-[#1F1A16]/20 p-5">
             <label
+              htmlFor="budget-gbp-input"
               style={monoStyle}
-              className="block text-[10px] uppercase tracking-[0.18em] text-[#5C5248] mb-1"
+              className="block text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.18em] text-[#5C5248] mb-1"
             >
               BRITISH STERLING (GBP &pound;)
             </label>
             <input
-              type="number"
+              id="budget-gbp-input"
+              type="text"
+              inputMode="decimal"
+              enterKeyHint="done"
+              autoComplete="off"
               value={gbpInput}
               onChange={(e) => onGbpChange(e.target.value)}
               style={serifStyle}
-              className="w-full bg-transparent text-4xl font-normal text-[#13382E] focus:outline-none"
+              className="w-full min-h-11 bg-transparent text-4xl font-normal text-[#13382E] focus:outline-none"
             />
           </div>
         </div>
@@ -141,7 +151,7 @@ export function StepBudgetAndLedger({
               type="button"
               onClick={() => onSetQuickThbPreset(preset.thb)}
               style={monoStyle}
-              className="px-3 py-1.5 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] text-[11px] text-[#4A4036] hover:text-[#1F1A16] cursor-pointer"
+              className="min-h-11 sm:min-h-0 px-3 py-1.5 bg-[#F6F1E7] border border-[#1F1A16]/15 hover:border-[#1F1A16] text-[11px] text-[#4A4036] hover:text-[#1F1A16] cursor-pointer"
             >
               {preset.label}
             </button>
@@ -155,7 +165,7 @@ export function StepBudgetAndLedger({
           <div className="space-y-3">
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#D8B979]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#D8B979]"
             >
               ACCOMMODATION SURPLUS
             </span>
@@ -204,7 +214,7 @@ export function StepBudgetAndLedger({
             <thead>
               <tr
                 style={monoStyle}
-                className="border-b-2 border-[#1F1A16] text-[10px] uppercase tracking-[0.15em] text-[#5C5248]"
+                className="border-b-2 border-[#1F1A16] text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[#5C5248]"
               >
                 <th className="py-2.5 pr-3">Component</th>
                 <th className="py-2.5 px-3">Settled Currency</th>
@@ -253,7 +263,7 @@ export function StepBudgetAndLedger({
                 </td>
                 <td
                   style={monoStyle}
-                  className="py-3.5 pl-3 text-[10px] uppercase tracking-wider text-[#5C5248]"
+                  className="py-3.5 pl-3 text-[11px] sm:text-[10px] uppercase tracking-wider text-[#5C5248]"
                 >
                   SETTLED IN FULL
                 </td>
@@ -269,7 +279,7 @@ export function StepBudgetAndLedger({
           <div>
             <span
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.2em] text-[#8A7E71]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[#8A7E71]"
             >
               BESPOKE DISCRETIONARY LEDGER
             </span>
@@ -283,7 +293,7 @@ export function StepBudgetAndLedger({
           <div className="text-right">
             <div
               style={monoStyle}
-              className="text-[10px] uppercase tracking-[0.16em] text-[#8A7E71]"
+              className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71]"
             >
               PLANNED DISCRETIONARY TOTAL
             </div>
@@ -308,23 +318,27 @@ export function StepBudgetAndLedger({
         >
           <input
             type="text"
+            enterKeyHint="next"
+            autoComplete="off"
             value={newExpTitle}
             onChange={(e) => setNewExpTitle(e.target.value)}
             placeholder="Experience or reservation (e.g. Couples Spa at Pavilions, Catch Beach Club)..."
-            className="sm:col-span-4 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+            className="sm:col-span-4 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
           />
           <input
-            type="number"
-            step="any"
+            type="text"
+            inputMode="decimal"
+            enterKeyHint="done"
+            autoComplete="off"
             value={newExpAmount}
             onChange={(e) => setNewExpAmount(e.target.value)}
             placeholder="Amount"
-            className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-xs text-[#1F1A16]"
+            className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-3 py-2 text-base sm:text-sm text-[#1F1A16]"
           />
           <select
             value={newExpCurrency}
             onChange={(e) => setNewExpCurrency(e.target.value as "THB" | "GBP")}
-            className="sm:col-span-1 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+            className="sm:col-span-1 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-base sm:text-sm text-[#1F1A16]"
           >
             <option value="THB">THB</option>
             <option value="GBP">GBP</option>
@@ -334,7 +348,7 @@ export function StepBudgetAndLedger({
             onChange={(e) =>
               setNewExpCategory(e.target.value as PlannedExpense["category"])
             }
-            className="sm:col-span-2 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+            className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-base sm:text-sm text-[#1F1A16]"
           >
             <option value="Birthday Treat">Birthday Treat</option>
             <option value="Dining">Dining</option>
@@ -347,7 +361,7 @@ export function StepBudgetAndLedger({
             onChange={(e) =>
               setNewExpCity(e.target.value as "Bangkok" | "Phuket" | "Both")
             }
-            className="sm:col-span-1 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-xs text-[#1F1A16]"
+            className="sm:col-span-1 min-h-11 sm:min-h-0 bg-[#FBF8F3] border border-[#1F1A16]/20 px-2 py-2 text-base sm:text-sm text-[#1F1A16]"
           >
             <option value="Bangkok">Bangkok</option>
             <option value="Phuket">Phuket</option>
@@ -356,7 +370,7 @@ export function StepBudgetAndLedger({
           <button
             type="submit"
             style={monoStyle}
-            className="sm:col-span-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
+            className="sm:col-span-2 min-h-11 sm:min-h-0 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] font-semibold text-xs uppercase tracking-wider py-2 cursor-pointer"
           >
             + Inscribe
           </button>
@@ -368,12 +382,12 @@ export function StepBudgetAndLedger({
               key={exp.id}
               className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-4"
             >
-              <label className="flex items-center gap-3 cursor-pointer flex-1">
+              <label className="min-h-11 sm:min-h-0 flex items-center gap-3 cursor-pointer flex-1">
                 <input
                   type="checkbox"
                   checked={!!exp.isBooked}
                   onChange={() => onToggleExpenseBooked(exp.id)}
-                  className="w-4 h-4 accent-[#13382E]"
+                  className="w-5 h-5 sm:w-4 sm:h-4 accent-[#13382E] shrink-0"
                 />
                 <div>
                   <div
@@ -384,7 +398,7 @@ export function StepBudgetAndLedger({
                   </div>
                   <div
                     style={monoStyle}
-                    className="text-[10px] uppercase tracking-[0.15em] text-[#5C5248]"
+                    className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.15em] text-[#5C5248]"
                   >
                     {exp.city} &bull; {exp.category} &bull;{" "}
                     {exp.isBooked ? "SETTLED / RESERVED" : "PLANNED"}
@@ -403,7 +417,8 @@ export function StepBudgetAndLedger({
                 <button
                   type="button"
                   onClick={() => onDeleteExpense(exp.id)}
-                  className="text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
+                  aria-label={`Delete ${exp.title}`}
+                  className="min-h-11 min-w-11 sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-xs text-[#8A7E71] hover:text-[#A8442A] px-2 py-1 cursor-pointer"
                 >
                   &#10005;
                 </button>
