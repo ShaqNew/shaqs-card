@@ -143,14 +143,20 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     const shell = container.firstElementChild as HTMLElement;
     expect(shell).toHaveClass("min-h-dvh");
     expect(shell.style.fontSizeAdjust).toBe("from-font");
+    expect(shell.style.getPropertyValue("--font-editorial-serif")).toBe("");
+    expect(shell.style.getPropertyValue("--font-editorial-sans")).toBe("");
+    expect(shell.style.getPropertyValue("--font-editorial-mono")).toBe("");
+    expect(shell.style.getPropertyValue("--font-digital")).toBe("");
     expect(container.querySelector("style")).toBeNull();
   });
 
-  it("uses text + decimal inputMode without pattern on QuickPocketDesk and StepBudgetAndLedger currency inputs and converts 22.47 GBP", () => {
+  it("uses text + decimal inputMode without pattern on QuickPocketDesk and StepBudgetAndLedger currency inputs and converts 22.47 / 22,47 GBP", () => {
     render(<ThailandTripDashboardV2 />);
 
     // Quick Pocket Desk
     fireEvent.click(screen.getByRole("button", { name: /Quick Tools/i }));
+    expect(screen.getByText(/INSTANT CURRENCY \(1 GBP ≈ 44\.5 THB\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/&approx;/i)).toBeNull();
     const pocketThb = screen.getByLabelText(/Quick THB input/i);
     const pocketGbp = screen.getByLabelText(/Quick GBP input/i);
     for (const input of [pocketThb, pocketGbp]) {
@@ -162,8 +168,16 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     fireEvent.change(pocketGbp, { target: { value: "22.47" } });
     expect((pocketThb as HTMLInputElement).value).toBe("1000");
 
+    fireEvent.change(pocketGbp, { target: { value: "22,47" } });
+    expect((pocketThb as HTMLInputElement).value).toBe("1000");
+
+    fireEvent.change(pocketThb, { target: { value: "2225,5" } });
+    expect((pocketGbp as HTMLInputElement).value).toBe("50.01");
+
     // Step VI: Budget & THB
     fireEvent.click(screen.getByRole("button", { name: /Budget & THB/i }));
+    expect(screen.getByText(/BENCHMARK: 1 GBP ≈ 44\.50 THB/i)).toBeInTheDocument();
+    expect(screen.queryByText(/&approx;/i)).toBeNull();
     const budgetThb = screen.getByLabelText(/SIAMESE BAHT/i);
     const budgetGbp = screen.getByLabelText(/BRITISH STERLING/i);
     const expTitle = screen.getByPlaceholderText(/Experience or reservation/i);
@@ -269,7 +283,7 @@ describe("Thailand 2027 v2 Phase 1 Mobile Foundations", () => {
     const toastText = screen.getByText(/Copied to Folio/i);
     const toastContainer = toastText.closest("div.fixed") as HTMLElement;
     expect(toastContainer).toHaveClass(
-      "bottom-20",
+      "bottom-[calc(5rem+env(safe-area-inset-bottom))]",
       "inset-x-4",
       "sm:bottom-6",
       "sm:right-6"

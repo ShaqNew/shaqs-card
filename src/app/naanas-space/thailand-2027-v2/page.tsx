@@ -99,7 +99,7 @@ export default function ThailandTripDashboard() {
 
   const handleThbChange = (val: string) => {
     setThbInput(val);
-    const num = parseFloat(val);
+    const num = parseFloat(val.replace(",", "."));
     if (!isNaN(num)) {
       setGbpInput((num / tripState.exchangeRate).toFixed(2));
     } else {
@@ -109,7 +109,7 @@ export default function ThailandTripDashboard() {
 
   const handleGbpChange = (val: string) => {
     setGbpInput(val);
-    const num = parseFloat(val);
+    const num = parseFloat(val.replace(",", "."));
     if (!isNaN(num)) {
       setThbInput(Math.round(num * tripState.exchangeRate).toString());
     } else {
@@ -148,7 +148,7 @@ export default function ThailandTripDashboard() {
         <div
           role="status"
           aria-live="polite"
-          className="fixed bottom-20 inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
+          className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] inset-x-4 mx-auto w-fit max-w-[calc(100vw-2rem)] z-50 sm:bottom-6 sm:right-6 sm:inset-x-auto sm:mx-0 sm:w-auto flex items-center gap-3 px-5 py-3.5 bg-[#13382E] text-[#F6F1E7] border border-[#9E7B3B] shadow-xl"
         >
           <span
             style={monoStyle}

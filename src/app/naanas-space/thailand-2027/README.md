@@ -107,7 +107,7 @@ src/
 ```
 
 ### State Management
-Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and debounced-synced (600ms) to `/api/naanas-space/thailand-2027` (persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
+Trip state is stored locally in `localStorage` under key `naanas_space_thailand_2027_v1` for instant offline rendering, and synced to `/api/naanas-space/thailand-2027` (600ms debouncing scheduled in Phase 5.4; persisted under Upstash Redis / Vercel KV key `naanas_space_thailand_2027_v1`). Both `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`) share this exact storage layer.
 
 ### Testing
 Run the dedicated test suites verifying `v1`, `v2`, cross-route shared persistence, interactive checklists, currency conversion, Thai driver modal, and the Change Log:
@@ -122,5 +122,6 @@ npm test -- src/app/naanas-space/__tests__/thailand-2027.test.tsx src/app/naanas
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md) — Phased Mobile UX Improvement Plan (Android / Google Pixel primary, targeting `/naanas-space/thailand-2027-v2`).
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md) — Consolidated open architecture & product decisions (`D0`–`D6`) with Argon A reviews.
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md) — Trade-offs, backwards-compatible schema rules, cross-tab `storage` sync, and sunset options for the dual `v1`/`v2` route architecture.
+- [`./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md) — PR #4 code review findings (`38f9d33`) and verification/resolution log.
 - [`./mobile-ux-plan/thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html) — Visual before/after mobile UX specification & verification showcase.
 - [Google Doc: App Improvements](https://docs.google.com/document/d/1ZoF7kau7Z_qgr3rgokyNEgt8E3CMI68BsIy8ypowYIQ/edit) — Master enhancements roadmap & technical decisions.

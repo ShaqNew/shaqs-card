@@ -66,8 +66,7 @@ export const monoStyle = {
 };
 
 export const chronometerDigitalStyle = {
-  fontFamily:
-    "'DS-Digital', var(--font-digital), var(--font-editorial-mono), monospace",
+  fontFamily: "var(--font-digital), var(--font-editorial-mono), monospace",
   fontVariantNumeric: "tabular-nums" as const,
   letterSpacing: "0.06em",
 };

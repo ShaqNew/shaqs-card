@@ -42,7 +42,7 @@ export function StepBudgetAndLedger({
 
   const handleAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    const rawAmount = parseFloat(newExpAmount);
+    const rawAmount = parseFloat(newExpAmount.replace(",", "."));
     if (!newExpTitle.trim() || isNaN(rawAmount) || rawAmount <= 0) return;
     const amountThb =
       newExpCurrency === "THB"
@@ -80,7 +80,7 @@ export function StepBudgetAndLedger({
             </h2>
           </div>
           <span style={monoStyle} className="text-xs text-[#13382E] font-semibold">
-            BENCHMARK: 1 GBP &approx; {exchangeRate.toFixed(2)} THB
+            BENCHMARK: 1 GBP &#8776; {exchangeRate.toFixed(2)} THB
           </span>
         </div>
 

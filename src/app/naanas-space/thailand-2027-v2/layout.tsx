@@ -54,11 +54,6 @@ export default function ThailandDossierLayout({
       className={`min-h-dvh bg-[#F6F1E7] text-[#1F1A16] selection:bg-[#13382E] selection:text-[#F6F1E7] ${dmSerifDisplay.variable} ${plusJakartaSans.variable} ${jetbrainsMono.variable} ${orbitron.variable}`}
       style={
         {
-          "--font-editorial-serif": "'DM Serif Display', Georgia, serif",
-          "--font-editorial-sans":
-            "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-          "--font-editorial-mono": "'JetBrains Mono', monospace",
-          "--font-digital": "'Orbitron', monospace",
           fontFamily: "var(--font-editorial-sans), system-ui, sans-serif",
           fontSizeAdjust: "from-font",
           fontVariantNumeric: "lining-nums tabular-nums",

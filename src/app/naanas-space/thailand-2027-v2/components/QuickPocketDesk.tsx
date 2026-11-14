@@ -54,7 +54,7 @@ export function QuickPocketDesk({
               style={monoStyle}
               className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#8A7E71] block"
             >
-              INSTANT CURRENCY (1 GBP &approx; {exchangeRate} THB)
+              INSTANT CURRENCY (1 GBP &#8776; {exchangeRate} THB)
             </span>
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-[#EFE7D8]/70 border border-[#1F1A16]/20 px-2.5 py-1.5">

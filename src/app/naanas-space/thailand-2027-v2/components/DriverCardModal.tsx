@@ -85,7 +85,7 @@ export function DriverCardModal({
             <strong>Hotel Reception Phone (พนักงานต้อนรับ):</strong>{" "}
             <a
               href={`tel:${activeHotel.phone.replace(/\s+/g, "")}`}
-              className="text-[#13382E] font-bold underline"
+              className="min-h-11 sm:min-h-0 inline-flex items-center px-2 -mx-2 text-[#13382E] font-bold underline"
             >
               {activeHotel.phone}
             </a>

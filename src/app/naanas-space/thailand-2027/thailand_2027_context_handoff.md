@@ -106,11 +106,11 @@ All static trip data is defined in `src/lib/thailandTripData.ts`:
 | `src/app/api/naanas-space/thailand-2027/route.ts` | Next.js App Router `GET` / `PUT` endpoint persisting shared trip state to Vercel KV (`KV_REST_API_URL` / `KV_REST_API_TOKEN`) under key `naanas_space_thailand_2027_v1`. |
 | `src/app/naanas-space/page.tsx` | *Naana's Space* hub page featuring launch links to `/naanas-space/thailand-2027` (`v1`) and `/naanas-space/thailand-2027-v2` (`v2`). |
 | `src/app/naanas-space/thailand-2027-v2/` | Mobile-first `v2` route copy sharing `types.ts`, `utils/*`, and `useThailandTripState.ts` via barrel re-exports from `../thailand-2027/` (keeping `v1` desktop untouched). |
-| `src/app/naanas-space/thailand-2027/mobile-ux-plan/` | Mobile UX planning suite: [`thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md), [`thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md), [`thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md), and [`thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html). |
+| `src/app/naanas-space/thailand-2027/mobile-ux-plan/` | Mobile UX planning suite: [`thailand_2027_mobile_ux_plan.md`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.md), [`thailand_2027_mobile_ux_open_decisions.md`](./mobile-ux-plan/thailand_2027_mobile_ux_open_decisions.md), [`thailand_2027_mobile_ux_v2_drawbacks.md`](./mobile-ux-plan/thailand_2027_mobile_ux_v2_drawbacks.md), [`thailand_2027_mobile_ux_pr4_review.md`](./mobile-ux-plan/thailand_2027_mobile_ux_pr4_review.md), and [`thailand_2027_mobile_ux_plan.html`](./mobile-ux-plan/thailand_2027_mobile_ux_plan.html). |
 | `src/app/naanas-space/__tests__/thailand-2027.test.tsx` & `thailand-2027-v2.test.tsx` | Jest + React Testing Library test suites covering `v1`, `v2`, cross-route shared persistence, all 6 steps, interactive checklists, currency conversion, Quick Pocket Desk, Thai driver modal, and the Folio Change Log. |
 
 ### Cloud & Local Persistence Schema (`PersistedTripState`)
-State is stored locally in `localStorage` (`naanas_space_thailand_2027_v1`) and debounced-synced (600ms) to `/api/naanas-space/thailand-2027`:
+State is stored locally in `localStorage` (`naanas_space_thailand_2027_v1`) and synced to `/api/naanas-space/thailand-2027` (600ms debouncing scheduled in Phase 5.4):
 - `completedActivityIds: string[]` — Checked-off itinerary activities.
 - `customActivitiesByDay: Record<number, ItineraryActivity[]>` — User-added or suggestion-inscribed activities per day.
 - `completedPrepIds: string[]` — Checked-off pre-trip checklist items (`8` total).
