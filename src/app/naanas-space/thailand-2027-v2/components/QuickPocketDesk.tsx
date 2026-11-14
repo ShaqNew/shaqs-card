@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { HOTEL_BOOKINGS } from "@/lib/thailandTripData";
+import { EMERGENCY_CONTACTS, HOTEL_BOOKINGS } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle } from "../styles";
 import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
 import { DualTimezoneClock } from "../utils/companion";
@@ -284,51 +284,81 @@ export function QuickPocketDesk({
         </div>
 
         {/* 1-Tap SOS & Hotel Reception Speed-Dials */}
-        <div className="space-y-1.5 pt-2 border-t border-[#1F1A16]/15">
-          <span
-            style={monoStyle}
-            className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold block"
-          >
-            SOS &amp; HOTEL RECEPTION SPEED-DIAL
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <a
-              href="tel:1155"
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#A8442A] text-[#FBF8F3] text-[11px] font-semibold flex items-center justify-center text-center"
-            >
-              1155 Police
-            </a>
-            <a
-              href="tel:1669"
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#1F1A16] text-[#F6F1E7] text-[11px] font-semibold flex items-center justify-center text-center"
-            >
-              1669 Medical
-            </a>
-            <a
-              href="tel:+6622367777"
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
-            >
-              Shangri-La Tel
-            </a>
-            <a
-              href="tel:+6676317600"
-              style={monoStyle}
-              className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
-            >
-              Pavilions Tel
-            </a>
-            <a
-              href="tel:+6623058333"
-              style={monoStyle}
-              className="col-span-2 min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
-            >
-              British Embassy Bangkok (+66 2 305 8333)
-            </a>
-          </div>
-        </div>
+        {(() => {
+          const touristPolice = EMERGENCY_CONTACTS.find(
+            (c) => c.number === "1155"
+          );
+          const medicalEms = EMERGENCY_CONTACTS.find(
+            (c) => c.number === "1669"
+          );
+          const embassy = EMERGENCY_CONTACTS.find((c) =>
+            c.title.includes("British Embassy")
+          );
+          const shangriLa = HOTEL_BOOKINGS.find(
+            (h) => h.id === "shangri-la-bangkok"
+          );
+          const pavilions = HOTEL_BOOKINGS.find(
+            (h) => h.id === "pavilions-phuket"
+          );
+
+          return (
+            <div className="space-y-1.5 pt-2 border-t border-[#1F1A16]/15">
+              <span
+                style={monoStyle}
+                className="text-[11px] sm:text-[10px] uppercase tracking-[0.1em] sm:tracking-[0.16em] text-[#A8442A] font-semibold block"
+              >
+                SOS &amp; HOTEL RECEPTION SPEED-DIAL
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {touristPolice && (
+                  <a
+                    href={touristPolice.telHref}
+                    style={monoStyle}
+                    className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#A8442A] text-[#FBF8F3] text-[11px] font-semibold flex items-center justify-center text-center"
+                  >
+                    {touristPolice.number} Police
+                  </a>
+                )}
+                {medicalEms && (
+                  <a
+                    href={medicalEms.telHref}
+                    style={monoStyle}
+                    className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#1F1A16] text-[#F6F1E7] text-[11px] font-semibold flex items-center justify-center text-center"
+                  >
+                    {medicalEms.number} Medical
+                  </a>
+                )}
+                {shangriLa && (
+                  <a
+                    href={`tel:${shangriLa.phone.replace(/\s+/g, "")}`}
+                    style={monoStyle}
+                    className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
+                  >
+                    Shangri-La Tel
+                  </a>
+                )}
+                {pavilions && (
+                  <a
+                    href={`tel:${pavilions.phone.replace(/\s+/g, "")}`}
+                    style={monoStyle}
+                    className="min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
+                  >
+                    Pavilions Tel
+                  </a>
+                )}
+                {embassy && (
+                  <a
+                    href={embassy.telHref}
+                    style={monoStyle}
+                    className="col-span-2 min-h-11 sm:min-h-0 px-2.5 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-[#1F1A16] text-[11px] font-semibold flex items-center justify-center text-center"
+                  >
+                    {embassy.title} ({embassy.number})
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Bottom Shortcuts: Log Expense & View Change Log */}
         <div className="pt-2 border-t border-[#1F1A16]/15 grid grid-cols-2 gap-2">

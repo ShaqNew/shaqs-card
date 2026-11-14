@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { HOTEL_BOOKINGS } from "@/lib/thailandTripData";
 import { serifStyle, monoStyle, ExternalArrow } from "../styles";
+import { useBottomSheetDialog } from "../hooks/useBottomSheetDialog";
 
 interface DriverCardModalProps {
   hotelId: string | null;
@@ -10,7 +11,10 @@ interface DriverCardModalProps {
 }
 
 interface WakeLockSentinelLike {
+  released?: boolean;
   release: () => Promise<void>;
+  addEventListener?: (type: "release", listener: () => void) => void;
+  removeEventListener?: (type: "release", listener: () => void) => void;
 }
 
 export function DriverCardModal({
@@ -19,131 +23,98 @@ export function DriverCardModal({
   onCopy,
   copiedText,
 }: DriverCardModalProps) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const triggerFocusRef = useRef<HTMLElement | null>(null);
-  const wasOpenRef = useRef(false);
-  const isClosingRef = useRef(false);
   const wakeLockSentinelRef = useRef<WakeLockSentinelLike | null>(null);
-
   const [isNightContrast, setIsNightContrast] = useState(false);
 
-  const matchedHotel = hotelId
+  const activeHotel = hotelId
     ? HOTEL_BOOKINGS.find((h) => h.id === hotelId) || null
     : null;
-  const lastHotelRef = useRef<typeof matchedHotel>(null);
-  if (matchedHotel) {
-    lastHotelRef.current = matchedHotel;
-  }
+  const isOpen = Boolean(hotelId && activeHotel);
 
-  const isOpen = Boolean(hotelId && matchedHotel);
-  const activeHotel = matchedHotel || lastHotelRef.current;
+  const { dialogRef, handleDialogClose } = useBottomSheetDialog({
+    open: isOpen,
+    onClose,
+    desktopMode: "modal",
+  });
 
-  // Sync native <dialog> top-layer modal open/close and restore focus to invoker
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-
-    if (isOpen) {
-      wasOpenRef.current = true;
-      if (!triggerFocusRef.current && typeof document !== "undefined") {
-        const currentActive = document.activeElement;
-        if (
-          currentActive instanceof HTMLElement &&
-          currentActive !== document.body &&
-          !dialog.contains(currentActive)
-        ) {
-          triggerFocusRef.current = currentActive;
-        }
-      }
-
-      if (!dialog.open && !dialog.hasAttribute("open")) {
-        if (typeof dialog.showModal === "function") {
-          try {
-            dialog.showModal();
-          } catch {
-            dialog.setAttribute("open", "");
-          }
-        } else {
-          dialog.setAttribute("open", "");
-        }
-      }
-    } else {
-      if (dialog.open || dialog.hasAttribute("open")) {
-        isClosingRef.current = true;
-        if (typeof dialog.close === "function") {
-          try {
-            dialog.close();
-          } catch {
-            dialog.removeAttribute("open");
-          }
-        } else {
-          dialog.removeAttribute("open");
-        }
-        isClosingRef.current = false;
-      }
-
-      if (wasOpenRef.current) {
-        wasOpenRef.current = false;
-        const targetToFocus = triggerFocusRef.current;
-        triggerFocusRef.current = null;
-        if (targetToFocus && targetToFocus.isConnected) {
-          targetToFocus.focus();
-        }
-      }
-    }
-  }, [isOpen]);
-
-  // Lock background document scroll while open
-  useEffect(() => {
-    if (!isOpen || typeof document === "undefined") return;
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [isOpen]);
-
-  // Keep screen awake when showing card to driver; ignore Battery Saver rejections
+  // Keep screen awake when showing card to driver; re-acquire when returning
+  // to the visible tab (browsers release Wake Lock on background / app switch)
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
+    let cleanupSentinelListener: (() => void) | null = null;
 
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
-    const acquireWakeLock = async () => {
-      try {
-        if (nav?.wakeLock && typeof nav.wakeLock.request === "function") {
-          const sentinel = await nav.wakeLock.request("screen");
-          if (cancelled) {
-            sentinel?.release?.().catch(() => {});
-            return;
-          }
-          wakeLockSentinelRef.current = sentinel;
-        }
-      } catch {
-        // Low Power Mode / Battery Saver blocks Wake Lock silently
-      }
-    };
-
-    void acquireWakeLock();
-
-    return () => {
-      cancelled = true;
+    const releaseCurrentLock = () => {
+      cleanupSentinelListener?.();
+      cleanupSentinelListener = null;
       const sentinel = wakeLockSentinelRef.current;
       wakeLockSentinelRef.current = null;
       if (sentinel && typeof sentinel.release === "function") {
         sentinel.release().catch(() => {});
       }
     };
-  }, [isOpen]);
 
-  const handleDialogClose = () => {
-    if (isClosingRef.current) return;
-    dialogRef.current?.removeAttribute("open");
-    if (isOpen) {
-      onClose();
+    const acquireWakeLock = async () => {
+      if (
+        cancelled ||
+        (typeof document !== "undefined" &&
+          document.visibilityState === "hidden")
+      ) {
+        return;
+      }
+      if (wakeLockSentinelRef.current && !wakeLockSentinelRef.current.released) {
+        return;
+      }
+
+      try {
+        if (nav?.wakeLock && typeof nav.wakeLock.request === "function") {
+          const sentinel = (await nav.wakeLock.request(
+            "screen"
+          )) as WakeLockSentinelLike;
+          if (cancelled) {
+            sentinel?.release?.().catch(() => {});
+            return;
+          }
+          wakeLockSentinelRef.current = sentinel;
+          const onReleased = () => {
+            if (wakeLockSentinelRef.current === sentinel) {
+              wakeLockSentinelRef.current = null;
+            }
+          };
+          if (typeof sentinel.addEventListener === "function") {
+            sentinel.addEventListener("release", onReleased);
+            cleanupSentinelListener = () =>
+              sentinel.removeEventListener?.("release", onReleased);
+          }
+        }
+      } catch {
+        // Low Power Mode / Battery Saver blocks Wake Lock silently
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void acquireWakeLock();
+      } else {
+        releaseCurrentLock();
+      }
+    };
+
+    void acquireWakeLock();
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", handleVisibilityChange);
     }
-  };
+
+    return () => {
+      cancelled = true;
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", handleVisibilityChange);
+      }
+      releaseCurrentLock();
+    };
+  }, [isOpen]);
 
   const handleShareAddress = async () => {
     if (!activeHotel) return;
@@ -175,15 +146,9 @@ export function DriverCardModal({
     <dialog
       ref={dialogRef}
       {...({ closedby: "any" } as React.DialogHTMLAttributes<HTMLDialogElement>)}
-      aria-modal="true"
       aria-labelledby="driver-card-hotel-title"
       onClose={handleDialogClose}
-      onClick={(e) => {
-        if (e.target === dialogRef.current) {
-          onClose();
-        }
-      }}
-      className={`[&:not([open])]:hidden fixed inset-0 m-0 w-full h-dvh max-w-none max-h-none p-0 sm:m-auto sm:w-full sm:max-w-3xl sm:h-auto sm:max-h-[92dvh] overflow-y-auto overscroll-contain border-0 sm:border-2 shadow-2xl z-50 backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm ${
+      className={`[&:not([open])]:hidden fixed inset-0 m-0 w-full h-dvh max-w-none max-h-none p-0 lg:m-auto lg:w-full lg:max-w-3xl lg:h-auto lg:max-h-[92dvh] overflow-y-auto overscroll-contain border-0 lg:border-2 shadow-2xl z-50 backdrop:bg-[#1F1A16]/85 backdrop:backdrop-blur-sm ${
         isNightContrast
           ? "bg-black text-[#FFE600] border-[#FFE600]"
           : "bg-[#FBF8F3] text-[#1F1A16] border-[#1F1A16]"
@@ -192,7 +157,7 @@ export function DriverCardModal({
       {isOpen && activeHotel && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="min-h-full flex flex-col justify-between p-4 sm:p-8 pb-[calc(1.25rem+env(safe-area-inset-bottom))] gap-5"
+          className="min-h-full flex flex-col justify-between p-4 lg:p-8 pb-[calc(1.25rem+env(safe-area-inset-bottom))] gap-5"
         >
           {/* Header + 1-Tap High-Contrast Night Mode Toggle */}
           <div

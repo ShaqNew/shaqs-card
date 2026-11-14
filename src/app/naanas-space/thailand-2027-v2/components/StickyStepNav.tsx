@@ -4,6 +4,7 @@ import {
   TRIP_DAYS,
   TRIP_METADATA,
   HOTEL_BOOKINGS,
+  EMERGENCY_CONTACTS,
 } from "@/lib/thailandTripData";
 import { ActiveTab, ProgressMetric } from "../types";
 import { serifStyle, monoStyle } from "../styles";
@@ -242,8 +243,13 @@ export function StickyStepNav({
   ];
 
   const activeTabMeta = tabs.find((t) => t.id === activeTab) ?? tabs[0];
-  const shangriLa = HOTEL_BOOKINGS.find((h) => h.id === "shangri-la");
-  const pavilions = HOTEL_BOOKINGS.find((h) => h.id === "pavilions");
+  const shangriLa = HOTEL_BOOKINGS.find((h) => h.id === "shangri-la-bangkok");
+  const pavilions = HOTEL_BOOKINGS.find((h) => h.id === "pavilions-phuket");
+  const touristPolice = EMERGENCY_CONTACTS.find((c) => c.number === "1155");
+  const medicalEms = EMERGENCY_CONTACTS.find((c) => c.number === "1669");
+  const embassy = EMERGENCY_CONTACTS.find((c) =>
+    c.title.includes("British Embassy")
+  );
 
   const mobileTopJumpButton = isScrolled ? (
     <button
@@ -654,36 +660,46 @@ export function StickyStepNav({
                 1-TAP SOS &amp; HOTEL DESK
               </span>
               <div className="grid grid-cols-2 gap-2">
-                <a
-                  href="tel:1155"
-                  className="min-h-11 px-3 py-2 bg-[#A8442A] text-[#FBF8F3] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
-                >
-                  <span>1155 Tourist Police</span>
-                </a>
-                <a
-                  href="tel:1669"
-                  className="min-h-11 px-3 py-2 bg-[#13382E] text-[#F6F1E7] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
-                >
-                  <span>1669 Medical EMS</span>
-                </a>
-                <a
-                  href="tel:+6623058333"
-                  className="col-span-2 min-h-11 px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
-                >
-                  British Embassy Bangkok (+66 2 305 8333)
-                </a>
-                <a
-                  href="tel:+6622367777"
-                  className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
-                >
-                  Call Shangri-La
-                </a>
-                <a
-                  href="tel:+6676317600"
-                  className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
-                >
-                  Call Pavilions
-                </a>
+                {touristPolice && (
+                  <a
+                    href={touristPolice.telHref}
+                    className="min-h-11 px-3 py-2 bg-[#A8442A] text-[#FBF8F3] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
+                  >
+                    <span>{touristPolice.number} Tourist Police</span>
+                  </a>
+                )}
+                {medicalEms && (
+                  <a
+                    href={medicalEms.telHref}
+                    className="min-h-11 px-3 py-2 bg-[#13382E] text-[#F6F1E7] text-xs font-semibold flex items-center justify-center gap-1.5 text-center"
+                  >
+                    <span>{medicalEms.number} Medical EMS</span>
+                  </a>
+                )}
+                {embassy && (
+                  <a
+                    href={embassy.telHref}
+                    className="col-span-2 min-h-11 px-3 py-2 bg-[#EFE7D8] border border-[#1F1A16]/25 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                  >
+                    {embassy.title} ({embassy.number})
+                  </a>
+                )}
+                {shangriLa && (
+                  <a
+                    href={`tel:${shangriLa.phone.replace(/\s+/g, "")}`}
+                    className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                  >
+                    Call Shangri-La
+                  </a>
+                )}
+                {pavilions && (
+                  <a
+                    href={`tel:${pavilions.phone.replace(/\s+/g, "")}`}
+                    className="min-h-11 px-3 py-2 bg-[#F6F1E7] border border-[#1F1A16]/20 text-xs font-semibold text-[#1F1A16] flex items-center justify-center text-center"
+                  >
+                    Call Pavilions
+                  </a>
+                )}
                 {onOpenDriverModal && shangriLa && (
                   <button
                     type="button"

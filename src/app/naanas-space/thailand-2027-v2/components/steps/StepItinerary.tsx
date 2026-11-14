@@ -15,10 +15,7 @@ import {
   CalendarIcon,
   HangerIcon,
 } from "../../styles";
-import {
-  formatDayNumber,
-  parseActivitySortMinutes,
-} from "../../utils/formatters";
+import { formatDayNumber } from "../../utils/formatters";
 import {
   buildGoogleCalendarUrl,
   buildActivityIcsContent,
@@ -34,9 +31,11 @@ import {
 } from "../../utils/wardrobe";
 import {
   detectActiveTripDay,
+  parseActivityTimelineWindow,
   resolveDayCompanionStatus,
   isActivityPast,
   resolveHotelIdForDay,
+  resolveCompanionGrabTarget,
 } from "../../utils/companion";
 
 interface StepItineraryProps {
@@ -393,7 +392,8 @@ export function StepItinerary({
           const allDayActivities = rawActivities
             .map((act, idx) => ({
               act,
-              sortKey: parseActivitySortMinutes(act.time, idx),
+              sortKey: parseActivityTimelineWindow(act, day.dayNumber, idx)
+                .sortMinutes,
               idx,
             }))
             .sort((a, b) =>
@@ -429,12 +429,16 @@ export function StepItinerary({
             check: ReturnType<typeof validateOutfitForActivity>;
           }[];
 
+          const isLiveTripDay = Boolean(
+            companionActive &&
+              effectiveDetectedDay !== null &&
+              day.dayNumber === effectiveDetectedDay
+          );
+
           const showCompanionForDay =
             companionActive &&
             (effectiveDetectedDay !== null
-              ? selectedDayNum !== null
-                ? day.dayNumber === selectedDayNum
-                : day.dayNumber === effectiveDetectedDay
+              ? day.dayNumber === effectiveDetectedDay
               : selectedDayNum !== null
               ? day.dayNumber === selectedDayNum
               : day.dayNumber === 1);
@@ -447,10 +451,14 @@ export function StepItinerary({
                 effectiveNow
               )
             : null;
-          const activeHotelId = resolveHotelIdForDay(day.dayNumber);
-          const activeHotel = HOTEL_BOOKINGS.find(
-            (h) => h.id === activeHotelId
+          const activeHotelId = resolveHotelIdForDay(
+            day.dayNumber,
+            companionStatus?.upNextActivity,
+            companionStatus?.currentMinutes
           );
+          const activeHotel = activeHotelId
+            ? HOTEL_BOOKINGS.find((h) => h.id === activeHotelId)
+            : undefined;
           const upNextOverride = companionStatus?.upNextActivity
             ? resolveActivityOutfit(
                 companionStatus.upNextActivity,
@@ -469,9 +477,11 @@ export function StepItinerary({
                 `https://maps.google.com/?q=${encodeURIComponent(
                   day.locationBadge
                 )}`);
-          const grabScript = activeHotel
-            ? `${activeHotel.thaiName} - ${activeHotel.thaiAddress}`
-            : day.accommodation || day.locationBadge;
+          const grabTarget = resolveCompanionGrabTarget(
+            day.dayNumber,
+            companionStatus?.upNextActivity || null,
+            activeHotelId
+          );
 
           return (
             <article
@@ -854,127 +864,161 @@ export function StepItinerary({
 
                   {/* Right Column (8 cols): Chronological Schedule & Custom Entry Form */}
                   <div className="lg:col-span-8 p-6 sm:p-8 flex flex-col justify-between space-y-6">
-                    {showCompanionForDay && companionStatus && (
-                      <div
-                        data-testid={`up-next-card-d${day.dayNumber}`}
-                        className="bg-[#EFE7D8] border-2 border-[#13382E] p-4 sm:p-5 space-y-3"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span
-                            style={monoStyle}
-                            className="text-[11px] uppercase tracking-[0.14em] text-[#13382E] font-bold"
-                          >
-                            UP NEXT &bull; TODAY COMPANION
-                          </span>
-                          <span
-                            style={monoStyle}
-                            className="px-2 py-0.5 bg-[#13382E] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold"
-                          >
-                            {companionStatus.countdownLabel}
-                          </span>
-                        </div>
+                    {showCompanionForDay &&
+                      companionStatus &&
+                      (() => {
+                        const upNextWin = companionStatus.upNextActivity
+                          ? parseActivityTimelineWindow(
+                              companionStatus.upNextActivity,
+                              day.dayNumber,
+                              0
+                            )
+                          : null;
+                        const isEveningUpNext = Boolean(
+                          companionStatus.upNextActivity &&
+                            (companionStatus.upNextActivity.category ===
+                              "romance" ||
+                              companionStatus.upNextActivity.category ===
+                                "dining" ||
+                              (upNextWin?.hasClockTime &&
+                                upNextWin.startMinutes >= 17 * 60))
+                        );
 
-                        {companionStatus.upNextActivity ? (
-                          <div className="space-y-1">
-                            <div
-                              style={monoStyle}
-                              className="text-xs text-[#A8442A] font-semibold"
-                            >
-                              {companionStatus.upNextActivity.time}
-                            </div>
-                            <h4
-                              style={serifStyle}
-                              className="text-xl sm:text-2xl font-medium text-[#1F1A16]"
-                            >
-                              {companionStatus.upNextActivity.title}
-                            </h4>
-                            {companionStatus.upNextActivity.location && (
-                              <p
+                        return (
+                          <div
+                            data-testid={`up-next-card-d${day.dayNumber}`}
+                            className="bg-[#EFE7D8] border-2 border-[#13382E] p-4 sm:p-5 space-y-3"
+                          >
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span
                                 style={monoStyle}
-                                className="text-[11px] text-[#5C5248]"
+                                className="text-[11px] uppercase tracking-[0.14em] text-[#13382E] font-bold"
                               >
-                                LOC: {companionStatus.upNextActivity.location}
+                                {isLiveTripDay
+                                  ? "UP NEXT • TODAY COMPANION"
+                                  : "UP NEXT • COMPANION PREVIEW"}
+                              </span>
+                              <span
+                                style={monoStyle}
+                                className="px-2 py-0.5 bg-[#13382E] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold"
+                              >
+                                {isLiveTripDay
+                                  ? companionStatus.countdownLabel
+                                  : "Preview mode"}
+                              </span>
+                            </div>
+
+                            {companionStatus.upNextActivity ? (
+                              <div className="space-y-1">
+                                <div
+                                  style={monoStyle}
+                                  className="text-xs text-[#A8442A] font-semibold"
+                                >
+                                  {companionStatus.upNextActivity.time}
+                                </div>
+                                <h4
+                                  style={serifStyle}
+                                  className="text-xl sm:text-2xl font-medium text-[#1F1A16]"
+                                >
+                                  {companionStatus.upNextActivity.title}
+                                </h4>
+                                {companionStatus.upNextActivity.location && (
+                                  <p
+                                    style={monoStyle}
+                                    className="text-[11px] text-[#5C5248]"
+                                  >
+                                    LOC: {companionStatus.upNextActivity.location}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-[#13382E] font-medium">
+                                Every planned movement for Day{" "}
+                                {formatDayNumber(day.dayNumber)} is checked off.
                               </p>
                             )}
+
+                            <div className="flex flex-wrap items-center gap-2 pt-1">
+                              <a
+                                href={upNextMapHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={monoStyle}
+                                className="min-h-11 px-3 py-2 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] text-[#13382E] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1"
+                              >
+                                <span>Maps</span>
+                                <ExternalArrow />
+                              </a>
+
+                              {activeHotelId && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onOpenDriverModal?.(activeHotelId)
+                                  }
+                                  style={monoStyle}
+                                  className="min-h-11 px-3 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
+                                >
+                                  Hotel Driver Card
+                                </button>
+                              )}
+
+                              {grabTarget && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    onCopy?.(
+                                      grabTarget.script,
+                                      grabTarget.toastLabel
+                                    )
+                                  }
+                                  style={monoStyle}
+                                  className="min-h-11 px-3 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
+                                >
+                                  {grabTarget.label}
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onOpenWardrobeDrawer?.(
+                                    day.dayNumber,
+                                    companionStatus.upNextActivity || undefined
+                                  )
+                                }
+                                disabled={!onOpenWardrobeDrawer}
+                                style={monoStyle}
+                                className="min-h-11 px-3 py-2 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border border-[#1F1A16]/25 text-[11px] uppercase tracking-[0.08em] inline-flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
+                              >
+                                <HangerIcon className="w-3.5 h-3.5" />
+                                <span>
+                                  {isEveningUpNext
+                                    ? "Tonight's outfit:"
+                                    : "Today's outfit:"}{" "}
+                                  {tonightLook
+                                    ? tonightLook.title
+                                    : "Choose Look"}
+                                </span>
+                              </button>
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-sm text-[#13382E] font-medium">
-                            Every planned movement for Day{" "}
-                            {formatDayNumber(day.dayNumber)} is checked off.
-                          </p>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <a
-                            href={upNextMapHref}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={monoStyle}
-                            className="min-h-11 px-3 py-2 bg-[#FBF8F3] border border-[#1F1A16]/25 hover:border-[#13382E] text-[#13382E] text-[11px] uppercase tracking-[0.1em] font-semibold inline-flex items-center gap-1"
-                          >
-                            <span>Maps</span>
-                            <ExternalArrow />
-                          </a>
-
-                          <button
-                            type="button"
-                            onClick={() => onOpenDriverModal?.(activeHotelId)}
-                            style={monoStyle}
-                            className="min-h-11 px-3 py-2 bg-[#13382E] hover:bg-[#1D4E40] text-[#F6F1E7] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
-                          >
-                            Driver card
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onCopy?.(
-                                grabScript,
-                                `Grab script (${
-                                  activeHotel?.name || day.locationBadge
-                                })`
-                              )
-                            }
-                            style={monoStyle}
-                            className="min-h-11 px-3 py-2 bg-[#A8442A] hover:bg-[#8F351E] text-[#FBF8F3] text-[11px] uppercase tracking-[0.1em] font-semibold cursor-pointer inline-flex items-center"
-                          >
-                            Grab script
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              onOpenWardrobeDrawer?.(
-                                day.dayNumber,
-                                companionStatus.upNextActivity || undefined
-                              )
-                            }
-                            disabled={!onOpenWardrobeDrawer}
-                            style={monoStyle}
-                            className="min-h-11 px-3 py-2 bg-[#FBF8F3] hover:bg-[#1F1A16] text-[#1F1A16] hover:text-[#F6F1E7] border border-[#1F1A16]/25 text-[11px] uppercase tracking-[0.08em] inline-flex items-center gap-1.5 cursor-pointer transition-colors disabled:opacity-60"
-                          >
-                            <HangerIcon className="w-3.5 h-3.5" />
-                            <span>
-                              Tonight&apos;s outfit:{" "}
-                              {tonightLook ? tonightLook.title : "Choose Look"}
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                        );
+                      })()}
 
                     <div className="divide-y divide-[#1F1A16]/12">
                       {allDayActivities.map((act, actIdx) => {
                         const isDone =
                           tripState.completedActivityIds.includes(act.id);
                         const pastUncompleted = Boolean(
-                          showCompanionForDay &&
+                          isLiveTripDay &&
                             companionStatus &&
                             !isDone &&
                             isActivityPast(
                               act,
                               actIdx,
-                              companionStatus.currentMinutes
+                              companionStatus.currentMinutes,
+                              day.dayNumber
                             )
                         );
                         const style = CATEGORY_EDITORIAL_STYLES[act.category];
@@ -990,7 +1034,7 @@ export function StepItinerary({
                         );
                         return (
                           <React.Fragment key={act.id}>
-                            {showCompanionForDay &&
+                            {isLiveTripDay &&
                               companionStatus &&
                               actIdx === companionStatus.nowMarkerIndex && (
                                 <div
@@ -1362,7 +1406,7 @@ export function StepItinerary({
                           </React.Fragment>
                         );
                       })}
-                      {showCompanionForDay &&
+                      {isLiveTripDay &&
                         companionStatus &&
                         companionStatus.nowMarkerIndex ===
                           allDayActivities.length && (
